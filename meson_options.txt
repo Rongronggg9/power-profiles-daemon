@@ -1,0 +1,8 @@
+option('systemdsystemunitdir',
+       description: 'systemd unit directory',
+       type: 'string',
+       value: 'auto')
+option('gtk_doc',
+       type: 'boolean',
+       value: false,
+       description: 'Build docs')

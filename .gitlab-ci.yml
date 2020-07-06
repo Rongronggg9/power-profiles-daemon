@@ -1,0 +1,17 @@
+image: fedora:rawhide
+
+variables:
+  DEPENDENCIES: gcc gtk-doc pkgconfig(udev) pkgconfig(systemd) pkgconfig(gio-2.0) pkgconfig(gudev-1.0) systemd
+      meson git
+
+build_stable:
+  before_script:
+    - dnf upgrade -y --nogpgcheck fedora-release fedora-repos*
+    - dnf update -y && dnf install -y $DEPENDENCIES
+  script:
+    - meson -Dgtk_doc=true -Dgtk-tests=true _build
+    - ninja -v -C _build
+    - ninja -v -C _build install
+    - ninja -v -C _build uninstall
+    - ninja -v -C _build dist
+    - meson test -C _build
