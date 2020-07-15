@@ -339,7 +339,13 @@ name_acquired_handler (GDBusConnection *connection,
         continue;
       }
 
-      /* FIXME implement selection for performance drivers */
+      if (!ppd_profile_driver_probe (driver)) {
+        g_debug ("probe() failed for driver %s, skipping",
+                 ppd_profile_driver_get_driver_name (driver));
+        g_object_unref (object);
+        continue;
+      }
+
       data->profile_data[profile].driver = driver;
     } else {
       /* FIXME implement actions */
