@@ -127,6 +127,17 @@ ppd_profile_driver_init (PpdProfileDriver *self)
 {
 }
 
+gboolean
+ppd_profile_driver_probe (PpdProfileDriver *driver)
+{
+  g_return_val_if_fail (PPD_IS_PROFILE_DRIVER (driver), FALSE);
+
+  if (!PPD_PROFILE_DRIVER_GET_CLASS (driver)->probe)
+    return TRUE;
+
+  return PPD_PROFILE_DRIVER_GET_CLASS (driver)->probe (driver);
+}
+
 const char *
 ppd_profile_driver_get_driver_name (PpdProfileDriver *driver)
 {
