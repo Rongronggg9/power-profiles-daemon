@@ -11,6 +11,7 @@ sources = [
   'power-profiles-daemon.c',
   'ppd-action.c',
   'ppd-profile-driver.c',
+  'ppd-profile-driver-lenovo-dytc.c',
   'ppd-profile-driver-balanced.c',
   'ppd-profile-driver-power-saver.c',
   resources,
