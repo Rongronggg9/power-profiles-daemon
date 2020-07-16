@@ -10,6 +10,9 @@ variables:
                 systemd
                 meson
                 git
+                python3-gobject
+                python3-dbusmock
+                umockdev
 
 build_stable:
   before_script:
