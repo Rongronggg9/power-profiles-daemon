@@ -177,6 +177,18 @@ send_dbus_event (PpdApp     *data,
                                  props_changed, NULL);
 }
 
+static void
+set_active_profile (PpdApp     *data,
+                    PpdProfile  target_profile)
+{
+  g_message ("set_active_profile: %s", profile_to_str (target_profile));
+  //deactivate the current profile
+  //detactive the actions related to the current profile
+  //activate the target profile
+  //change the active profile
+  data->active_profile = target_profile;
+}
+
 static gboolean
 set_selected_profile (PpdApp      *data,
                       const char  *profile,
@@ -207,15 +219,42 @@ set_selected_profile (PpdApp      *data,
     return TRUE;
   }
 
-  //deactivate the current profile
-  //detactive the actions related to the current profile
-  //activate the target profile
-  //change the active profile
-  data->active_profile = target_profile;
+  set_active_profile (data, target_profile);
 
   send_dbus_event (data, PROP_ACTIVE_PROFILE | PROP_SELECTED_PROFILE);
 
   return TRUE;
+}
+
+static void
+driver_inhibited_changed_cb (GObject    *gobject,
+                             GParamSpec *pspec,
+                             gpointer    user_data)
+{
+  PpdApp *data = user_data;
+  PpdProfileDriver *driver = PPD_PROFILE_DRIVER (gobject);
+  const char *prop_str = pspec->name;
+
+  if (g_strcmp0 (prop_str, "inhibited") != 0) {
+    g_debug ("Ignoring '%s' property change on profile driver '%s'",
+             prop_str, ppd_profile_driver_get_driver_name (driver));
+    return;
+  }
+
+  if (ppd_profile_driver_get_profile (driver) != PPD_PROFILE_PERFORMANCE) {
+    g_warning ("Ignored 'inhibited' change on non-performance driver '%s'",
+               ppd_profile_driver_get_driver_name (driver));
+    return;
+  }
+
+  if (data->selected_profile != PPD_PROFILE_PERFORMANCE) {
+    g_debug ("User didn't want the performance profile, so ignoring 'inhibited' change on '%s'",
+             ppd_profile_driver_get_driver_name (driver));
+    return;
+  }
+
+  set_active_profile (data, ppd_profile_driver_is_inhibited (driver) ?
+                      PPD_PROFILE_BALANCED : PPD_PROFILE_PERFORMANCE);
 }
 
 static GVariant *
@@ -348,6 +387,9 @@ name_acquired_handler (GDBusConnection *connection,
       }
 
       data->profile_data[profile].driver = driver;
+
+      g_signal_connect (G_OBJECT (driver), "notify::inhibited",
+                        G_CALLBACK (driver_inhibited_changed_cb), data);
     } else {
       /* FIXME implement actions */
     }
