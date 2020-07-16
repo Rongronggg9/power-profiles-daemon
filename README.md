@@ -9,7 +9,7 @@ Installation
 $ meson _build -Dprefix=/usr
 $ ninja -v -C _build install
 ```
-It requires libgudev and systemd (>= 233 for the accelerometer quirks).
+It requires libgudev and systemd.
 
 Introduction
 ------------
