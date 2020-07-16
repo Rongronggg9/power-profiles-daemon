@@ -24,7 +24,6 @@ typedef struct {
 
 typedef struct {
   GMainLoop *loop;
-  //	GUdevClient *client;
   GDBusNodeInfo *introspection_data;
   GDBusConnection *connection;
   guint name_id;
