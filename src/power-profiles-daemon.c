@@ -201,7 +201,7 @@ set_selected_profile (PpdApp      *data,
            profile_to_str (data->selected_profile), profile);
   data->selected_profile = target_profile;
 
-  if (ppd_profile_driver_get_inhibited (SELECTED_DRIVER)) {
+  if (ppd_profile_driver_is_inhibited (SELECTED_DRIVER)) {
     send_dbus_event (data, PROP_SELECTED_PROFILE);
     g_debug ("Not transitioning to '%s' as inhibited", profile);
     return TRUE;
