@@ -181,3 +181,15 @@ ppd_profile_driver_get_inhibited (PpdProfileDriver *driver)
   priv = PPD_PROFILE_DRIVER_GET_PRIVATE (driver);
   return priv->inhibited ? priv->inhibited : "";
 }
+
+gboolean
+ppd_profile_driver_is_inhibited (PpdProfileDriver *driver)
+{
+  PpdProfileDriverPrivate *priv;
+
+  g_return_val_if_fail (PPD_IS_PROFILE_DRIVER (driver), FALSE);
+
+  priv = PPD_PROFILE_DRIVER_GET_PRIVATE (driver);
+
+  return (priv->inhibited != NULL);
+}
