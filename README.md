@@ -41,6 +41,12 @@ You can now check which mode is in use, and which ones are available by running:
 gdbus introspect --system --dest net.hadess.PowerProfiles --object-path /net/hadess/PowerProfiles
 ```
 
+You can change the selected profile by running (change `power-saver` for the
+chosen profile):
+```
+gdbus call --system --dest net.hadess.PowerProfiles --object-path /net/hadess/PowerProfiles --method org.freedesktop.DBus.Properties.Set 'net.hadess.PowerProfiles' 'SelectedProfile' "<'power-saver'>"
+```
+
 If that doesn't work, please file an issue, make sure any running power-profiles-daemon
 has been stopped:
 `systemctl stop power-profiles-daemon.service`
