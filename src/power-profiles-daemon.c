@@ -113,7 +113,7 @@ get_profiles_variant (PpdApp *data)
 
   g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
 
-  for (i = 0; i < G_N_ELEMENTS(data->profile_data); i++) {
+  for (i = 0; i < NUM_PROFILES; i++) {
     PpdProfileDriver *driver = data->profile_data[i].driver;
     GVariantBuilder asv_builder;
 
