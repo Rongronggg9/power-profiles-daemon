@@ -157,7 +157,7 @@ send_dbus_event (PpdApp     *data,
                            g_variant_new_string (get_selected_profile (data)));
   }
   if (mask & PROP_INHIBITED) {
-    g_variant_builder_add (&props_builder, "{sv}", "SelectedProfile",
+    g_variant_builder_add (&props_builder, "{sv}", "Inhibited",
                            g_variant_new_string (get_inhibited (data)));
   }
   if (mask & PROP_PROFILES) {
