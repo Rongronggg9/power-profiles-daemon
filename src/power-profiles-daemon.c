@@ -368,7 +368,7 @@ name_acquired_handler (GDBusConnection *connection,
       PpdProfileDriver *driver = PPD_PROFILE_DRIVER (object);
       PpdProfile profile;
 
-      g_message ("got driver %s", ppd_profile_driver_get_driver_name (driver));
+      g_debug ("Handling driver '%s'", ppd_profile_driver_get_driver_name (driver));
 
       profile = ppd_profile_driver_get_profile (driver);
       if (profile == PPD_PROFILE_UNSET) {
