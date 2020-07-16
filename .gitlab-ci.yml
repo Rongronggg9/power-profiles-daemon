@@ -1,8 +1,15 @@
 image: fedora:rawhide
 
 variables:
-  DEPENDENCIES: gcc gtk-doc pkgconfig(udev) pkgconfig(systemd) pkgconfig(gio-2.0) pkgconfig(gudev-1.0) systemd
-      meson git
+  DEPENDENCIES: gcc
+                gtk-doc
+                pkgconfig(udev)
+                pkgconfig(systemd)
+                pkgconfig(gio-2.0)
+                pkgconfig(gudev-1.0)
+                systemd
+                meson
+                git
 
 build_stable:
   before_script:
