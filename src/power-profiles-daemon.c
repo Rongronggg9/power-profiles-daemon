@@ -40,7 +40,7 @@ typedef struct {
 #define SELECTED_DRIVER (data->profile_data[data->selected_profile].driver)
 
 /* profile drivers and actions */
-// #include "ppd-action-mfi-fastcharge.h"
+#include "ppd-action-trickle-charge.h"
 #include "ppd-profile-driver-balanced.h"
 #include "ppd-profile-driver-power-saver.h"
 #include "ppd-profile-driver-lenovo-dytc.h"
@@ -56,6 +56,7 @@ static GTypeGetFunc objects[] = {
   ppd_profile_driver_power_saver_get_type,
 
   /* Actions */
+  ppd_action_trickle_charge_get_type,
 };
 
 typedef enum {

@@ -10,6 +10,7 @@ resources = gnome.compile_resources(
 sources = [
   'power-profiles-daemon.c',
   'ppd-action.c',
+  'ppd-action-trickle-charge.c',
   'ppd-profile-driver.c',
   'ppd-profile-driver-lenovo-dytc.c',
   'ppd-profile-driver-balanced.c',
