@@ -8,7 +8,6 @@
  */
 
 #include "ppd-profile-driver.h"
-#include "ppd-profile.h"
 #include "ppd-enums.h"
 
 typedef struct
