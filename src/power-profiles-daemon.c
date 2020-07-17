@@ -47,9 +47,12 @@ typedef struct {
 typedef GType (*GTypeGetFunc) (void);
 
 static GTypeGetFunc objects[] = {
+  /* Hardware specific profile drivers */
+  ppd_profile_driver_lenovo_dytc_get_type,
+
+  /* Generic profile drivers */
   ppd_profile_driver_balanced_get_type,
   ppd_profile_driver_power_saver_get_type,
-  ppd_profile_driver_lenovo_dytc_get_type,
 };
 
 typedef enum {
