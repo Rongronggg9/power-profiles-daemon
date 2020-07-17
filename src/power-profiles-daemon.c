@@ -184,6 +184,34 @@ send_dbus_event (PpdApp     *data,
 }
 
 static void
+set_all_actions_active (GPtrArray *actions,
+                        gboolean   active)
+{
+  guint i;
+
+  g_return_if_fail (actions != NULL);
+
+  for (i = 0; i < actions->len; i++) {
+    g_autoptr(GError) error = NULL;
+    PpdAction *action;
+    gboolean ret;
+
+    action = g_ptr_array_index (actions, i);
+
+    if (active)
+      ret = ppd_action_activate (action, &error);
+    else
+      ret = ppd_action_deactivate (action, &error);
+
+    if (!ret)
+      g_warning ("Failed to %s action '%s': %s",
+                 active ? "activate" : "deactivate",
+                 ppd_action_get_action_name (action),
+                 error->message);
+  }
+}
+
+static void
 set_active_profile (PpdApp     *data,
                     PpdProfile  target_profile)
 {
@@ -201,7 +229,7 @@ set_active_profile (PpdApp     *data,
                error->message);
     g_clear_error (&error);
   }
-  /* FIXME: deactivate the actions related to the current profile */
+  set_all_actions_active (data->actions[data->active_profile], FALSE);
 
   driver = GET_DRIVER(target_profile);
   if (!ppd_profile_driver_activate (driver, &error)) {
@@ -210,7 +238,7 @@ set_active_profile (PpdApp     *data,
                error->message);
     g_clear_error (&error);
   }
-  /* FIXME: activate the actions related to the new profile */
+  set_all_actions_active (data->actions[target_profile], TRUE);
 
   data->active_profile = target_profile;
 }
