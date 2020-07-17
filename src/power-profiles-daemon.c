@@ -181,11 +181,31 @@ static void
 set_active_profile (PpdApp     *data,
                     PpdProfile  target_profile)
 {
-  g_message ("set_active_profile: %s", profile_to_str (target_profile));
-  //deactivate the current profile
-  //detactive the actions related to the current profile
-  //activate the target profile
-  //change the active profile
+  PpdProfileDriver *driver;
+  g_autoptr(GError) error = NULL;
+
+  g_debug ("Setting active profile '%s' (current: '%s')",
+           profile_to_str (target_profile),
+           profile_to_str (data->active_profile));
+
+  driver = ACTIVE_DRIVER;
+  if (!ppd_profile_driver_deactivate (driver, &error)) {
+    g_warning ("Failed to deactivate driver '%s': %s",
+               ppd_profile_driver_get_driver_name (driver),
+               error->message);
+    g_clear_error (&error);
+  }
+  /* FIXME: deactivate the actions related to the current profile */
+
+  driver = GET_DRIVER(target_profile);
+  if (!ppd_profile_driver_activate (driver, &error)) {
+    g_warning ("Failed to activate driver '%s': %s",
+               ppd_profile_driver_get_driver_name (driver),
+               error->message);
+    g_clear_error (&error);
+  }
+  /* FIXME: activate the actions related to the new profile */
+
   data->active_profile = target_profile;
 }
 
