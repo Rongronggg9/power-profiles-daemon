@@ -32,6 +32,7 @@ typedef struct {
   PpdProfile active_profile;
   PpdProfile selected_profile;
   ProfileData profile_data[NUM_PROFILES];
+  GPtrArray *actions[NUM_PROFILES];
 } PpdApp;
 
 #define GET_DRIVER(p) (data->profile_data[p].driver)
@@ -53,6 +54,8 @@ static GTypeGetFunc objects[] = {
   /* Generic profile drivers */
   ppd_profile_driver_balanced_get_type,
   ppd_profile_driver_power_saver_get_type,
+
+  /* Actions */
 };
 
 typedef enum {
@@ -413,8 +416,31 @@ name_acquired_handler (GDBusConnection *connection,
 
       g_signal_connect (G_OBJECT (driver), "notify::inhibited",
                         G_CALLBACK (driver_inhibited_changed_cb), data);
+    } else if (PPD_IS_ACTION (object)) {
+      PpdAction *action = PPD_ACTION (object);
+      PpdProfile profile;
+
+      g_debug ("Handling action '%s'", ppd_action_get_action_name (action));
+
+      profile = ppd_action_get_profile (action);
+      if (profile == PPD_PROFILE_UNSET) {
+        g_warning ("Action '%s' implements invalid profile '%d'",
+                   ppd_action_get_action_name (action),
+                   profile);
+        g_object_unref (object);
+        continue;
+      }
+
+      if (!ppd_action_probe (action)) {
+        g_debug ("probe() failed for action '%s', skipping",
+                 ppd_action_get_action_name (action));
+        g_object_unref (object);
+        continue;
+      }
+
+      g_ptr_array_add (data->actions[profile], action);
     } else {
-      /* FIXME implement actions */
+      g_assert_not_reached ();
     }
   }
 
@@ -460,6 +486,8 @@ setup_dbus (PpdApp *data)
 static void
 free_app_data (PpdApp *data)
 {
+  guint i;
+
   if (data == NULL)
     return;
 
@@ -467,6 +495,9 @@ free_app_data (PpdApp *data)
     g_bus_unown_name (data->name_id);
     data->name_id = 0;
   }
+
+  for (i = 0; i < NUM_PROFILES; i++)
+    g_ptr_array_free (data->actions[i], TRUE);
 
   g_clear_pointer (&data->introspection_data, g_dbus_node_info_unref);
   g_clear_object (&data->connection);
@@ -478,8 +509,11 @@ int main (int argc, char **argv)
 {
   PpdApp *data;
   int ret = 0;
+  guint i;
 
   data = g_new0 (PpdApp, 1);
+  for (i = 0; i < NUM_PROFILES; i++)
+    data->actions[i] = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
 
   /* Set up D-Bus */
   setup_dbus (data);
