@@ -203,6 +203,11 @@ class Tests(dbusmock.DBusTestCase):
         with open(self.log.name) as f:
             return f.read().count(text)
 
+    def read_sysfs_attr(self, device, attribute):
+        with open(os.path.join(self.testbed.get_root_dir() + device, attribute), 'rb') as f:
+            return f.read()
+        return None
+
     def assertEventually(self, condition, message=None, timeout=50):
         '''Assert that condition function eventually returns True.
 
@@ -291,6 +296,32 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
       self.assertEqual(self.get_dbus_property('SelectedProfile'), 'performance')
       self.assertEqual(self.get_dbus_property('Inhibited'), 'lap-detected')
+
+    def test_trickle_charge_mode(self):
+      '''Trickle power_supply charge type'''
+
+      idevice = self.testbed.add_device('usb', 'iDevice', None,
+          [],
+          [ 'ID_MODEL', 'iDevice', 'DRIVER', 'apple-mfi-fastcharge' ]
+      )
+      fastcharge = self.testbed.add_device('power_supply', 'MFi Fastcharge', idevice,
+          [ 'charge_type', 'Trickle', 'scope', 'Device' ],
+          []
+      )
+
+      self.start_daemon()
+
+      # Verify that charge-type got changed to Fast on startup
+      self.assertEqual(self.read_sysfs_attr(fastcharge, 'charge_type'), b'Fast')
+
+      # Verify that charge-type got changed to Trickle when power saving
+      self.set_dbus_property('SelectedProfile', GLib.Variant.new_string('power-saver'))
+      self.assertEqual(self.read_sysfs_attr(fastcharge, 'charge_type'), b'Trickle')
+
+      # FIXME no performance mode
+      # Verify that charge-type got changed to Fast in a non-default, non-power save mode
+      # self.set_dbus_property('SelectedProfile', GLib.Variant.new_string('performance'))
+      # self.assertEqual(self.read_sysfs_attr(fastcharge, 'charge_type'), 'Fast')
 
     #
     # Helper methods
