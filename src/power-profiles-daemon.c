@@ -477,6 +477,14 @@ name_acquired_handler (GDBusConnection *connection,
     goto bail;
   }
 
+  /* Set initial state for actions */
+  for (i = 0; i < NUM_PROFILES; i++) {
+    if (i == data->active_profile)
+      continue;
+    set_all_actions_active (data->actions[i], FALSE);
+  }
+  set_all_actions_active (data->actions[data->active_profile], TRUE);
+
   send_dbus_event (data, PROP_ALL);
 
   return;
