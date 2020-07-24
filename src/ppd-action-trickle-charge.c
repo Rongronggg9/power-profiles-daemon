@@ -8,10 +8,10 @@
  */
 
 #include <gudev/gudev.h>
-#include <stdio.h>
 
 #include "ppd-action-trickle-charge.h"
 #include "ppd-profile.h"
+#include "ppd-utils.h"
 
 #define CHARGE_TYPE_SYSFS_NAME "charge_type"
 
@@ -44,24 +44,6 @@ ppd_action_trickle_charge_constructor (GType                  type,
 }
 
 static void
-write_sysfs (GUdevDevice *device,
-             const char  *attribute,
-             const char  *value)
-{
-  FILE *sysfsfp;
-  g_autofree char *filename = NULL;
-
-  filename = g_build_filename (g_udev_device_get_sysfs_path (device), attribute, NULL);
-  sysfsfp = fopen (filename, "w");
-  if (sysfsfp == NULL) {
-    g_warning ("Could not open for write '%s'", filename);
-    return;
-  }
-  fprintf (sysfsfp, value);
-  fclose (sysfsfp);
-}
-
-static void
 set_charge_type (PpdActionTrickleCharge *action,
                  const char             *charge_type)
 {
@@ -77,7 +59,7 @@ set_charge_type (PpdActionTrickleCharge *action,
     if (!g_udev_device_has_sysfs_attr (dev, CHARGE_TYPE_SYSFS_NAME))
       continue;
 
-    write_sysfs (dev, CHARGE_TYPE_SYSFS_NAME, charge_type);
+    ppd_utils_write_sysfs (dev, CHARGE_TYPE_SYSFS_NAME, charge_type, NULL);
 
     break;
   }
@@ -124,7 +106,7 @@ uevent_cb (GUdevClient *client,
   g_debug ("Updating charge type for '%s' to '%s'",
            g_udev_device_get_sysfs_path (device),
            charge_type);
-  write_sysfs (device, CHARGE_TYPE_SYSFS_NAME, charge_type);
+  ppd_utils_write_sysfs (device, CHARGE_TYPE_SYSFS_NAME, charge_type, NULL);
 }
 
 static void
