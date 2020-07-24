@@ -9,6 +9,7 @@ resources = gnome.compile_resources(
 
 sources = [
   'power-profiles-daemon.c',
+  'ppd-utils.c',
   'ppd-action.c',
   'ppd-action-trickle-charge.c',
   'ppd-profile-driver.c',
