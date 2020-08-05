@@ -35,9 +35,21 @@ typedef struct {
   GPtrArray *actions;
 } PpdApp;
 
-#define GET_DRIVER(p) (data->profile_data[p].driver)
-#define ACTIVE_DRIVER (data->profile_data[data->active_profile].driver)
-#define SELECTED_DRIVER (data->profile_data[data->selected_profile].driver)
+static guint
+flags_to_index (PpdProfile profile)
+{
+  guint i;
+
+  for (i = 0; i < NUM_PROFILES; i++)
+    if (profile & 1 << i)
+      return i;
+
+  g_assert_not_reached ();
+}
+
+#define GET_DRIVER(p) (data->profile_data[flags_to_index(p)].driver)
+#define ACTIVE_DRIVER (data->profile_data[flags_to_index(data->active_profile)].driver)
+#define SELECTED_DRIVER (data->profile_data[flags_to_index(data->selected_profile)].driver)
 
 /* profile drivers and actions */
 #include "ppd-action-trickle-charge.h"
@@ -71,8 +83,8 @@ typedef enum {
 static const char *
 profile_to_str (PpdProfile profile)
 {
-  GEnumClass *klass = g_type_class_ref (PPD_TYPE_PROFILE);
-  GEnumValue *value = g_enum_get_value (klass, profile);
+  GFlagsClass *klass = g_type_class_ref (PPD_TYPE_PROFILE);
+  GFlagsValue *value = g_flags_get_first_value (klass, profile);
   const gchar *name = value ? value->value_nick : "";
   g_type_class_unref (klass);
   return name;
@@ -81,8 +93,8 @@ profile_to_str (PpdProfile profile)
 static PpdProfile
 profile_from_str (const char *str)
 {
-  GEnumClass *klass = g_type_class_ref (PPD_TYPE_PROFILE);
-  GEnumValue *value = g_enum_get_value_by_nick (klass, str);
+  GFlagsClass *klass = g_type_class_ref (PPD_TYPE_PROFILE);
+  GFlagsValue *value = g_flags_get_value_by_nick (klass, str);
   PpdProfile profile = value ? value->value : PPD_PROFILE_UNSET;
   g_type_class_unref (klass);
   return profile;
@@ -106,7 +118,7 @@ get_inhibited (PpdApp *data)
   PpdProfileDriver *driver;
   const char *ret;
 
-  driver = data->profile_data[data->selected_profile].driver;
+  driver = SELECTED_DRIVER;
   ret = ppd_profile_driver_get_inhibited (driver);
   g_assert (ret != NULL);
   return ret;
@@ -393,10 +405,10 @@ bus_acquired_handler (GDBusConnection *connection,
 static gboolean
 has_required_drivers (PpdApp *data)
 {
-  if (!data->profile_data[PPD_PROFILE_BALANCED].driver ||
-      !G_IS_OBJECT (data->profile_data[PPD_PROFILE_BALANCED].driver) ||
-      !data->profile_data[PPD_PROFILE_POWER_SAVER].driver ||
-      !G_IS_OBJECT (data->profile_data[PPD_PROFILE_POWER_SAVER].driver)) {
+  if (!data->profile_data[flags_to_index(PPD_PROFILE_BALANCED)].driver ||
+      !G_IS_OBJECT (data->profile_data[flags_to_index(PPD_PROFILE_BALANCED)].driver) ||
+      !data->profile_data[flags_to_index(PPD_PROFILE_POWER_SAVER)].driver ||
+      !G_IS_OBJECT (data->profile_data[flags_to_index(PPD_PROFILE_POWER_SAVER)].driver)) {
     return FALSE;
   }
   return TRUE;
@@ -436,7 +448,7 @@ name_acquired_handler (GDBusConnection *connection,
         continue;
       }
 
-      data->profile_data[profile].driver = driver;
+      data->profile_data[flags_to_index(profile)].driver = driver;
 
       g_signal_connect (G_OBJECT (driver), "notify::inhibited",
                         G_CALLBACK (driver_inhibited_changed_cb), data);
@@ -526,6 +538,8 @@ int main (int argc, char **argv)
 
   data = g_new0 (PpdApp, 1);
   data->actions = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
+  data->active_profile = PPD_PROFILE_BALANCED;
+  data->selected_profile = PPD_PROFILE_BALANCED;
 
   /* Set up D-Bus */
   setup_dbus (data);

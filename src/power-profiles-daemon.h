@@ -11,4 +11,4 @@
 
 #include "ppd-profile.h"
 
-#define NUM_PROFILES (PPD_PROFILE_PERFORMANCE + 1)
+#define NUM_PROFILES 3

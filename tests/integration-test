@@ -239,10 +239,10 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 2)
-      self.assertEqual(profiles[0]['Driver'], 'balanced')
-      self.assertEqual(profiles[1]['Driver'], 'power-saver')
-      self.assertEqual(profiles[0]['Profile'], 'balanced')
-      self.assertEqual(profiles[1]['Profile'], 'power-saver')
+      self.assertEqual(profiles[1]['Driver'], 'balanced')
+      self.assertEqual(profiles[0]['Driver'], 'power-saver')
+      self.assertEqual(profiles[1]['Profile'], 'balanced')
+      self.assertEqual(profiles[0]['Profile'], 'power-saver')
 
       self.set_dbus_property('SelectedProfile', GLib.Variant.new_string('power-saver'))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')

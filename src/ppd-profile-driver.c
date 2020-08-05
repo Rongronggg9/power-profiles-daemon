@@ -43,7 +43,7 @@ ppd_profile_driver_set_property (GObject        *object,
     priv->driver_name = g_value_dup_string (value);
     break;
   case PROP_PROFILE:
-    priv->profile = g_value_get_enum (value);
+    priv->profile = g_value_get_flags (value);
     break;
   case PROP_INHIBITED:
     g_clear_pointer (&priv->inhibited, g_free);
@@ -68,7 +68,7 @@ ppd_profile_driver_get_property (GObject        *object,
     g_value_set_string (value, priv->driver_name);
     break;
   case PROP_PROFILE:
-    g_value_set_enum (value, priv->profile);
+    g_value_set_flags (value, priv->profile);
     break;
   case PROP_INHIBITED:
     g_value_set_string (value, priv->inhibited);
@@ -107,12 +107,12 @@ ppd_profile_driver_class_init (PpdProfileDriverClass *klass)
                                                        NULL,
                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
   g_object_class_install_property (object_class, PROP_PROFILE,
-                                   g_param_spec_enum("profile",
-                                                     "Profile",
-                                                     "Profile implemented by this driver",
-                                                     PPD_TYPE_PROFILE,
-                                                     PPD_PROFILE_UNSET,
-                                                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+                                   g_param_spec_flags("profile",
+                                                      "Profile",
+                                                      "Profile implemented by this driver",
+                                                      PPD_TYPE_PROFILE,
+                                                      0,
+                                                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
   g_object_class_install_property (object_class, PROP_INHIBITED,
                                    g_param_spec_string("inhibited",
                                                        "Inhibited",
