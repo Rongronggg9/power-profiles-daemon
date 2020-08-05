@@ -19,10 +19,10 @@ struct _PpdDriverClass
 {
   GObjectClass   parent_class;
 
-  gboolean       (* probe)      (PpdDriver  *driver);
-  gboolean       (* activate_profile)   (PpdDriver  *driver,
-                                         PpdProfile         profile,
-                                         GError           **error);
+  gboolean       (* probe)            (PpdDriver   *driver);
+  gboolean       (* activate_profile) (PpdDriver   *driver,
+                                       PpdProfile   profile,
+                                       GError     **error);
 };
 
 gboolean ppd_driver_probe (PpdDriver *driver);

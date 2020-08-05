@@ -30,9 +30,9 @@ G_DEFINE_TYPE_WITH_PRIVATE (PpdDriver, ppd_driver, G_TYPE_OBJECT)
 
 static void
 ppd_driver_set_property (GObject        *object,
-                              guint           property_id,
-                              const GValue   *value,
-                              GParamSpec     *pspec)
+                         guint           property_id,
+                         const GValue   *value,
+                         GParamSpec     *pspec)
 {
   PpdDriver *driver = PPD_DRIVER (object);
   PpdDriverPrivate *priv = PPD_DRIVER_GET_PRIVATE (driver);
@@ -56,9 +56,9 @@ ppd_driver_set_property (GObject        *object,
 
 static void
 ppd_driver_get_property (GObject        *object,
-                              guint           property_id,
-                              GValue         *value,
-                              GParamSpec     *pspec)
+                         guint           property_id,
+                         GValue         *value,
+                         GParamSpec     *pspec)
 {
   PpdDriver *driver = PPD_DRIVER (object);
   PpdDriverPrivate *priv = PPD_DRIVER_GET_PRIVATE (driver);
@@ -139,8 +139,8 @@ ppd_driver_probe (PpdDriver *driver)
 
 gboolean
 ppd_driver_activate_profile (PpdDriver  *driver,
-                                     PpdProfile         profile,
-                                     GError           **error)
+                             PpdProfile         profile,
+                             GError           **error)
 {
   g_return_val_if_fail (PPD_IS_DRIVER (driver), FALSE);
 
