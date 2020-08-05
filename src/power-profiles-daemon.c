@@ -219,28 +219,27 @@ static void
 set_active_profile (PpdApp     *data,
                     PpdProfile  target_profile)
 {
-  PpdProfileDriver *driver;
-  g_autoptr(GError) error = NULL;
+  guint i;
 
   g_debug ("Setting active profile '%s' (current: '%s')",
            profile_to_str (target_profile),
            profile_to_str (data->active_profile));
 
-  driver = ACTIVE_DRIVER;
-  if (!ppd_profile_driver_deactivate (driver, &error)) {
-    g_warning ("Failed to deactivate driver '%s': %s",
-               ppd_profile_driver_get_driver_name (driver),
-               error->message);
-    g_clear_error (&error);
+  for (i = 0; i < NUM_PROFILES; i++) {
+    PpdProfileDriver *driver = data->profile_drivers[i];
+    g_autoptr(GError) error = NULL;
+
+    if (!driver)
+      continue;
+
+    if (!ppd_profile_driver_activate_profile (driver, target_profile, &error)) {
+      g_warning ("Failed to activate driver '%s': %s",
+                 ppd_profile_driver_get_driver_name (driver),
+                 error->message);
+      g_clear_error (&error);
+    }
   }
 
-  driver = GET_DRIVER(target_profile);
-  if (!ppd_profile_driver_activate (driver, &error)) {
-    g_warning ("Failed to activate driver '%s': %s",
-               ppd_profile_driver_get_driver_name (driver),
-               error->message);
-    g_clear_error (&error);
-  }
   actions_activate_profile (data->actions, target_profile);
 
   data->active_profile = target_profile;

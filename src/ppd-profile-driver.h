@@ -20,15 +20,13 @@ struct _PpdProfileDriverClass
   GObjectClass   parent_class;
 
   gboolean       (* probe)      (PpdProfileDriver  *driver);
-  gboolean       (* activate)   (PpdProfileDriver  *driver,
-                                 GError           **error);
-  gboolean       (* deactivate) (PpdProfileDriver  *driver,
-                                 GError           **error);
+  gboolean       (* activate_profile)   (PpdProfileDriver  *driver,
+                                         PpdProfile         profile,
+                                         GError           **error);
 };
 
 gboolean ppd_profile_driver_probe (PpdProfileDriver *driver);
-gboolean ppd_profile_driver_activate (PpdProfileDriver *driver, GError **error);
-gboolean ppd_profile_driver_deactivate (PpdProfileDriver *driver, GError **error);
+gboolean ppd_profile_driver_activate_profile (PpdProfileDriver *driver, PpdProfile profile, GError **error);
 const char *ppd_profile_driver_get_driver_name (PpdProfileDriver *driver);
 PpdProfile ppd_profile_driver_get_profile (PpdProfileDriver *driver);
 const char *ppd_profile_driver_get_inhibited (PpdProfileDriver *driver);

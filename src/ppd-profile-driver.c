@@ -138,27 +138,16 @@ ppd_profile_driver_probe (PpdProfileDriver *driver)
 }
 
 gboolean
-ppd_profile_driver_activate (PpdProfileDriver  *driver,
-                             GError           **error)
+ppd_profile_driver_activate_profile (PpdProfileDriver  *driver,
+                                     PpdProfile         profile,
+                                     GError           **error)
 {
   g_return_val_if_fail (PPD_IS_PROFILE_DRIVER (driver), FALSE);
 
-  if (!PPD_PROFILE_DRIVER_GET_CLASS (driver)->activate)
+  if (!PPD_PROFILE_DRIVER_GET_CLASS (driver)->activate_profile)
     return TRUE;
 
-  return PPD_PROFILE_DRIVER_GET_CLASS (driver)->activate (driver, error);
-}
-
-gboolean
-ppd_profile_driver_deactivate (PpdProfileDriver  *driver,
-                               GError           **error)
-{
-  g_return_val_if_fail (PPD_IS_PROFILE_DRIVER (driver), FALSE);
-
-  if (!PPD_PROFILE_DRIVER_GET_CLASS (driver)->deactivate)
-    return TRUE;
-
-  return PPD_PROFILE_DRIVER_GET_CLASS (driver)->deactivate (driver, error);
+  return PPD_PROFILE_DRIVER_GET_CLASS (driver)->activate_profile (driver, profile, error);
 }
 
 const char *
