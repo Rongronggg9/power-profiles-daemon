@@ -68,22 +68,20 @@ set_charge_type (PpdActionTrickleCharge *action,
 }
 
 static gboolean
-ppd_action_trickle_charge_activate (PpdAction  *action,
-                                    GError    **error)
+ppd_action_trickle_charge_activate_profile (PpdAction   *action,
+                                            PpdProfile   profile,
+                                            GError     **error)
 {
   PpdActionTrickleCharge *self = PPD_ACTION_TRICKLE_CHARGE (action);
-  set_charge_type (self, "Trickle");
-  self->active = TRUE;
-  return TRUE;
-}
 
-static gboolean
-ppd_action_trickle_charge_deactivate (PpdAction  *action,
-                                      GError    **error)
-{
-  PpdActionTrickleCharge *self = PPD_ACTION_TRICKLE_CHARGE (action);
-  set_charge_type (self, "Fast");
-  self->active = FALSE;
+  if (profile == PPD_PROFILE_POWER_SAVER) {
+    set_charge_type (self, "Trickle");
+    self->active = TRUE;
+  } else {
+    set_charge_type (self, "Fast");
+    self->active = FALSE;
+  }
+
   return TRUE;
 }
 
@@ -130,8 +128,7 @@ ppd_action_trickle_charge_class_init (PpdActionTrickleChargeClass *klass)
   object_class->finalize = ppd_action_trickle_charge_finalize;
 
   driver_class = PPD_ACTION_CLASS(klass);
-  driver_class->activate = ppd_action_trickle_charge_activate;
-  driver_class->deactivate = ppd_action_trickle_charge_deactivate;
+  driver_class->activate_profile = ppd_action_trickle_charge_activate_profile;
 }
 
 static void

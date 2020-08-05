@@ -121,27 +121,16 @@ ppd_action_probe (PpdAction *action)
 }
 
 gboolean
-ppd_action_activate (PpdAction  *action,
+ppd_action_activate_profile (PpdAction  *action,
+                             PpdProfile         profile,
                              GError           **error)
 {
   g_return_val_if_fail (PPD_IS_ACTION (action), FALSE);
 
-  if (!PPD_ACTION_GET_CLASS (action)->activate)
+  if (!PPD_ACTION_GET_CLASS (action)->activate_profile)
     return TRUE;
 
-  return PPD_ACTION_GET_CLASS (action)->activate (action, error);
-}
-
-gboolean
-ppd_action_deactivate (PpdAction  *action,
-                               GError           **error)
-{
-  g_return_val_if_fail (PPD_IS_ACTION (action), FALSE);
-
-  if (!PPD_ACTION_GET_CLASS (action)->deactivate)
-    return TRUE;
-
-  return PPD_ACTION_GET_CLASS (action)->deactivate (action, error);
+  return PPD_ACTION_GET_CLASS (action)->activate_profile (action, profile, error);
 }
 
 const char *

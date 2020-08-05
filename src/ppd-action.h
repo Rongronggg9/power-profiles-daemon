@@ -19,15 +19,13 @@ struct _PpdActionClass
 {
   GObjectClass   parent_class;
 
-  gboolean       (* probe)      (PpdAction  *action);
-  gboolean       (* activate)   (PpdAction  *action,
-                                 GError    **error);
-  gboolean       (* deactivate) (PpdAction  *action,
-                                 GError    **error);
+  gboolean       (* probe)            (PpdAction  *action);
+  gboolean       (* activate_profile) (PpdAction  *action,
+                                       PpdProfile  profile,
+                                       GError    **error);
 };
 
 gboolean ppd_action_probe (PpdAction *action);
-gboolean ppd_action_activate (PpdAction *action, GError **error);
-gboolean ppd_action_deactivate (PpdAction *action, GError **error);
+gboolean ppd_action_activate_profile (PpdAction *action, PpdProfile profile, GError **error);
 const char *ppd_action_get_action_name (PpdAction *action);
 PpdProfile ppd_action_get_profile (PpdAction *action);

@@ -32,7 +32,7 @@ typedef struct {
   PpdProfile active_profile;
   PpdProfile selected_profile;
   ProfileData profile_data[NUM_PROFILES];
-  GPtrArray *actions[NUM_PROFILES];
+  GPtrArray *actions;
 } PpdApp;
 
 #define GET_DRIVER(p) (data->profile_data[p].driver)
@@ -185,8 +185,8 @@ send_dbus_event (PpdApp     *data,
 }
 
 static void
-set_all_actions_active (GPtrArray *actions,
-                        gboolean   active)
+actions_activate_profile (GPtrArray *actions,
+                          PpdProfile profile)
 {
   guint i;
 
@@ -199,14 +199,10 @@ set_all_actions_active (GPtrArray *actions,
 
     action = g_ptr_array_index (actions, i);
 
-    if (active)
-      ret = ppd_action_activate (action, &error);
-    else
-      ret = ppd_action_deactivate (action, &error);
-
+    ret = ppd_action_activate_profile (action, profile, &error);
     if (!ret)
-      g_warning ("Failed to %s action '%s': %s",
-                 active ? "activate" : "deactivate",
+      g_warning ("Failed to activate action '%s' to profile %s: %s",
+                 profile_to_str (profile),
                  ppd_action_get_action_name (action),
                  error->message);
   }
@@ -230,7 +226,6 @@ set_active_profile (PpdApp     *data,
                error->message);
     g_clear_error (&error);
   }
-  set_all_actions_active (data->actions[data->active_profile], FALSE);
 
   driver = GET_DRIVER(target_profile);
   if (!ppd_profile_driver_activate (driver, &error)) {
@@ -239,7 +234,7 @@ set_active_profile (PpdApp     *data,
                error->message);
     g_clear_error (&error);
   }
-  set_all_actions_active (data->actions[target_profile], TRUE);
+  actions_activate_profile (data->actions, target_profile);
 
   data->active_profile = target_profile;
 }
@@ -467,7 +462,7 @@ name_acquired_handler (GDBusConnection *connection,
         continue;
       }
 
-      g_ptr_array_add (data->actions[profile], action);
+      g_ptr_array_add (data->actions, action);
     } else {
       g_assert_not_reached ();
     }
@@ -479,12 +474,7 @@ name_acquired_handler (GDBusConnection *connection,
   }
 
   /* Set initial state for actions */
-  for (i = 0; i < NUM_PROFILES; i++) {
-    if (i == data->active_profile)
-      continue;
-    set_all_actions_active (data->actions[i], FALSE);
-  }
-  set_all_actions_active (data->actions[data->active_profile], TRUE);
+  actions_activate_profile (data->actions, data->active_profile);
 
   send_dbus_event (data, PROP_ALL);
 
@@ -523,8 +513,6 @@ setup_dbus (PpdApp *data)
 static void
 free_app_data (PpdApp *data)
 {
-  guint i;
-
   if (data == NULL)
     return;
 
@@ -533,8 +521,7 @@ free_app_data (PpdApp *data)
     data->name_id = 0;
   }
 
-  for (i = 0; i < NUM_PROFILES; i++)
-    g_ptr_array_free (data->actions[i], TRUE);
+  g_ptr_array_free (data->actions, TRUE);
 
   g_clear_pointer (&data->introspection_data, g_dbus_node_info_unref);
   g_clear_object (&data->connection);
@@ -546,11 +533,9 @@ int main (int argc, char **argv)
 {
   PpdApp *data;
   int ret = 0;
-  guint i;
 
   data = g_new0 (PpdApp, 1);
-  for (i = 0; i < NUM_PROFILES; i++)
-    data->actions[i] = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
+  data->actions = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
 
   /* Set up D-Bus */
   setup_dbus (data);
