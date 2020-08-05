@@ -28,4 +28,3 @@ struct _PpdActionClass
 gboolean ppd_action_probe (PpdAction *action);
 gboolean ppd_action_activate_profile (PpdAction *action, PpdProfile profile, GError **error);
 const char *ppd_action_get_action_name (PpdAction *action);
-PpdProfile ppd_action_get_profile (PpdAction *action);

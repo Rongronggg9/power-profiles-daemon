@@ -18,8 +18,7 @@ typedef struct
 
 enum {
   PROP_0,
-  PROP_ACTION_NAME,
-  PROP_PROFILE,
+  PROP_ACTION_NAME
 };
 
 #define PPD_ACTION_GET_PRIVATE(o) (ppd_action_get_instance_private (o))
@@ -39,9 +38,6 @@ ppd_action_set_property (GObject        *object,
     g_assert (priv->action_name == NULL);
     priv->action_name = g_value_dup_string (value);
     break;
-  case PROP_PROFILE:
-    priv->profile = g_value_get_enum (value);
-    break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
   }
@@ -59,9 +55,6 @@ ppd_action_get_property (GObject        *object,
   switch (property_id) {
   case PROP_ACTION_NAME:
     g_value_set_string (value, priv->action_name);
-    break;
-  case PROP_PROFILE:
-    g_value_set_enum (value, priv->profile);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -95,13 +88,6 @@ ppd_action_class_init (PpdActionClass *klass)
                                                        "Action name",
                                                        NULL,
                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-  g_object_class_install_property (object_class, PROP_PROFILE,
-                                   g_param_spec_enum("profile",
-                                                     "Profile",
-                                                     "Profile attached to this action",
-                                                     PPD_TYPE_PROFILE,
-                                                     PPD_PROFILE_UNSET,
-                                                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }
 
 static void
@@ -142,15 +128,4 @@ ppd_action_get_action_name (PpdAction *action)
 
   priv = PPD_ACTION_GET_PRIVATE (action);
   return priv->action_name;
-}
-
-PpdProfile
-ppd_action_get_profile (PpdAction *action)
-{
-  PpdActionPrivate *priv;
-
-  g_return_val_if_fail (PPD_IS_ACTION (action), PPD_PROFILE_BALANCED);
-
-  priv = PPD_ACTION_GET_PRIVATE (action);
-  return priv->profile;
 }

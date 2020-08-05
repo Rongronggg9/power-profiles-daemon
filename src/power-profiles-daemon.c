@@ -442,18 +442,8 @@ name_acquired_handler (GDBusConnection *connection,
                         G_CALLBACK (driver_inhibited_changed_cb), data);
     } else if (PPD_IS_ACTION (object)) {
       PpdAction *action = PPD_ACTION (object);
-      PpdProfile profile;
 
       g_debug ("Handling action '%s'", ppd_action_get_action_name (action));
-
-      profile = ppd_action_get_profile (action);
-      if (profile == PPD_PROFILE_UNSET) {
-        g_warning ("Action '%s' implements invalid profile '%d'",
-                   ppd_action_get_action_name (action),
-                   profile);
-        g_object_unref (object);
-        continue;
-      }
 
       if (!ppd_action_probe (action)) {
         g_debug ("probe() failed for action '%s', skipping",

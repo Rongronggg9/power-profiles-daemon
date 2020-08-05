@@ -37,7 +37,6 @@ ppd_action_trickle_charge_constructor (GType                  type,
                                                                                 construct_params);
   g_object_set (object,
                 "action-name", "trickle_charge",
-                "profile", PPD_PROFILE_POWER_SAVER,
                 NULL);
 
   return object;
