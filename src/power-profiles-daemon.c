@@ -19,7 +19,6 @@
 
 typedef struct {
   PpdProfileDriver *driver;
-  GList *actions; /* list of PpdActions for the profile */
 } ProfileData;
 
 typedef struct {
