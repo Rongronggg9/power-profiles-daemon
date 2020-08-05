@@ -7,23 +7,23 @@
  *
  */
 
-#include "ppd-profile-driver-power-saver.h"
+#include "ppd-driver-power-saver.h"
 
-struct _PpdProfileDriverPowerSaver
+struct _PpdDriverPowerSaver
 {
-  PpdProfileDriver  parent_instance;
+  PpdDriver  parent_instance;
 };
 
-G_DEFINE_TYPE (PpdProfileDriverPowerSaver, ppd_profile_driver_power_saver, PPD_TYPE_PROFILE_DRIVER)
+G_DEFINE_TYPE (PpdDriverPowerSaver, ppd_driver_power_saver, PPD_TYPE_DRIVER)
 
 static GObject*
-ppd_profile_driver_power_saver_constructor (GType                  type,
+ppd_driver_power_saver_constructor (GType                  type,
                                          guint                  n_construct_params,
                                          GObjectConstructParam *construct_params)
 {
   GObject *object;
 
-  object = G_OBJECT_CLASS (ppd_profile_driver_power_saver_parent_class)->constructor (type,
+  object = G_OBJECT_CLASS (ppd_driver_power_saver_parent_class)->constructor (type,
                                                                                    n_construct_params,
                                                                                    construct_params);
   g_object_set (object,
@@ -35,15 +35,15 @@ ppd_profile_driver_power_saver_constructor (GType                  type,
 }
 
 static void
-ppd_profile_driver_power_saver_class_init (PpdProfileDriverPowerSaverClass *klass)
+ppd_driver_power_saver_class_init (PpdDriverPowerSaverClass *klass)
 {
   GObjectClass *object_class;
 
   object_class = G_OBJECT_CLASS(klass);
-  object_class->constructor = ppd_profile_driver_power_saver_constructor;
+  object_class->constructor = ppd_driver_power_saver_constructor;
 }
 
 static void
-ppd_profile_driver_power_saver_init (PpdProfileDriverPowerSaver *self)
+ppd_driver_power_saver_init (PpdDriverPowerSaver *self)
 {
 }

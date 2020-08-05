@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "ppd-profile-driver.h"
+#include "ppd-driver.h"
 
-#define PPD_TYPE_PROFILE_DRIVER_POWER_SAVER (ppd_profile_driver_power_saver_get_type())
-G_DECLARE_FINAL_TYPE(PpdProfileDriverPowerSaver, ppd_profile_driver_power_saver, PPD, PROFILE_DRIVER_POWER_SAVER, PpdProfileDriver)
+#define PPD_TYPE_DRIVER_POWER_SAVER (ppd_driver_power_saver_get_type())
+G_DECLARE_FINAL_TYPE(PpdDriverPowerSaver, ppd_driver_power_saver, PPD, DRIVER_POWER_SAVER, PpdDriver)

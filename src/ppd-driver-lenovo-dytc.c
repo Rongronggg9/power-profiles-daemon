@@ -9,29 +9,29 @@
 
 #include <gudev/gudev.h>
 
-#include "ppd-profile-driver-lenovo-dytc.h"
+#include "ppd-driver-lenovo-dytc.h"
 
 #define LAPMODE_SYSFS_NAME "dytc_lapmode"
 
-struct _PpdProfileDriverLenovoDytc
+struct _PpdDriverLenovoDytc
 {
-  PpdProfileDriver  parent_instance;
+  PpdDriver  parent_instance;
 
   GUdevClient *client;
   GUdevDevice *device;
   gboolean lapmode;
 };
 
-G_DEFINE_TYPE (PpdProfileDriverLenovoDytc, ppd_profile_driver_lenovo_dytc, PPD_TYPE_PROFILE_DRIVER)
+G_DEFINE_TYPE (PpdDriverLenovoDytc, ppd_driver_lenovo_dytc, PPD_TYPE_DRIVER)
 
 static GObject*
-ppd_profile_driver_lenovo_dytc_constructor (GType                  type,
+ppd_driver_lenovo_dytc_constructor (GType                  type,
                                             guint                  n_construct_params,
                                             GObjectConstructParam *construct_params)
 {
   GObject *object;
 
-  object = G_OBJECT_CLASS (ppd_profile_driver_lenovo_dytc_parent_class)->constructor (type,
+  object = G_OBJECT_CLASS (ppd_driver_lenovo_dytc_parent_class)->constructor (type,
                                                                                 n_construct_params,
                                                                                 construct_params);
   g_object_set (object,
@@ -58,7 +58,7 @@ sysfs_attr_as_boolean (GUdevDevice *device,
 }
 
 static void
-update_dytc_state (PpdProfileDriverLenovoDytc *dytc)
+update_dytc_state (PpdDriverLenovoDytc *dytc)
 {
   gboolean new_lapmode;
 
@@ -81,7 +81,7 @@ uevent_cb (GUdevClient *client,
            GUdevDevice *device,
            gpointer     user_data)
 {
-  PpdProfileDriverLenovoDytc *dytc = user_data;
+  PpdDriverLenovoDytc *dytc = user_data;
 
   if (g_strcmp0 (action, "change") != 0)
     return;
@@ -94,12 +94,12 @@ uevent_cb (GUdevClient *client,
 }
 
 static gboolean
-ppd_profile_driver_lenovo_dytc_probe (PpdProfileDriver *driver)
+ppd_driver_lenovo_dytc_probe (PpdDriver *driver)
 {
   const gchar * const subsystem[] = { "platform", NULL };
   GList *devices, *l;
   gboolean ret = FALSE;
-  PpdProfileDriverLenovoDytc *dytc = PPD_PROFILE_DRIVER_LENOVO_DYTC (driver);
+  PpdDriverLenovoDytc *dytc = PPD_DRIVER_LENOVO_DYTC (driver);
 
   g_return_val_if_fail (!dytc->client, FALSE);
 
@@ -137,31 +137,31 @@ out:
 }
 
 static void
-ppd_profile_driver_lenovo_dytc_finalize (GObject *object)
+ppd_driver_lenovo_dytc_finalize (GObject *object)
 {
-  PpdProfileDriverLenovoDytc *driver;
+  PpdDriverLenovoDytc *driver;
 
-  driver = PPD_PROFILE_DRIVER_LENOVO_DYTC (object);
+  driver = PPD_DRIVER_LENOVO_DYTC (object);
   g_clear_object (&driver->device);
   g_clear_object (&driver->client);
-  G_OBJECT_CLASS (ppd_profile_driver_lenovo_dytc_parent_class)->finalize (object);
+  G_OBJECT_CLASS (ppd_driver_lenovo_dytc_parent_class)->finalize (object);
 }
 
 static void
-ppd_profile_driver_lenovo_dytc_class_init (PpdProfileDriverLenovoDytcClass *klass)
+ppd_driver_lenovo_dytc_class_init (PpdDriverLenovoDytcClass *klass)
 {
   GObjectClass *object_class;
-  PpdProfileDriverClass *driver_class;
+  PpdDriverClass *driver_class;
 
   object_class = G_OBJECT_CLASS(klass);
-  object_class->constructor = ppd_profile_driver_lenovo_dytc_constructor;
-  object_class->finalize = ppd_profile_driver_lenovo_dytc_finalize;
+  object_class->constructor = ppd_driver_lenovo_dytc_constructor;
+  object_class->finalize = ppd_driver_lenovo_dytc_finalize;
 
-  driver_class = PPD_PROFILE_DRIVER_CLASS(klass);
-  driver_class->probe = ppd_profile_driver_lenovo_dytc_probe;
+  driver_class = PPD_DRIVER_CLASS(klass);
+  driver_class->probe = ppd_driver_lenovo_dytc_probe;
 }
 
 static void
-ppd_profile_driver_lenovo_dytc_init (PpdProfileDriverLenovoDytc *self)
+ppd_driver_lenovo_dytc_init (PpdDriverLenovoDytc *self)
 {
 }

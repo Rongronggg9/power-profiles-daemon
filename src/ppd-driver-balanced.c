@@ -7,23 +7,23 @@
  *
  */
 
-#include "ppd-profile-driver-balanced.h"
+#include "ppd-driver-balanced.h"
 
-struct _PpdProfileDriverBalanced
+struct _PpdDriverBalanced
 {
-  PpdProfileDriver  parent_instance;
+  PpdDriver  parent_instance;
 };
 
-G_DEFINE_TYPE (PpdProfileDriverBalanced, ppd_profile_driver_balanced, PPD_TYPE_PROFILE_DRIVER)
+G_DEFINE_TYPE (PpdDriverBalanced, ppd_driver_balanced, PPD_TYPE_DRIVER)
 
 static GObject*
-ppd_profile_driver_balanced_constructor (GType                  type,
+ppd_driver_balanced_constructor (GType                  type,
                                       guint                  n_construct_params,
                                       GObjectConstructParam *construct_params)
 {
   GObject *object;
 
-  object = G_OBJECT_CLASS (ppd_profile_driver_balanced_parent_class)->constructor (type,
+  object = G_OBJECT_CLASS (ppd_driver_balanced_parent_class)->constructor (type,
                                                                                 n_construct_params,
                                                                                 construct_params);
   g_object_set (object,
@@ -35,15 +35,15 @@ ppd_profile_driver_balanced_constructor (GType                  type,
 }
 
 static void
-ppd_profile_driver_balanced_class_init (PpdProfileDriverBalancedClass *klass)
+ppd_driver_balanced_class_init (PpdDriverBalancedClass *klass)
 {
   GObjectClass *object_class;
 
   object_class = G_OBJECT_CLASS(klass);
-  object_class->constructor = ppd_profile_driver_balanced_constructor;
+  object_class->constructor = ppd_driver_balanced_constructor;
 }
 
 static void
-ppd_profile_driver_balanced_init (PpdProfileDriverBalanced *self)
+ppd_driver_balanced_init (PpdDriverBalanced *self)
 {
 }

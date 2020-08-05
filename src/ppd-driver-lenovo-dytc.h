@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "ppd-profile-driver.h"
+#include "ppd-driver.h"
 
-#define PPD_TYPE_PROFILE_DRIVER_LENOVO_DYTC (ppd_profile_driver_lenovo_dytc_get_type())
-G_DECLARE_FINAL_TYPE(PpdProfileDriverLenovoDytc, ppd_profile_driver_lenovo_dytc, PPD, PROFILE_DRIVER_LENOVO_DYTC, PpdProfileDriver)
+#define PPD_TYPE_DRIVER_LENOVO_DYTC (ppd_driver_lenovo_dytc_get_type())
+G_DECLARE_FINAL_TYPE(PpdDriverLenovoDytc, ppd_driver_lenovo_dytc, PPD, DRIVER_LENOVO_DYTC, PpdDriver)

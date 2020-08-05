@@ -9,7 +9,7 @@
 
 #include "power-profiles-daemon-resources.h"
 #include "power-profiles-daemon.h"
-#include "ppd-profile-driver.h"
+#include "ppd-driver.h"
 #include "ppd-action.h"
 #include "ppd-enums.h"
 
@@ -26,7 +26,7 @@ typedef struct {
 
   PpdProfile active_profile;
   PpdProfile selected_profile;
-  PpdProfileDriver *profile_drivers[NUM_PROFILES];
+  PpdDriver *profile_drivers[NUM_PROFILES];
   GPtrArray *actions;
 } PpdApp;
 
@@ -48,19 +48,19 @@ flags_to_index (PpdProfile profile)
 
 /* profile drivers and actions */
 #include "ppd-action-trickle-charge.h"
-#include "ppd-profile-driver-balanced.h"
-#include "ppd-profile-driver-power-saver.h"
-#include "ppd-profile-driver-lenovo-dytc.h"
+#include "ppd-driver-balanced.h"
+#include "ppd-driver-power-saver.h"
+#include "ppd-driver-lenovo-dytc.h"
 
 typedef GType (*GTypeGetFunc) (void);
 
 static GTypeGetFunc objects[] = {
   /* Hardware specific profile drivers */
-  ppd_profile_driver_lenovo_dytc_get_type,
+  ppd_driver_lenovo_dytc_get_type,
 
   /* Generic profile drivers */
-  ppd_profile_driver_balanced_get_type,
-  ppd_profile_driver_power_saver_get_type,
+  ppd_driver_balanced_get_type,
+  ppd_driver_power_saver_get_type,
 
   /* Actions */
   ppd_action_trickle_charge_get_type,
@@ -110,11 +110,11 @@ get_selected_profile (PpdApp *data)
 static const char *
 get_inhibited (PpdApp *data)
 {
-  PpdProfileDriver *driver;
+  PpdDriver *driver;
   const char *ret;
 
   driver = SELECTED_DRIVER;
-  ret = ppd_profile_driver_get_inhibited (driver);
+  ret = ppd_driver_get_inhibited (driver);
   g_assert (ret != NULL);
   return ret;
 }
@@ -128,7 +128,7 @@ get_profiles_variant (PpdApp *data)
   g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
 
   for (i = 0; i < NUM_PROFILES; i++) {
-    PpdProfileDriver *driver = data->profile_drivers[i];
+    PpdDriver *driver = data->profile_drivers[i];
     GVariantBuilder asv_builder;
 
     if (driver == NULL)
@@ -136,9 +136,9 @@ get_profiles_variant (PpdApp *data)
 
     g_variant_builder_init (&asv_builder, G_VARIANT_TYPE ("a{sv}"));
     g_variant_builder_add (&asv_builder, "{sv}", "Driver",
-                           g_variant_new_string (ppd_profile_driver_get_driver_name (driver)));
+                           g_variant_new_string (ppd_driver_get_driver_name (driver)));
     g_variant_builder_add (&asv_builder, "{sv}", "Profile",
-                           g_variant_new_string (profile_to_str (ppd_profile_driver_get_profile (driver))));
+                           g_variant_new_string (profile_to_str (ppd_driver_get_profile (driver))));
 
     g_variant_builder_add (&builder, "a{sv}", &asv_builder);
   }
@@ -226,15 +226,15 @@ set_active_profile (PpdApp     *data,
            profile_to_str (data->active_profile));
 
   for (i = 0; i < NUM_PROFILES; i++) {
-    PpdProfileDriver *driver = data->profile_drivers[i];
+    PpdDriver *driver = data->profile_drivers[i];
     g_autoptr(GError) error = NULL;
 
     if (!driver)
       continue;
 
-    if (!ppd_profile_driver_activate_profile (driver, target_profile, &error)) {
+    if (!ppd_driver_activate_profile (driver, target_profile, &error)) {
       g_warning ("Failed to activate driver '%s': %s",
-                 ppd_profile_driver_get_driver_name (driver),
+                 ppd_driver_get_driver_name (driver),
                  error->message);
       g_clear_error (&error);
     }
@@ -269,7 +269,7 @@ set_selected_profile (PpdApp      *data,
            profile_to_str (data->selected_profile), profile);
   data->selected_profile = target_profile;
 
-  if (ppd_profile_driver_is_inhibited (SELECTED_DRIVER)) {
+  if (ppd_driver_is_inhibited (SELECTED_DRIVER)) {
     send_dbus_event (data, PROP_SELECTED_PROFILE);
     g_debug ("Not transitioning to '%s' as inhibited", profile);
     return TRUE;
@@ -288,28 +288,28 @@ driver_inhibited_changed_cb (GObject    *gobject,
                              gpointer    user_data)
 {
   PpdApp *data = user_data;
-  PpdProfileDriver *driver = PPD_PROFILE_DRIVER (gobject);
+  PpdDriver *driver = PPD_DRIVER (gobject);
   const char *prop_str = pspec->name;
 
   if (g_strcmp0 (prop_str, "inhibited") != 0) {
     g_debug ("Ignoring '%s' property change on profile driver '%s'",
-             prop_str, ppd_profile_driver_get_driver_name (driver));
+             prop_str, ppd_driver_get_driver_name (driver));
     return;
   }
 
-  if (ppd_profile_driver_get_profile (driver) != PPD_PROFILE_PERFORMANCE) {
+  if (ppd_driver_get_profile (driver) != PPD_PROFILE_PERFORMANCE) {
     g_warning ("Ignored 'inhibited' change on non-performance driver '%s'",
-               ppd_profile_driver_get_driver_name (driver));
+               ppd_driver_get_driver_name (driver));
     return;
   }
 
   if (data->selected_profile != PPD_PROFILE_PERFORMANCE) {
     g_debug ("User didn't want the performance profile, so ignoring 'inhibited' change on '%s'",
-             ppd_profile_driver_get_driver_name (driver));
+             ppd_driver_get_driver_name (driver));
     return;
   }
 
-  set_active_profile (data, ppd_profile_driver_is_inhibited (driver) ?
+  set_active_profile (data, ppd_driver_is_inhibited (driver) ?
                       PPD_PROFILE_BALANCED : PPD_PROFILE_PERFORMANCE);
 }
 
@@ -420,24 +420,24 @@ name_acquired_handler (GDBusConnection *connection,
     GObject *object;
 
     object = g_object_new (objects[i](), NULL);
-    if (PPD_IS_PROFILE_DRIVER (object)) {
-      PpdProfileDriver *driver = PPD_PROFILE_DRIVER (object);
+    if (PPD_IS_DRIVER (object)) {
+      PpdDriver *driver = PPD_DRIVER (object);
       PpdProfile profile;
 
-      g_debug ("Handling driver '%s'", ppd_profile_driver_get_driver_name (driver));
+      g_debug ("Handling driver '%s'", ppd_driver_get_driver_name (driver));
 
-      profile = ppd_profile_driver_get_profile (driver);
+      profile = ppd_driver_get_profile (driver);
       if (profile == PPD_PROFILE_UNSET) {
         g_warning ("Profile Driver '%s' implements invalid profile '%d'",
-                   ppd_profile_driver_get_driver_name (driver),
+                   ppd_driver_get_driver_name (driver),
                    profile);
         g_object_unref (object);
         continue;
       }
 
-      if (!ppd_profile_driver_probe (driver)) {
+      if (!ppd_driver_probe (driver)) {
         g_debug ("probe() failed for driver %s, skipping",
-                 ppd_profile_driver_get_driver_name (driver));
+                 ppd_driver_get_driver_name (driver));
         g_object_unref (object);
         continue;
       }

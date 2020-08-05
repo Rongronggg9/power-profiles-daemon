@@ -7,7 +7,7 @@
  *
  */
 
-#include "ppd-profile-driver.h"
+#include "ppd-driver.h"
 #include "ppd-enums.h"
 
 typedef struct
@@ -16,7 +16,7 @@ typedef struct
   PpdProfile     profile;
   gboolean       selected;
   char          *inhibited;
-} PpdProfileDriverPrivate;
+} PpdDriverPrivate;
 
 enum {
   PROP_0,
@@ -25,17 +25,17 @@ enum {
   PROP_INHIBITED
 };
 
-#define PPD_PROFILE_DRIVER_GET_PRIVATE(o) (ppd_profile_driver_get_instance_private (o))
-G_DEFINE_TYPE_WITH_PRIVATE (PpdProfileDriver, ppd_profile_driver, G_TYPE_OBJECT)
+#define PPD_DRIVER_GET_PRIVATE(o) (ppd_driver_get_instance_private (o))
+G_DEFINE_TYPE_WITH_PRIVATE (PpdDriver, ppd_driver, G_TYPE_OBJECT)
 
 static void
-ppd_profile_driver_set_property (GObject        *object,
+ppd_driver_set_property (GObject        *object,
                               guint           property_id,
                               const GValue   *value,
                               GParamSpec     *pspec)
 {
-  PpdProfileDriver *driver = PPD_PROFILE_DRIVER (object);
-  PpdProfileDriverPrivate *priv = PPD_PROFILE_DRIVER_GET_PRIVATE (driver);
+  PpdDriver *driver = PPD_DRIVER (object);
+  PpdDriverPrivate *priv = PPD_DRIVER_GET_PRIVATE (driver);
 
   switch (property_id) {
   case PROP_DRIVER_NAME:
@@ -55,13 +55,13 @@ ppd_profile_driver_set_property (GObject        *object,
 }
 
 static void
-ppd_profile_driver_get_property (GObject        *object,
+ppd_driver_get_property (GObject        *object,
                               guint           property_id,
                               GValue         *value,
                               GParamSpec     *pspec)
 {
-  PpdProfileDriver *driver = PPD_PROFILE_DRIVER (object);
-  PpdProfileDriverPrivate *priv = PPD_PROFILE_DRIVER_GET_PRIVATE (driver);
+  PpdDriver *driver = PPD_DRIVER (object);
+  PpdDriverPrivate *priv = PPD_DRIVER_GET_PRIVATE (driver);
 
   switch (property_id) {
   case PROP_DRIVER_NAME:
@@ -79,26 +79,26 @@ ppd_profile_driver_get_property (GObject        *object,
 }
 
 static void
-ppd_profile_driver_finalize (GObject *object)
+ppd_driver_finalize (GObject *object)
 {
-  PpdProfileDriverPrivate *priv;
+  PpdDriverPrivate *priv;
 
-  priv = PPD_PROFILE_DRIVER_GET_PRIVATE (PPD_PROFILE_DRIVER (object));
+  priv = PPD_DRIVER_GET_PRIVATE (PPD_DRIVER (object));
   g_clear_pointer (&priv->driver_name, g_free);
   g_clear_pointer (&priv->inhibited, g_free);
 
-  G_OBJECT_CLASS (ppd_profile_driver_parent_class)->finalize (object);
+  G_OBJECT_CLASS (ppd_driver_parent_class)->finalize (object);
 }
 
 static void
-ppd_profile_driver_class_init (PpdProfileDriverClass *klass)
+ppd_driver_class_init (PpdDriverClass *klass)
 {
   GObjectClass *object_class;
 
   object_class = G_OBJECT_CLASS(klass);
-  object_class->finalize = ppd_profile_driver_finalize;
-  object_class->get_property = ppd_profile_driver_get_property;
-  object_class->set_property = ppd_profile_driver_set_property;
+  object_class->finalize = ppd_driver_finalize;
+  object_class->get_property = ppd_driver_get_property;
+  object_class->set_property = ppd_driver_set_property;
 
   g_object_class_install_property (object_class, PROP_DRIVER_NAME,
                                    g_param_spec_string("driver-name",
@@ -122,86 +122,86 @@ ppd_profile_driver_class_init (PpdProfileDriverClass *klass)
 }
 
 static void
-ppd_profile_driver_init (PpdProfileDriver *self)
+ppd_driver_init (PpdDriver *self)
 {
 }
 
 gboolean
-ppd_profile_driver_probe (PpdProfileDriver *driver)
+ppd_driver_probe (PpdDriver *driver)
 {
-  g_return_val_if_fail (PPD_IS_PROFILE_DRIVER (driver), FALSE);
+  g_return_val_if_fail (PPD_IS_DRIVER (driver), FALSE);
 
-  if (!PPD_PROFILE_DRIVER_GET_CLASS (driver)->probe)
+  if (!PPD_DRIVER_GET_CLASS (driver)->probe)
     return TRUE;
 
-  return PPD_PROFILE_DRIVER_GET_CLASS (driver)->probe (driver);
+  return PPD_DRIVER_GET_CLASS (driver)->probe (driver);
 }
 
 gboolean
-ppd_profile_driver_activate_profile (PpdProfileDriver  *driver,
+ppd_driver_activate_profile (PpdDriver  *driver,
                                      PpdProfile         profile,
                                      GError           **error)
 {
-  g_return_val_if_fail (PPD_IS_PROFILE_DRIVER (driver), FALSE);
+  g_return_val_if_fail (PPD_IS_DRIVER (driver), FALSE);
 
-  if (!PPD_PROFILE_DRIVER_GET_CLASS (driver)->activate_profile)
+  if (!PPD_DRIVER_GET_CLASS (driver)->activate_profile)
     return TRUE;
 
-  return PPD_PROFILE_DRIVER_GET_CLASS (driver)->activate_profile (driver, profile, error);
+  return PPD_DRIVER_GET_CLASS (driver)->activate_profile (driver, profile, error);
 }
 
 const char *
-ppd_profile_driver_get_driver_name (PpdProfileDriver *driver)
+ppd_driver_get_driver_name (PpdDriver *driver)
 {
-  PpdProfileDriverPrivate *priv;
+  PpdDriverPrivate *priv;
 
-  g_return_val_if_fail (PPD_IS_PROFILE_DRIVER (driver), NULL);
+  g_return_val_if_fail (PPD_IS_DRIVER (driver), NULL);
 
-  priv = PPD_PROFILE_DRIVER_GET_PRIVATE (driver);
+  priv = PPD_DRIVER_GET_PRIVATE (driver);
   return priv->driver_name;
 }
 
 PpdProfile
-ppd_profile_driver_get_profile (PpdProfileDriver *driver)
+ppd_driver_get_profile (PpdDriver *driver)
 {
-  PpdProfileDriverPrivate *priv;
+  PpdDriverPrivate *priv;
 
-  g_return_val_if_fail (PPD_IS_PROFILE_DRIVER (driver), PPD_PROFILE_BALANCED);
+  g_return_val_if_fail (PPD_IS_DRIVER (driver), PPD_PROFILE_BALANCED);
 
-  priv = PPD_PROFILE_DRIVER_GET_PRIVATE (driver);
+  priv = PPD_DRIVER_GET_PRIVATE (driver);
   return priv->profile;
 }
 
 gboolean
-ppd_profile_driver_get_selected (PpdProfileDriver *driver)
+ppd_driver_get_selected (PpdDriver *driver)
 {
-  PpdProfileDriverPrivate *priv;
+  PpdDriverPrivate *priv;
 
-  g_return_val_if_fail (PPD_IS_PROFILE_DRIVER (driver), FALSE);
+  g_return_val_if_fail (PPD_IS_DRIVER (driver), FALSE);
 
-  priv = PPD_PROFILE_DRIVER_GET_PRIVATE (driver);
+  priv = PPD_DRIVER_GET_PRIVATE (driver);
   return priv->selected;
 }
 
 const char *
-ppd_profile_driver_get_inhibited (PpdProfileDriver *driver)
+ppd_driver_get_inhibited (PpdDriver *driver)
 {
-  PpdProfileDriverPrivate *priv;
+  PpdDriverPrivate *priv;
 
-  g_return_val_if_fail (PPD_IS_PROFILE_DRIVER (driver), NULL);
+  g_return_val_if_fail (PPD_IS_DRIVER (driver), NULL);
 
-  priv = PPD_PROFILE_DRIVER_GET_PRIVATE (driver);
+  priv = PPD_DRIVER_GET_PRIVATE (driver);
   return priv->inhibited ? priv->inhibited : "";
 }
 
 gboolean
-ppd_profile_driver_is_inhibited (PpdProfileDriver *driver)
+ppd_driver_is_inhibited (PpdDriver *driver)
 {
-  PpdProfileDriverPrivate *priv;
+  PpdDriverPrivate *priv;
 
-  g_return_val_if_fail (PPD_IS_PROFILE_DRIVER (driver), FALSE);
+  g_return_val_if_fail (PPD_IS_DRIVER (driver), FALSE);
 
-  priv = PPD_PROFILE_DRIVER_GET_PRIVATE (driver);
+  priv = PPD_DRIVER_GET_PRIVATE (driver);
 
   return (priv->inhibited != NULL);
 }
