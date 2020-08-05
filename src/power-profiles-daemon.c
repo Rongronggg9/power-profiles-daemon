@@ -18,10 +18,6 @@
 #define POWER_PROFILES_IFACE_NAME         POWER_PROFILES_DBUS_NAME
 
 typedef struct {
-  PpdProfileDriver *driver;
-} ProfileData;
-
-typedef struct {
   GMainLoop *loop;
   GDBusNodeInfo *introspection_data;
   GDBusConnection *connection;
@@ -30,7 +26,7 @@ typedef struct {
 
   PpdProfile active_profile;
   PpdProfile selected_profile;
-  ProfileData profile_data[NUM_PROFILES];
+  PpdProfileDriver *profile_drivers[NUM_PROFILES];
   GPtrArray *actions;
 } PpdApp;
 
@@ -46,9 +42,9 @@ flags_to_index (PpdProfile profile)
   g_assert_not_reached ();
 }
 
-#define GET_DRIVER(p) (data->profile_data[flags_to_index(p)].driver)
-#define ACTIVE_DRIVER (data->profile_data[flags_to_index(data->active_profile)].driver)
-#define SELECTED_DRIVER (data->profile_data[flags_to_index(data->selected_profile)].driver)
+#define GET_DRIVER(p) (data->profile_drivers[flags_to_index(p)])
+#define ACTIVE_DRIVER (data->profile_drivers[flags_to_index(data->active_profile)])
+#define SELECTED_DRIVER (data->profile_drivers[flags_to_index(data->selected_profile)])
 
 /* profile drivers and actions */
 #include "ppd-action-trickle-charge.h"
@@ -132,7 +128,7 @@ get_profiles_variant (PpdApp *data)
   g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
 
   for (i = 0; i < NUM_PROFILES; i++) {
-    PpdProfileDriver *driver = data->profile_data[i].driver;
+    PpdProfileDriver *driver = data->profile_drivers[i];
     GVariantBuilder asv_builder;
 
     if (driver == NULL)
@@ -404,10 +400,10 @@ bus_acquired_handler (GDBusConnection *connection,
 static gboolean
 has_required_drivers (PpdApp *data)
 {
-  if (!data->profile_data[flags_to_index(PPD_PROFILE_BALANCED)].driver ||
-      !G_IS_OBJECT (data->profile_data[flags_to_index(PPD_PROFILE_BALANCED)].driver) ||
-      !data->profile_data[flags_to_index(PPD_PROFILE_POWER_SAVER)].driver ||
-      !G_IS_OBJECT (data->profile_data[flags_to_index(PPD_PROFILE_POWER_SAVER)].driver)) {
+  if (!data->profile_drivers[flags_to_index(PPD_PROFILE_BALANCED)] ||
+      !G_IS_OBJECT (data->profile_drivers[flags_to_index(PPD_PROFILE_BALANCED)]) ||
+      !data->profile_drivers[flags_to_index(PPD_PROFILE_POWER_SAVER)] ||
+      !G_IS_OBJECT (data->profile_drivers[flags_to_index(PPD_PROFILE_POWER_SAVER)])) {
     return FALSE;
   }
   return TRUE;
@@ -447,7 +443,7 @@ name_acquired_handler (GDBusConnection *connection,
         continue;
       }
 
-      data->profile_data[flags_to_index(profile)].driver = driver;
+      data->profile_drivers[flags_to_index(profile)] = driver;
 
       g_signal_connect (G_OBJECT (driver), "notify::inhibited",
                         G_CALLBACK (driver_inhibited_changed_cb), data);
