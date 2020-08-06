@@ -1,5 +1,6 @@
 [Unit]
 Description=Power Profiles daemon
+Conflicts=tuned.service tlp.service
 
 [Service]
 Type=dbus
