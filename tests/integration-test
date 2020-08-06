@@ -265,6 +265,8 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'lenovo_dytc')
+      self.assertEqual(profiles[0]['Profile'], 'power-saver')
       self.assertEqual(profiles[2]['Driver'], 'lenovo_dytc')
       self.assertEqual(profiles[2]['Profile'], 'performance')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
