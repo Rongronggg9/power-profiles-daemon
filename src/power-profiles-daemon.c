@@ -138,7 +138,7 @@ get_profiles_variant (PpdApp *data)
     g_variant_builder_add (&asv_builder, "{sv}", "Driver",
                            g_variant_new_string (ppd_driver_get_driver_name (driver)));
     g_variant_builder_add (&asv_builder, "{sv}", "Profile",
-                           g_variant_new_string (profile_to_str (ppd_driver_get_profile (driver))));
+                           g_variant_new_string (profile_to_str (1 << i)));
 
     g_variant_builder_add (&builder, "a{sv}", &asv_builder);
   }
@@ -297,7 +297,7 @@ driver_inhibited_changed_cb (GObject    *gobject,
     return;
   }
 
-  if (ppd_driver_get_profile (driver) != PPD_PROFILE_PERFORMANCE) {
+  if (!(ppd_driver_get_profiles (driver) & PPD_PROFILE_PERFORMANCE)) {
     g_warning ("Ignored 'inhibited' change on non-performance driver '%s'",
                ppd_driver_get_driver_name (driver));
     return;
@@ -408,6 +408,29 @@ has_required_drivers (PpdApp *data)
   return TRUE;
 }
 
+static gboolean
+profile_already_handled (PpdApp     *data,
+                         PpdDriver  *driver,
+                         PpdProfile  profiles)
+{
+  guint i;
+
+  for (i = 0; i < NUM_PROFILES; i++) {
+    if (!(profiles & (1 << i)))
+      continue;
+
+    if (data->profile_drivers[i] != NULL) {
+      g_debug ("Driver '%s' conflicts with already probed driver '%s' for profile %s",
+               ppd_driver_get_driver_name (driver),
+               ppd_driver_get_driver_name (data->profile_drivers[i]),
+               profile_to_str (1 << i));
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
 static void
 name_acquired_handler (GDBusConnection *connection,
                        const gchar     *name,
@@ -422,15 +445,21 @@ name_acquired_handler (GDBusConnection *connection,
     object = g_object_new (objects[i](), NULL);
     if (PPD_IS_DRIVER (object)) {
       PpdDriver *driver = PPD_DRIVER (object);
-      PpdProfile profile;
+      PpdProfile profiles;
+      guint j;
 
       g_debug ("Handling driver '%s'", ppd_driver_get_driver_name (driver));
 
-      profile = ppd_driver_get_profile (driver);
-      if (profile == PPD_PROFILE_UNSET) {
-        g_warning ("Profile Driver '%s' implements invalid profile '%d'",
+      profiles = ppd_driver_get_profiles (driver);
+      if (!(profiles & PPD_PROFILE_ALL)) {
+        g_warning ("Profile Driver '%s' implements invalid profiles '0x%X'",
                    ppd_driver_get_driver_name (driver),
-                   profile);
+                   profiles);
+        g_object_unref (object);
+        continue;
+      }
+
+      if (profile_already_handled (data, driver, profiles)) {
         g_object_unref (object);
         continue;
       }
@@ -442,7 +471,13 @@ name_acquired_handler (GDBusConnection *connection,
         continue;
       }
 
-      data->profile_drivers[flags_to_index(profile)] = driver;
+      for (j = 0; j < NUM_PROFILES; j++) {
+        if (!(profiles & (1 << j)))
+          continue;
+        data->profile_drivers[j] = g_object_ref (driver);
+      }
+      /* references are held for each entry in the profile_drivers array */
+      g_object_unref (driver);
 
       g_signal_connect (G_OBJECT (driver), "notify::inhibited",
                         G_CALLBACK (driver_inhibited_changed_cb), data);

@@ -36,7 +36,7 @@ ppd_driver_lenovo_dytc_constructor (GType                  type,
                                                                               construct_params);
   g_object_set (object,
                 "driver-name", "lenovo_dytc",
-                "profile", PPD_PROFILE_PERFORMANCE,
+                "profiles", PPD_PROFILE_PERFORMANCE,
                 NULL);
 
   return object;

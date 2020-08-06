@@ -28,7 +28,7 @@ ppd_driver_balanced_constructor (GType                  type,
                                                                                 construct_params);
   g_object_set (object,
                 "driver-name", "balanced",
-                "profile", PPD_PROFILE_BALANCED,
+                "profiles", PPD_PROFILE_BALANCED,
                 NULL);
 
   return object;

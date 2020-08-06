@@ -28,7 +28,7 @@ ppd_driver_power_saver_constructor (GType                  type,
                                                                                    construct_params);
   g_object_set (object,
                 "driver-name", "power-saver",
-                "profile", PPD_PROFILE_POWER_SAVER,
+                "profiles", PPD_PROFILE_POWER_SAVER,
                 NULL);
 
   return object;

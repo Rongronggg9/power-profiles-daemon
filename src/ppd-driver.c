@@ -13,7 +13,7 @@
 typedef struct
 {
   char          *driver_name;
-  PpdProfile     profile;
+  PpdProfile     profiles;
   gboolean       selected;
   char          *inhibited;
 } PpdDriverPrivate;
@@ -21,7 +21,7 @@ typedef struct
 enum {
   PROP_0,
   PROP_DRIVER_NAME,
-  PROP_PROFILE,
+  PROP_PROFILES,
   PROP_INHIBITED
 };
 
@@ -42,8 +42,8 @@ ppd_driver_set_property (GObject        *object,
     g_assert (priv->driver_name == NULL);
     priv->driver_name = g_value_dup_string (value);
     break;
-  case PROP_PROFILE:
-    priv->profile = g_value_get_flags (value);
+  case PROP_PROFILES:
+    priv->profiles = g_value_get_flags (value);
     break;
   case PROP_INHIBITED:
     g_clear_pointer (&priv->inhibited, g_free);
@@ -67,8 +67,8 @@ ppd_driver_get_property (GObject        *object,
   case PROP_DRIVER_NAME:
     g_value_set_string (value, priv->driver_name);
     break;
-  case PROP_PROFILE:
-    g_value_set_flags (value, priv->profile);
+  case PROP_PROFILES:
+    g_value_set_flags (value, priv->profiles);
     break;
   case PROP_INHIBITED:
     g_value_set_string (value, priv->inhibited);
@@ -106,10 +106,10 @@ ppd_driver_class_init (PpdDriverClass *klass)
                                                        "Profile driver name",
                                                        NULL,
                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-  g_object_class_install_property (object_class, PROP_PROFILE,
-                                   g_param_spec_flags("profile",
-                                                      "Profile",
-                                                      "Profile implemented by this driver",
+  g_object_class_install_property (object_class, PROP_PROFILES,
+                                   g_param_spec_flags("profiles",
+                                                      "Profiles",
+                                                      "Profiles implemented by this driver",
                                                       PPD_TYPE_PROFILE,
                                                       0,
                                                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
@@ -162,14 +162,14 @@ ppd_driver_get_driver_name (PpdDriver *driver)
 }
 
 PpdProfile
-ppd_driver_get_profile (PpdDriver *driver)
+ppd_driver_get_profiles (PpdDriver *driver)
 {
   PpdDriverPrivate *priv;
 
   g_return_val_if_fail (PPD_IS_DRIVER (driver), PPD_PROFILE_BALANCED);
 
   priv = PPD_DRIVER_GET_PRIVATE (driver);
-  return priv->profile;
+  return priv->profiles;
 }
 
 gboolean
