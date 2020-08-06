@@ -135,10 +135,10 @@ get_profiles_variant (PpdApp *data)
       continue;
 
     g_variant_builder_init (&asv_builder, G_VARIANT_TYPE ("a{sv}"));
-    g_variant_builder_add (&asv_builder, "{sv}", "Driver",
-                           g_variant_new_string (ppd_driver_get_driver_name (driver)));
     g_variant_builder_add (&asv_builder, "{sv}", "Profile",
                            g_variant_new_string (profile_to_str (1 << i)));
+    g_variant_builder_add (&asv_builder, "{sv}", "Driver",
+                           g_variant_new_string (ppd_driver_get_driver_name (driver)));
 
     g_variant_builder_add (&builder, "a{sv}", &asv_builder);
   }
