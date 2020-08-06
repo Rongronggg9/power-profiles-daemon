@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include <glib.h>
+
 /**
  * PpdProfile:
  * @PPD_PROFILE_POWER_SAVER: "power-saver", the battery saving profile
@@ -30,3 +32,4 @@ typedef enum {
 
 const char *ppd_profile_to_str (PpdProfile profile);
 PpdProfile ppd_profile_from_str (const char *str);
+gboolean ppd_profile_has_single_flag (PpdProfile profile);

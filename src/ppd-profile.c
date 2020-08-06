@@ -29,3 +29,15 @@ ppd_profile_from_str (const char *str)
   g_type_class_unref (klass);
   return profile;
 }
+
+gboolean
+ppd_profile_has_single_flag (PpdProfile profile)
+{
+  GFlagsClass *klass = g_type_class_ref (PPD_TYPE_PROFILE);
+  GFlagsValue *value = g_flags_get_first_value (klass, profile);
+  gboolean ret = FALSE;
+  if (value && value->value == profile)
+    ret = TRUE;
+  g_type_class_unref (klass);
+  return ret;
+}
