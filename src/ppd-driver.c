@@ -143,6 +143,7 @@ ppd_driver_activate_profile (PpdDriver  *driver,
                              GError           **error)
 {
   g_return_val_if_fail (PPD_IS_DRIVER (driver), FALSE);
+  g_return_val_if_fail (ppd_profile_has_single_flag (profile), FALSE);
 
   if (!PPD_DRIVER_GET_CLASS (driver)->activate_profile)
     return TRUE;
