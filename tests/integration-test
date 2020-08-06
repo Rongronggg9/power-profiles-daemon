@@ -386,7 +386,7 @@ class Tests(dbusmock.DBusTestCase):
       '''Lenovo DYTC performance driver'''
 
       tp_acpi = self.testbed.add_device('platform', 'thinkpad_acpi', None,
-          ['dytc_lapmode', '0'],
+          ['dytc_lapmode', '0', 'dytc_perfmode', 'H'],
           [ 'DEVPATH', '/devices/platform/thinkpad_acpi' ]
       )
 
@@ -399,6 +399,9 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(profiles[2]['Driver'], 'lenovo_dytc')
       self.assertEqual(profiles[2]['Profile'], 'performance')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      # Verify that perfmode got reset
+      self.assertEventually(lambda: self.read_sysfs_attr(tp_acpi, 'dytc_perfmode') == b'M')
 
       # lapmode detected, but performance wasn't selected anyway
       self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '1')
@@ -416,14 +419,28 @@ class Tests(dbusmock.DBusTestCase):
       # Set performance mode
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+      self.assertEventually(lambda: self.read_sysfs_attr(tp_acpi, 'dytc_perfmode') == b'H')
 
       # And turn on lapmode
       self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '1')
       self.testbed.uevent(tp_acpi, 'change')
       self.assertEventually(lambda: self.have_text_in_log('dytc_lapmode is now on'))
+      self.assertEventually(lambda: self.read_sysfs_attr(tp_acpi, 'dytc_perfmode') == b'M')
 
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
       self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
+
+      # Turn off lapmode, profile stays balanced
+      self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '0')
+      self.testbed.uevent(tp_acpi, 'change')
+      self.assertEventually(lambda: self.have_text_in_log('dytc_lapmode is now off'))
+      self.assertEventually(lambda: self.read_sysfs_attr(tp_acpi, 'dytc_perfmode') == b'M')
+
+      # Switch to power-saver mode
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+      self.assertEqual(self.get_dbus_property('PerformanceInhibited'), '')
+      self.assertEventually(lambda: self.read_sysfs_attr(tp_acpi, 'dytc_perfmode') == b'L')
 
     def test_fake_driver(self):
       '''Test that the fake driver works'''
