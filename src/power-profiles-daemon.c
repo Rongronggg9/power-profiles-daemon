@@ -80,35 +80,15 @@ typedef enum {
 #define PROP_ALL (PROP_ACTIVE_PROFILE | PROP_SELECTED_PROFILE | PROP_INHIBITED | PROP_PROFILES)
 
 static const char *
-profile_to_str (PpdProfile profile)
-{
-  GFlagsClass *klass = g_type_class_ref (PPD_TYPE_PROFILE);
-  GFlagsValue *value = g_flags_get_first_value (klass, profile);
-  const gchar *name = value ? value->value_nick : "";
-  g_type_class_unref (klass);
-  return name;
-}
-
-static PpdProfile
-profile_from_str (const char *str)
-{
-  GFlagsClass *klass = g_type_class_ref (PPD_TYPE_PROFILE);
-  GFlagsValue *value = g_flags_get_value_by_nick (klass, str);
-  PpdProfile profile = value ? value->value : PPD_PROFILE_UNSET;
-  g_type_class_unref (klass);
-  return profile;
-}
-
-static const char *
 get_active_profile (PpdApp *data)
 {
-  return profile_to_str (data->active_profile);
+  return ppd_profile_to_str (data->active_profile);
 }
 
 static const char *
 get_selected_profile (PpdApp *data)
 {
-  return profile_to_str (data->selected_profile);
+  return ppd_profile_to_str (data->selected_profile);
 }
 
 static const char *
@@ -140,7 +120,7 @@ get_profiles_variant (PpdApp *data)
 
     g_variant_builder_init (&asv_builder, G_VARIANT_TYPE ("a{sv}"));
     g_variant_builder_add (&asv_builder, "{sv}", "Profile",
-                           g_variant_new_string (profile_to_str (1 << i)));
+                           g_variant_new_string (ppd_profile_to_str (1 << i)));
     g_variant_builder_add (&asv_builder, "{sv}", "Driver",
                            g_variant_new_string (ppd_driver_get_driver_name (driver)));
 
@@ -213,7 +193,7 @@ actions_activate_profile (GPtrArray *actions,
     ret = ppd_action_activate_profile (action, profile, &error);
     if (!ret)
       g_warning ("Failed to activate action '%s' to profile %s: %s",
-                 profile_to_str (profile),
+                 ppd_profile_to_str (profile),
                  ppd_action_get_action_name (action),
                  error->message);
   }
@@ -226,8 +206,8 @@ set_active_profile (PpdApp     *data,
   guint i;
 
   g_debug ("Setting active profile '%s' (current: '%s')",
-           profile_to_str (target_profile),
-           profile_to_str (data->active_profile));
+           ppd_profile_to_str (target_profile),
+           ppd_profile_to_str (data->active_profile));
 
   for (i = 0; i < data->drivers->len; i++) {
     PpdDriver *driver = g_ptr_array_index (data->drivers, i);
@@ -252,7 +232,7 @@ set_selected_profile (PpdApp      *data,
 {
   PpdProfile target_profile;
 
-  target_profile = profile_from_str (profile);
+  target_profile = ppd_profile_from_str (profile);
   if (target_profile == PPD_PROFILE_UNSET) {
     g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
                  "Invalid profile name '%s'", profile);
@@ -266,7 +246,7 @@ set_selected_profile (PpdApp      *data,
   }
 
   g_debug ("Transitioning from '%s' to '%s'",
-           profile_to_str (data->selected_profile), profile);
+           ppd_profile_to_str (data->selected_profile), profile);
   data->selected_profile = target_profile;
 
   if (ppd_driver_is_inhibited (SELECTED_DRIVER)) {
@@ -429,7 +409,7 @@ profile_already_handled (PpdApp     *data,
       g_debug ("Driver '%s' conflicts with already probed driver '%s' for profile %s",
                ppd_driver_get_driver_name (driver),
                ppd_driver_get_driver_name (existing_driver),
-               profile_to_str (1 << i));
+               ppd_profile_to_str (1 << i));
       return TRUE;
     }
   }

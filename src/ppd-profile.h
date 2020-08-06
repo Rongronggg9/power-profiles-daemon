@@ -27,3 +27,6 @@ typedef enum {
 
 #define PPD_PROFILE_ALL   (PPD_PROFILE_BALANCED | PPD_PROFILE_POWER_SAVER | PPD_PROFILE_PERFORMANCE)
 #define PPD_PROFILE_UNSET (0)
+
+const char *ppd_profile_to_str (PpdProfile profile);
+PpdProfile ppd_profile_from_str (const char *str);
