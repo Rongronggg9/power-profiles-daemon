@@ -36,6 +36,8 @@ get_driver_for_profile (PpdApp     *data,
 {
   guint i;
 
+  g_return_val_if_fail (ppd_profile_has_single_flag (profile), NULL);
+
   for (i = 0; i < data->drivers->len; i++) {
     PpdDriver *driver = g_ptr_array_index (data->drivers, i);
 
