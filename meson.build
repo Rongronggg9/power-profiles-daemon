@@ -23,7 +23,8 @@ common_cflags = cc.get_supported_arguments([
     '-Wshadow'
 ])
 
-libexecdir = get_option('libexecdir')
+prefix = get_option('prefix')
+libexecdir = prefix / get_option('libexecdir')
 bindir = get_option('bindir')
 dbusconfdir = get_option('sysconfdir') / 'dbus-1' / 'system.d'
 
