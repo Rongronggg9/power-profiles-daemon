@@ -33,7 +33,7 @@ gboolean ppd_utils_write_sysfs (GUdevDevice  *device,
     g_debug ("Could not open for writing '%s'", filename);
     return FALSE;
   }
-  ret = fprintf (sysfsfp, value);
+  ret = fprintf (sysfsfp, "%s", value);
   if (ret < 0) {
     g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno),
                  "Error writing '%s'", filename);
