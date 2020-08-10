@@ -253,6 +253,38 @@ class Tests(dbusmock.DBusTestCase):
 
       self.stop_daemon()
 
+    def test_inhibited_transition(self):
+      '''Test that transitions work as expected when inhibited'''
+
+      tp_acpi = self.testbed.add_device('platform', 'thinkpad_acpi', None,
+          ['dytc_lapmode', '0'],
+          [ 'DEVPATH', '/devices/platform/thinkpad_acpi' ]
+      )
+
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      self.assertEqual(self.get_dbus_property('SelectedProfile'), 'balanced')
+
+      self.set_dbus_property('SelectedProfile', GLib.Variant.new_string('performance'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+      self.assertEqual(self.get_dbus_property('SelectedProfile'), 'performance')
+
+      # Inhibit
+      self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '1')
+      self.testbed.uevent(tp_acpi, 'change')
+      self.assertEventually(lambda: self.have_text_in_log('dytc_lapmode is now on'))
+      self.assertEqual(self.get_dbus_property('Inhibited'), 'lap-detected')
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      self.assertEqual(self.get_dbus_property('SelectedProfile'), 'performance')
+
+      # Switch to non-performance
+      self.set_dbus_property('SelectedProfile', GLib.Variant.new_string('power-saver'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+      self.assertEqual(self.get_dbus_property('SelectedProfile'), 'power-saver')
+
     def test_dytc_performance_driver(self):
       '''Lenovo DYTC performance driver'''
 
