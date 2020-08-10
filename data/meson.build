@@ -14,3 +14,8 @@ configure_file(
   configuration: data_conf,
   install_dir: dbusconfdir
 )
+
+install_data(
+  'net.hadess.PowerProfiles.service',
+  install_dir: dbusservicedir
+)

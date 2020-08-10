@@ -27,6 +27,7 @@ prefix = get_option('prefix')
 libexecdir = prefix / get_option('libexecdir')
 bindir = get_option('bindir')
 dbusconfdir = get_option('sysconfdir') / 'dbus-1' / 'system.d'
+dbusservicedir = get_option('datadir') / 'dbus-1' / 'system-services'
 
 systemd_system_unit_dir = get_option('systemdsystemunitdir')
 if systemd_system_unit_dir == 'auto'
