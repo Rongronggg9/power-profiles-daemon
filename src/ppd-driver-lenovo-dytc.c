@@ -70,7 +70,7 @@ update_dytc_state (PpdDriverLenovoDytc *dytc)
              dytc->lapmode ? "on" : "off",
              dytc->lapmode ? "inhibited" : "uninhibited");
     g_object_set (G_OBJECT (dytc),
-                  "inhibited", dytc->lapmode ? "lap-detected" : NULL,
+                  "performance-inhibited", dytc->lapmode ? "lap-detected" : NULL,
                   NULL);
   }
 }

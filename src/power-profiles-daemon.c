@@ -94,13 +94,13 @@ get_selected_profile (PpdApp *data)
 }
 
 static const char *
-get_inhibited (PpdApp *data)
+get_performance_inhibited (PpdApp *data)
 {
   PpdDriver *driver;
   const char *ret;
 
   driver = SELECTED_DRIVER;
-  ret = ppd_driver_get_inhibited (driver);
+  ret = ppd_driver_get_performance_inhibited (driver);
   g_assert (ret != NULL);
   return ret;
 }
@@ -157,8 +157,8 @@ send_dbus_event (PpdApp     *data,
                            g_variant_new_string (get_selected_profile (data)));
   }
   if (mask & PROP_INHIBITED) {
-    g_variant_builder_add (&props_builder, "{sv}", "Inhibited",
-                           g_variant_new_string (get_inhibited (data)));
+    g_variant_builder_add (&props_builder, "{sv}", "PerformanceInhibited",
+                           g_variant_new_string (get_performance_inhibited (data)));
   }
   if (mask & PROP_PROFILES) {
     g_variant_builder_add (&props_builder, "{sv}", "Profiles",
@@ -252,7 +252,7 @@ set_selected_profile (PpdApp      *data,
   data->selected_profile = target_profile;
 
   if (target_profile == PPD_PROFILE_PERFORMANCE &&
-      ppd_driver_is_inhibited (SELECTED_DRIVER)) {
+      ppd_driver_is_performance_inhibited (SELECTED_DRIVER)) {
     send_dbus_event (data, PROP_SELECTED_PROFILE);
     g_debug ("Not transitioning active profile to '%s' as inhibited", profile);
     return TRUE;
@@ -266,33 +266,33 @@ set_selected_profile (PpdApp      *data,
 }
 
 static void
-driver_inhibited_changed_cb (GObject    *gobject,
-                             GParamSpec *pspec,
-                             gpointer    user_data)
+driver_performance_inhibited_changed_cb (GObject    *gobject,
+                                         GParamSpec *pspec,
+                                         gpointer    user_data)
 {
   PpdApp *data = user_data;
   PpdDriver *driver = PPD_DRIVER (gobject);
   const char *prop_str = pspec->name;
 
-  if (g_strcmp0 (prop_str, "inhibited") != 0) {
+  if (g_strcmp0 (prop_str, "performance-inhibited") != 0) {
     g_debug ("Ignoring '%s' property change on profile driver '%s'",
              prop_str, ppd_driver_get_driver_name (driver));
     return;
   }
 
   if (!(ppd_driver_get_profiles (driver) & PPD_PROFILE_PERFORMANCE)) {
-    g_warning ("Ignored 'inhibited' change on non-performance driver '%s'",
+    g_warning ("Ignored 'performance-inhibited' change on non-performance driver '%s'",
                ppd_driver_get_driver_name (driver));
     return;
   }
 
   if (data->selected_profile != PPD_PROFILE_PERFORMANCE) {
-    g_debug ("User didn't want the performance profile, so ignoring 'inhibited' change on '%s'",
+    g_debug ("User didn't want the performance profile, so ignoring 'performance-inhibited' change on '%s'",
              ppd_driver_get_driver_name (driver));
     return;
   }
 
-  set_active_profile (data, ppd_driver_is_inhibited (driver) ?
+  set_active_profile (data, ppd_driver_is_performance_inhibited (driver) ?
                       PPD_PROFILE_BALANCED : PPD_PROFILE_PERFORMANCE);
 }
 
@@ -313,8 +313,8 @@ handle_get_property (GDBusConnection *connection,
     return g_variant_new_string (get_active_profile (data));
   if (g_strcmp0 (property_name, "SelectedProfile") == 0)
     return g_variant_new_string (get_selected_profile (data));
-  if (g_strcmp0 (property_name, "Inhibited") == 0)
-    return g_variant_new_string (get_inhibited (data));
+  if (g_strcmp0 (property_name, "PerformanceInhibited") == 0)
+    return g_variant_new_string (get_performance_inhibited (data));
   if (g_strcmp0 (property_name, "Profiles") == 0)
     return get_profiles_variant (data);
   return NULL;
@@ -461,8 +461,8 @@ name_acquired_handler (GDBusConnection *connection,
 
       g_ptr_array_add (data->drivers, driver);
 
-      g_signal_connect (G_OBJECT (driver), "notify::inhibited",
-                        G_CALLBACK (driver_inhibited_changed_cb), data);
+      g_signal_connect (G_OBJECT (driver), "notify::performance-inhibited",
+                        G_CALLBACK (driver_performance_inhibited_changed_cb), data);
     } else if (PPD_IS_ACTION (object)) {
       PpdAction *action = PPD_ACTION (object);
 

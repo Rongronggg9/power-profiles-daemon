@@ -29,5 +29,5 @@ gboolean ppd_driver_probe (PpdDriver *driver);
 gboolean ppd_driver_activate_profile (PpdDriver *driver, PpdProfile profile, GError **error);
 const char *ppd_driver_get_driver_name (PpdDriver *driver);
 PpdProfile ppd_driver_get_profiles (PpdDriver *driver);
-const char *ppd_driver_get_inhibited (PpdDriver *driver);
-gboolean ppd_driver_is_inhibited (PpdDriver *driver);
+const char *ppd_driver_get_performance_inhibited (PpdDriver *driver);
+gboolean ppd_driver_is_performance_inhibited (PpdDriver *driver);

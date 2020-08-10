@@ -33,16 +33,16 @@
     <property name="SelectedProfile" type="s" access="readwrite"/>
 
     <!--
-        Inhibited:
+        PerformanceInhibited:
 
-        This will be set if the user-selected power profile is unavailable, with
+        This will be set if the performance power profile is unavailable, with
         the value being used to identify the reason for unavailability. As new
         reasons can be added, it is recommended that front-ends show a generic
         reason if they do not recognise the value. Possible values are:
         - "lap-detected" (the computer is sitting on the user's lap)
         - "" (the empty string, if not inhibited)
     -->
-    <property name="Inhibited" type="s" access="read"/>
+    <property name="PerformanceInhibited" type="s" access="read"/>
 
     <!--
         Profiles:

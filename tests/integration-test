@@ -235,7 +235,7 @@ class Tests(dbusmock.DBusTestCase):
       self.start_daemon()
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
       self.assertEqual(self.get_dbus_property('SelectedProfile'), 'balanced')
-      self.assertEqual(self.get_dbus_property('Inhibited'), '')
+      self.assertEqual(self.get_dbus_property('PerformanceInhibited'), '')
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 2)
@@ -276,7 +276,7 @@ class Tests(dbusmock.DBusTestCase):
       self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '1')
       self.testbed.uevent(tp_acpi, 'change')
       self.assertEventually(lambda: self.have_text_in_log('dytc_lapmode is now on'))
-      self.assertEqual(self.get_dbus_property('Inhibited'), 'lap-detected')
+      self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
       self.assertEqual(self.get_dbus_property('SelectedProfile'), 'performance')
 
@@ -329,7 +329,7 @@ class Tests(dbusmock.DBusTestCase):
 
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
       self.assertEqual(self.get_dbus_property('SelectedProfile'), 'performance')
-      self.assertEqual(self.get_dbus_property('Inhibited'), 'lap-detected')
+      self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
 
     def test_trickle_charge_mode(self):
       '''Trickle power_supply charge type'''
