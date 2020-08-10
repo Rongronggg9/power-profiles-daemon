@@ -260,7 +260,7 @@ class Tests(dbusmock.DBusTestCase):
       '''Test that transitions work as expected when inhibited'''
 
       tp_acpi = self.testbed.add_device('platform', 'thinkpad_acpi', None,
-          ['dytc_lapmode', '0'],
+          ['dytc_lapmode', '0', 'dytc_perfmode', 'H'],
           [ 'DEVPATH', '/devices/platform/thinkpad_acpi' ]
       )
 
@@ -336,7 +336,7 @@ class Tests(dbusmock.DBusTestCase):
 
       # Verify that the Lenovo DYTC driver still gets preferred
       tp_acpi = self.testbed.add_device('platform', 'thinkpad_acpi', None,
-          ['dytc_lapmode', '0'],
+          ['dytc_lapmode', '0', 'dytc_perfmode', 'H'],
           [ 'DEVPATH', '/devices/platform/thinkpad_acpi' ]
       )
 
