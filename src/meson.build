@@ -17,6 +17,7 @@ sources = [
   'ppd-driver-lenovo-dytc.c',
   'ppd-driver-balanced.c',
   'ppd-driver-power-saver.c',
+  'ppd-driver-fake.c',
   resources,
 ]
 

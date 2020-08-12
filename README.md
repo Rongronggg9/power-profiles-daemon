@@ -54,6 +54,16 @@ and attach the output of:
 `G_MESSAGES_DEBUG=all /usr/libexec/power-profiles-daemon`
 running as ```root```.
 
+Testing
+-------
+
+If you don't have hardware that can support the performance mode, you can
+manually run the `power-profiles-daemon` binary as `root` with the environment
+variable `POWER_PROFILE_DAEMON_FAKE_DRIVER` set to 1. For example:
+```sh
+$ sudo POWER_PROFILE_DAEMON_FAKE_DRIVER=1 /usr/libexec/power-profiles-daemon
+```
+
 References
 ----------
 

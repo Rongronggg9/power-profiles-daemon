@@ -57,11 +57,13 @@ get_driver_for_profile (PpdApp     *data,
 #include "ppd-driver-balanced.h"
 #include "ppd-driver-power-saver.h"
 #include "ppd-driver-lenovo-dytc.h"
+#include "ppd-driver-fake.h"
 
 typedef GType (*GTypeGetFunc) (void);
 
 static GTypeGetFunc objects[] = {
   /* Hardware specific profile drivers */
+  ppd_driver_fake_get_type,
   ppd_driver_lenovo_dytc_get_type,
 
   /* Generic profile drivers */

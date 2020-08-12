@@ -332,6 +332,20 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(self.get_dbus_property('SelectedProfile'), 'performance')
       self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
 
+    def test_fake_driver(self):
+      '''Test that the fake driver works'''
+
+      os.environ['POWER_PROFILE_DAEMON_FAKE_DRIVER'] = '1'
+      self.start_daemon()
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.stop_daemon()
+
+      del os.environ['POWER_PROFILE_DAEMON_FAKE_DRIVER']
+      self.start_daemon()
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 2)
+
     def test_trickle_charge_mode(self):
       '''Trickle power_supply charge type'''
 
