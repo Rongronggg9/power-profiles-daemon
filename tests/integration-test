@@ -311,6 +311,7 @@ class Tests(dbusmock.DBusTestCase):
 
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
       self.assertEqual(self.get_dbus_property('SelectedProfile'), 'balanced')
+      self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
 
       # Reset lapmode
       self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '0')
