@@ -234,7 +234,6 @@ class Tests(dbusmock.DBusTestCase):
 
       self.start_daemon()
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
-      self.assertEqual(self.get_dbus_property('SelectedProfile'), 'balanced')
       self.assertEqual(self.get_dbus_property('PerformanceInhibited'), '')
 
       profiles = self.get_dbus_property('Profiles')
@@ -244,9 +243,8 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(profiles[1]['Profile'], 'balanced')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
 
-      self.set_dbus_property('SelectedProfile', GLib.Variant.new_string('power-saver'))
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
-      self.assertEqual(self.get_dbus_property('SelectedProfile'), 'power-saver')
 
       # process = subprocess.Popen(['gdbus', 'introspect', '--system', '--dest', 'net.hadess.PowerProfiles', '--object-path', '/net/hadess/PowerProfiles'])
       # print (self.get_dbus_property('GPUs'))
@@ -266,11 +264,9 @@ class Tests(dbusmock.DBusTestCase):
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
-      self.assertEqual(self.get_dbus_property('SelectedProfile'), 'balanced')
 
-      self.set_dbus_property('SelectedProfile', GLib.Variant.new_string('performance'))
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
-      self.assertEqual(self.get_dbus_property('SelectedProfile'), 'performance')
 
       # Inhibit
       self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '1')
@@ -278,12 +274,10 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEventually(lambda: self.have_text_in_log('dytc_lapmode is now on'))
       self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
-      self.assertEqual(self.get_dbus_property('SelectedProfile'), 'performance')
 
       # Switch to non-performance
-      self.set_dbus_property('SelectedProfile', GLib.Variant.new_string('power-saver'))
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
-      self.assertEqual(self.get_dbus_property('SelectedProfile'), 'power-saver')
 
     def test_dytc_performance_driver(self):
       '''Lenovo DYTC performance driver'''
@@ -302,7 +296,6 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(profiles[2]['Driver'], 'lenovo_dytc')
       self.assertEqual(profiles[2]['Profile'], 'performance')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
-      self.assertEqual(self.get_dbus_property('SelectedProfile'), 'balanced')
 
       # lapmode detected, but performance wasn't selected anyway
       self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '1')
@@ -310,7 +303,6 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEventually(lambda: self.have_text_in_log('dytc_lapmode is now on'))
 
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
-      self.assertEqual(self.get_dbus_property('SelectedProfile'), 'balanced')
       self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
 
       # Reset lapmode
@@ -319,9 +311,8 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEventually(lambda: self.have_text_in_log('dytc_lapmode is now off'))
 
       # Set performance mode
-      self.set_dbus_property('SelectedProfile', GLib.Variant.new_string('performance'))
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
-      self.assertEqual(self.get_dbus_property('SelectedProfile'), 'performance')
 
       # And turn on lapmode
       self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '1')
@@ -329,7 +320,6 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEventually(lambda: self.have_text_in_log('dytc_lapmode is now on'))
 
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
-      self.assertEqual(self.get_dbus_property('SelectedProfile'), 'performance')
       self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
 
     def test_fake_driver(self):
@@ -366,12 +356,12 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(self.read_sysfs_attr(fastcharge, 'charge_type'), b'Fast')
 
       # Verify that charge-type got changed to Trickle when power saving
-      self.set_dbus_property('SelectedProfile', GLib.Variant.new_string('power-saver'))
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
       self.assertEqual(self.read_sysfs_attr(fastcharge, 'charge_type'), b'Trickle')
 
       # FIXME no performance mode
       # Verify that charge-type got changed to Fast in a non-default, non-power save mode
-      # self.set_dbus_property('SelectedProfile', GLib.Variant.new_string('performance'))
+      # self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
       # self.assertEqual(self.read_sysfs_attr(fastcharge, 'charge_type'), 'Fast')
 
     #

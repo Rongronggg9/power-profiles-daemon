@@ -25,7 +25,6 @@ typedef struct {
   int ret;
 
   PpdProfile active_profile;
-  PpdProfile selected_profile;
   GPtrArray *drivers;
   GPtrArray *actions;
 } PpdApp;
@@ -50,7 +49,6 @@ get_driver_for_profile (PpdApp     *data,
 
 #define GET_DRIVER(p) (get_driver_for_profile (data, p))
 #define ACTIVE_DRIVER (get_driver_for_profile (data, data->active_profile))
-#define SELECTED_DRIVER (get_driver_for_profile (data, data->selected_profile))
 
 /* profile drivers and actions */
 #include "ppd-action-trickle-charge.h"
@@ -76,24 +74,17 @@ static GTypeGetFunc objects[] = {
 
 typedef enum {
   PROP_ACTIVE_PROFILE             = 1 << 0,
-  PROP_SELECTED_PROFILE           = 1 << 1,
-  PROP_INHIBITED                  = 1 << 2,
-  PROP_PROFILES                   = 1 << 3,
-  PROP_ACTIONS                    = 1 << 4,
+  PROP_INHIBITED                  = 1 << 1,
+  PROP_PROFILES                   = 1 << 2,
+  PROP_ACTIONS                    = 1 << 3,
 } PropertiesMask;
 
-#define PROP_ALL (PROP_ACTIVE_PROFILE | PROP_SELECTED_PROFILE | PROP_INHIBITED | PROP_PROFILES | PROP_ACTIONS)
+#define PROP_ALL (PROP_ACTIVE_PROFILE | PROP_INHIBITED | PROP_PROFILES | PROP_ACTIONS)
 
 static const char *
 get_active_profile (PpdApp *data)
 {
   return ppd_profile_to_str (data->active_profile);
-}
-
-static const char *
-get_selected_profile (PpdApp *data)
-{
-  return ppd_profile_to_str (data->selected_profile);
 }
 
 static const char *
@@ -174,10 +165,6 @@ send_dbus_event (PpdApp     *data,
     g_variant_builder_add (&props_builder, "{sv}", "ActiveProfile",
                            g_variant_new_string (get_active_profile (data)));
   }
-  if (mask & PROP_SELECTED_PROFILE) {
-    g_variant_builder_add (&props_builder, "{sv}", "SelectedProfile",
-                           g_variant_new_string (get_selected_profile (data)));
-  }
   if (mask & PROP_INHIBITED) {
     g_variant_builder_add (&props_builder, "{sv}", "PerformanceInhibited",
                            g_variant_new_string (get_performance_inhibited (data)));
@@ -228,8 +215,8 @@ actions_activate_profile (GPtrArray *actions,
 }
 
 static void
-set_active_profile (PpdApp     *data,
-                    PpdProfile  target_profile)
+activate_target_profile (PpdApp     *data,
+                         PpdProfile  target_profile)
 {
   guint i;
 
@@ -254,9 +241,9 @@ set_active_profile (PpdApp     *data,
 }
 
 static gboolean
-set_selected_profile (PpdApp      *data,
-                      const char  *profile,
-                      GError     **error)
+set_active_profile (PpdApp      *data,
+                    const char  *profile,
+                    GError     **error)
 {
   PpdProfile target_profile;
 
@@ -267,26 +254,25 @@ set_selected_profile (PpdApp      *data,
     return FALSE;
   }
 
-  if (target_profile == data->selected_profile) {
+  if (target_profile == data->active_profile) {
     g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
-                 "Profile '%s' already selected", profile);
+                 "Profile '%s' already active", profile);
     return FALSE;
   }
 
-  g_debug ("Transitioning selected profile from '%s' to '%s'",
-           ppd_profile_to_str (data->selected_profile), profile);
-  data->selected_profile = target_profile;
-
   if (target_profile == PPD_PROFILE_PERFORMANCE &&
-      ppd_driver_is_performance_inhibited (SELECTED_DRIVER)) {
-    send_dbus_event (data, PROP_SELECTED_PROFILE);
-    g_debug ("Not transitioning active profile to '%s' as inhibited", profile);
-    return TRUE;
+      ppd_driver_is_performance_inhibited (GET_DRIVER (PPD_PROFILE_PERFORMANCE))) {
+    g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                 "Profile '%s' is inhibited", profile);
+    return FALSE;
   }
 
-  set_active_profile (data, target_profile);
+  g_debug ("Transitioning active profile from '%s' to '%s'",
+           ppd_profile_to_str (data->active_profile), profile);
+  data->active_profile = target_profile;
 
-  send_dbus_event (data, PROP_ACTIVE_PROFILE | PROP_SELECTED_PROFILE);
+  activate_target_profile (data, target_profile);
+  send_dbus_event (data, PROP_ACTIVE_PROFILE);
 
   return TRUE;
 }
@@ -313,15 +299,11 @@ driver_performance_inhibited_changed_cb (GObject    *gobject,
   }
 
   send_dbus_event (data, PROP_INHIBITED);
-
-  if (data->selected_profile != PPD_PROFILE_PERFORMANCE) {
-    g_debug ("User didn't want the performance profile, so ignoring 'performance-inhibited' change on '%s'",
-             ppd_driver_get_driver_name (driver));
+  if (!ppd_driver_is_performance_inhibited (driver))
     return;
-  }
 
-  set_active_profile (data, ppd_driver_is_performance_inhibited (driver) ?
-                      PPD_PROFILE_BALANCED : PPD_PROFILE_PERFORMANCE);
+  activate_target_profile (data, PPD_PROFILE_BALANCED);
+  send_dbus_event (data, PROP_ACTIVE_PROFILE);
 }
 
 static GVariant *
@@ -339,8 +321,6 @@ handle_get_property (GDBusConnection *connection,
 
   if (g_strcmp0 (property_name, "ActiveProfile") == 0)
     return g_variant_new_string (get_active_profile (data));
-  if (g_strcmp0 (property_name, "SelectedProfile") == 0)
-    return g_variant_new_string (get_selected_profile (data));
   if (g_strcmp0 (property_name, "PerformanceInhibited") == 0)
     return g_variant_new_string (get_performance_inhibited (data));
   if (g_strcmp0 (property_name, "Profiles") == 0)
@@ -365,14 +345,14 @@ handle_set_property (GDBusConnection  *connection,
 
   g_assert (data->connection);
 
-  if (g_strcmp0 (property_name, "SelectedProfile") != 0) {
+  if (g_strcmp0 (property_name, "ActiveProfile") != 0) {
     g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
                  "No such property: %s", property_name);
     return FALSE;
   }
 
   g_variant_get (value, "&s", &profile);
-  return set_selected_profile (data, profile, error);
+  return set_active_profile (data, profile, error);
 }
 
 static const GDBusInterfaceVTable interface_vtable =
@@ -517,7 +497,7 @@ name_acquired_handler (GDBusConnection *connection,
   }
 
   /* Set initial state */
-  set_active_profile (data, data->active_profile);
+  activate_target_profile (data, data->active_profile);
 
   send_dbus_event (data, PROP_ALL);
 
@@ -582,7 +562,6 @@ int main (int argc, char **argv)
   data->actions = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
   data->drivers = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
   data->active_profile = PPD_PROFILE_BALANCED;
-  data->selected_profile = PPD_PROFILE_BALANCED;
 
   /* Set up D-Bus */
   setup_dbus (data);

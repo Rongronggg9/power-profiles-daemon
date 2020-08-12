@@ -19,18 +19,11 @@
     <!--
         ActiveProfile:
 
-        The type of the currently active profile. It might not be the same as the
-        user selected profile, as it will change depending on hardware configuration.
+        The type of the currently active profile. It might change automatically
+        if the "performance" profile was selected but it got inhibited, in which
+        case the "PerformanceInhibited" property will reflect the reason.
     -->
-    <property name="ActiveProfile" type="s" access="read"/>
-
-    <!--
-        SelectedProfile:
-
-        The type of the user-selected profile. It might not be the same as the
-        active profile, as it will change depending on hardware configuration.
-    -->
-    <property name="SelectedProfile" type="s" access="readwrite"/>
+    <property name="ActiveProfile" type="s" access="readwrite"/>
 
     <!--
         PerformanceInhibited:
