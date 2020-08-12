@@ -100,7 +100,9 @@ get_performance_inhibited (PpdApp *data)
   PpdDriver *driver;
   const char *ret;
 
-  driver = SELECTED_DRIVER;
+  driver = GET_DRIVER(PPD_PROFILE_PERFORMANCE);
+  if (!driver)
+    return "";
   ret = ppd_driver_get_performance_inhibited (driver);
   g_assert (ret != NULL);
   return ret;
@@ -297,8 +299,8 @@ driver_performance_inhibited_changed_cb (GObject    *gobject,
   const char *prop_str = pspec->name;
 
   if (g_strcmp0 (prop_str, "performance-inhibited") != 0) {
-    g_debug ("Ignoring '%s' property change on profile driver '%s'",
-             prop_str, ppd_driver_get_driver_name (driver));
+    g_warning ("Ignoring '%s' property change on profile driver '%s'",
+               prop_str, ppd_driver_get_driver_name (driver));
     return;
   }
 
@@ -307,6 +309,8 @@ driver_performance_inhibited_changed_cb (GObject    *gobject,
                ppd_driver_get_driver_name (driver));
     return;
   }
+
+  send_dbus_event (data, PROP_INHIBITED);
 
   if (data->selected_profile != PPD_PROFILE_PERFORMANCE) {
     g_debug ("User didn't want the performance profile, so ignoring 'performance-inhibited' change on '%s'",
