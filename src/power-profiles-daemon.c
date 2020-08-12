@@ -77,9 +77,10 @@ typedef enum {
   PROP_SELECTED_PROFILE           = 1 << 1,
   PROP_INHIBITED                  = 1 << 2,
   PROP_PROFILES                   = 1 << 3,
+  PROP_ACTIONS                    = 1 << 4,
 } PropertiesMask;
 
-#define PROP_ALL (PROP_ACTIVE_PROFILE | PROP_SELECTED_PROFILE | PROP_INHIBITED | PROP_PROFILES)
+#define PROP_ALL (PROP_ACTIVE_PROFILE | PROP_SELECTED_PROFILE | PROP_INHIBITED | PROP_PROFILES | PROP_ACTIONS)
 
 static const char *
 get_active_profile (PpdApp *data)
@@ -132,6 +133,23 @@ get_profiles_variant (PpdApp *data)
   return g_variant_builder_end (&builder);
 }
 
+static GVariant *
+get_actions_variant (PpdApp *data)
+{
+  GVariantBuilder builder;
+  guint i;
+
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("as"));
+
+  for (i = 0; i < data->actions->len; i++) {
+    PpdAction *action = g_ptr_array_index (data->actions, i);
+
+    g_variant_builder_add (&builder, "s", ppd_action_get_action_name (action));
+  }
+
+  return g_variant_builder_end (&builder);
+}
+
 static void
 send_dbus_event (PpdApp     *data,
                  PropertiesMask  mask)
@@ -163,6 +181,10 @@ send_dbus_event (PpdApp     *data,
   if (mask & PROP_PROFILES) {
     g_variant_builder_add (&props_builder, "{sv}", "Profiles",
                            get_profiles_variant (data));
+  }
+  if (mask & PROP_ACTIONS) {
+    g_variant_builder_add (&props_builder, "{sv}", "Actions",
+                           get_actions_variant (data));
   }
 
   props_changed = g_variant_new ("(s@a{sv}@as)", POWER_PROFILES_IFACE_NAME,
@@ -317,6 +339,8 @@ handle_get_property (GDBusConnection *connection,
     return g_variant_new_string (get_performance_inhibited (data));
   if (g_strcmp0 (property_name, "Profiles") == 0)
     return get_profiles_variant (data);
+  if (g_strcmp0 (property_name, "Actions") == 0)
+    return get_actions_variant (data);
   return NULL;
 }
 

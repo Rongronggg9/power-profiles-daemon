@@ -61,5 +61,14 @@
     -->
     <property name="Profiles" type="aa{sv}" access="read"/>
 
+    <!--
+        Actions:
+
+        An array of strings listing each one of the "actions" implemented in
+        the running daemon. This is used by API users to figure out whether
+        particular functionality is available in a version of the daemon.
+    -->
+    <property name="Actions" type="as" access="read"/>
+
   </interface>
 </node>

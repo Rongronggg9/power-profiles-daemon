@@ -345,6 +345,8 @@ class Tests(dbusmock.DBusTestCase):
 
       self.start_daemon()
 
+      self.assertIn('trickle_charge', self.get_dbus_property('Actions'))
+
       # Verify that charge-type got changed to Fast on startup
       self.assertEqual(self.read_sysfs_attr(fastcharge, 'charge_type'), b'Fast')
 
