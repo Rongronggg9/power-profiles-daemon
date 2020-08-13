@@ -19,8 +19,9 @@
 #define POWER_PROFILES_DBUS_PATH          "/net/hadess/PowerProfiles"
 #define POWER_PROFILES_IFACE_NAME         POWER_PROFILES_DBUS_NAME
 
+GMainLoop *main_loop = NULL;
+
 typedef struct {
-  GMainLoop *loop;
   GDBusNodeInfo *introspection_data;
   GDBusConnection *connection;
   guint name_id;
@@ -508,7 +509,7 @@ name_acquired_handler (GDBusConnection *connection,
 bail:
   data->ret = 0;
   g_debug ("Exiting because some non recoverable error occurred during startup");
-  g_main_loop_quit (data->loop);
+  g_main_loop_quit (main_loop);
 }
 
 static gboolean

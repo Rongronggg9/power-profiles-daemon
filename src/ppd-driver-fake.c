@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <termios.h>
 
+extern GMainLoop *main_loop;
+
 struct _PpdDriverFake
 {
   PpdDriver  parent_instance;
@@ -54,7 +56,7 @@ toggle_inhibition (PpdDriverFake *fake)
 static void
 keyboard_usage (void)
 {
-  g_print ("Valid keys are: i (toggle inhibition)\n");
+  g_print ("Valid keys are: i (toggle inhibition), q/x (quit)\n");
 }
 
 static gboolean
@@ -79,6 +81,10 @@ check_keyboard (GIOChannel    *source,
   case 'i':
     g_print ("Toggling inhibition\n");
     toggle_inhibition (fake);
+    break;
+  case 'q':
+  case 'x':
+    g_main_loop_quit (main_loop);
     break;
   default:
     keyboard_usage ();
