@@ -7,6 +7,8 @@
  *
  */
 
+#include <locale.h>
+
 #include "power-profiles-daemon-resources.h"
 #include "power-profiles-daemon.h"
 #include "ppd-driver.h"
@@ -510,9 +512,11 @@ bail:
 }
 
 static gboolean
-setup_dbus (PpdApp *data)
+setup_dbus (PpdApp   *data,
+            gboolean  replace)
 {
   GBytes *bytes;
+  GBusNameOwnerFlags flags;
 
   bytes = g_resources_lookup_data ("/net/hadess/PowerProfiles/net.hadess.PowerProfiles.xml",
                                    G_RESOURCE_LOOKUP_FLAGS_NONE,
@@ -521,9 +525,13 @@ setup_dbus (PpdApp *data)
   g_bytes_unref (bytes);
   g_assert (data->introspection_data != NULL);
 
+  flags = G_BUS_NAME_OWNER_FLAGS_ALLOW_REPLACEMENT;
+  if (replace)
+    flags |= G_BUS_NAME_OWNER_FLAGS_REPLACE;
+
   data->name_id = g_bus_own_name (G_BUS_TYPE_SYSTEM,
                                   POWER_PROFILES_DBUS_NAME,
-                                  G_BUS_NAME_OWNER_FLAGS_NONE,
+                                  flags,
                                   bus_acquired_handler,
                                   name_acquired_handler,
                                   name_lost_handler,
@@ -549,7 +557,7 @@ free_app_data (PpdApp *data)
 
   g_clear_pointer (&data->introspection_data, g_dbus_node_info_unref);
   g_clear_object (&data->connection);
-  g_clear_pointer (&data->loop, g_main_loop_unref);
+  g_clear_pointer (&main_loop, g_main_loop_unref);
   g_free (data);
 }
 
@@ -557,6 +565,28 @@ int main (int argc, char **argv)
 {
   PpdApp *data;
   int ret = 0;
+  g_autoptr(GOptionContext) option_context = NULL;
+  g_autoptr(GError) error = NULL;
+  gboolean verbose = FALSE;
+  gboolean replace = FALSE;
+  const GOptionEntry options[] = {
+    { "verbose", 'v', 0, G_OPTION_ARG_NONE, &verbose, "Show extra debugging information", NULL },
+    { "replace", 'r', 0, G_OPTION_ARG_NONE, &replace, "Replace the running instance of power-profiles-daemon", NULL },
+    { NULL}
+  };
+
+  setlocale (LC_ALL, "");
+  option_context = g_option_context_new ("");
+  g_option_context_add_main_entries (option_context, options, NULL);
+
+  ret = g_option_context_parse (option_context, &argc, &argv, &error);
+  if (!ret) {
+    g_print ("Failed to parse arguments: %s\n", error->message);
+    return EXIT_FAILURE;
+  }
+
+  if (verbose)
+    g_setenv ("G_MESSAGES_DEBUG", "all", TRUE);
 
   data = g_new0 (PpdApp, 1);
   data->actions = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
@@ -564,10 +594,10 @@ int main (int argc, char **argv)
   data->active_profile = PPD_PROFILE_BALANCED;
 
   /* Set up D-Bus */
-  setup_dbus (data);
+  setup_dbus (data, replace);
 
-  data->loop = g_main_loop_new (NULL, TRUE);
-  g_main_loop_run (data->loop);
+  main_loop = g_main_loop_new (NULL, TRUE);
+  g_main_loop_run (main_loop);
   ret = data->ret;
   free_app_data (data);
 
