@@ -279,6 +279,54 @@ class Tests(dbusmock.DBusTestCase):
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
 
+    def test_intel_pstate(self):
+      '''Intel P-State driver'''
+
+      # Create 2 CPUs with preferences
+      dir1 = os.path.join(self.testbed.get_root_dir(), "devices/system/cpu/cpufreq/policy0/")
+      os.makedirs(dir1)
+      with open(os.path.join(dir1, "energy_performance_preference")  ,'w') as prefs:
+        prefs.write("performance")
+      dir2 = os.path.join(self.testbed.get_root_dir(), "devices/system/cpu/cpufreq/policy1/")
+      os.makedirs(dir2)
+      with open(os.path.join(dir2, "energy_performance_preference")  ,'w') as prefs:
+        prefs.write("performance")
+
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'intel_pstate')
+      self.assertEqual(profiles[0]['Profile'], 'power-saver')
+
+      contents = None
+      with open(os.path.join(dir2, "energy_performance_preference"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'balance_power')
+
+      # Set performance mode
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+
+      contents = None
+      with open(os.path.join(dir2, "energy_performance_preference"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'performance')
+
+      self.stop_daemon()
+
+      # Verify that the Lenovo DYTC driver still gets preferred
+      tp_acpi = self.testbed.add_device('platform', 'thinkpad_acpi', None,
+          ['dytc_lapmode', '0'],
+          [ 'DEVPATH', '/devices/platform/thinkpad_acpi' ]
+      )
+
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'lenovo_dytc')
+
     def test_dytc_performance_driver(self):
       '''Lenovo DYTC performance driver'''
 
