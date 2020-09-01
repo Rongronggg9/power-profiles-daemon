@@ -12,20 +12,16 @@
 #include <stdio.h>
 #include <errno.h>
 
-gboolean ppd_utils_write_sysfs (GUdevDevice  *device,
-                                const char   *attribute,
-                                const char   *value,
-                                GError      **error)
+gboolean ppd_utils_write (const char  *filename,
+                          const char  *value,
+                          GError     **error)
 {
   FILE *sysfsfp;
-  g_autofree char *filename = NULL;
   int ret;
 
-  g_return_val_if_fail (G_UDEV_IS_DEVICE (device), FALSE);
-  g_return_val_if_fail (attribute, FALSE);
+  g_return_val_if_fail (filename, FALSE);
   g_return_val_if_fail (value, FALSE);
 
-  filename = g_build_filename (g_udev_device_get_sysfs_path (device), attribute, NULL);
   sysfsfp = fopen (filename, "w");
   if (sysfsfp == NULL) {
     g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno),
@@ -42,4 +38,19 @@ gboolean ppd_utils_write_sysfs (GUdevDevice  *device,
   }
   fclose (sysfsfp);
   return TRUE;
+}
+
+gboolean ppd_utils_write_sysfs (GUdevDevice  *device,
+                                const char   *attribute,
+                                const char   *value,
+                                GError      **error)
+{
+  g_autofree char *filename = NULL;
+
+  g_return_val_if_fail (G_UDEV_IS_DEVICE (device), FALSE);
+  g_return_val_if_fail (attribute, FALSE);
+  g_return_val_if_fail (value, FALSE);
+
+  filename = g_build_filename (g_udev_device_get_sysfs_path (device), attribute, NULL);
+  return ppd_utils_write (filename, value, error);
 }

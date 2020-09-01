@@ -11,6 +11,9 @@
 
 #include <gudev/gudev.h>
 
+gboolean ppd_utils_write (const char  *filename,
+                          const char  *value,
+                          GError     **error);
 gboolean ppd_utils_write_sysfs (GUdevDevice  *device,
                                 const char   *attribute,
                                 const char   *value,
