@@ -14,6 +14,7 @@ sources = [
   'ppd-action.c',
   'ppd-action-trickle-charge.c',
   'ppd-driver.c',
+  'ppd-driver-intel-pstate.c',
   'ppd-driver-lenovo-dytc.c',
   'ppd-driver-balanced.c',
   'ppd-driver-power-saver.c',
