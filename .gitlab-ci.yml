@@ -7,6 +7,7 @@ variables:
                 pkgconfig(systemd)
                 pkgconfig(gio-2.0)
                 pkgconfig(gudev-1.0)
+                pkgconfig(upower-glib)
                 systemd
                 meson
                 git
