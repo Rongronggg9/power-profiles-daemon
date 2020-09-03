@@ -1,4 +1,4 @@
-deps = [ gio_dep, gudev_dep ]
+deps = [ gio_dep, gudev_dep, upower_dep ]
 
 resources = gnome.compile_resources(
     'power-profiles-daemon-resources', 'power-profiles-daemon.gresource.xml',

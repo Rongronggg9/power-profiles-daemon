@@ -302,7 +302,7 @@ class Tests(dbusmock.DBusTestCase):
       contents = None
       with open(os.path.join(dir2, "energy_performance_preference"), 'rb') as f:
         contents = f.read()
-      self.assertEqual(contents, b'balance_power')
+      self.assertEqual(contents, b'balance_performance')
 
       # Set performance mode
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))

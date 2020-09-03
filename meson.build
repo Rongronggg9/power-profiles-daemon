@@ -36,6 +36,7 @@ if systemd_system_unit_dir == 'auto'
 endif
 gio_dep = dependency('gio-2.0')
 gudev_dep = dependency('gudev-1.0', version: '>= 232')
+upower_dep = dependency('upower-glib')
 
 gnome = import('gnome')
 
