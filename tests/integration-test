@@ -280,7 +280,7 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
 
     def test_intel_pstate(self):
-      '''Intel P-State driver'''
+      '''Intel P-State driver (no UPower)'''
 
       # Create 2 CPUs with preferences
       dir1 = os.path.join(self.testbed.get_root_dir(), "devices/system/cpu/cpufreq/policy0/")
@@ -326,6 +326,44 @@ class Tests(dbusmock.DBusTestCase):
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
       self.assertEqual(profiles[0]['Driver'], 'lenovo_dytc')
+
+    def test_intel_pstate_balance(self):
+      '''Intel P-State driver (balance)'''
+
+      # Create CPU with preference
+      dir1 = os.path.join(self.testbed.get_root_dir(), "devices/system/cpu/cpufreq/policy0/")
+      os.makedirs(dir1)
+      with open(os.path.join(dir1, "energy_performance_preference")  ,'w') as prefs:
+        prefs.write("performance")
+
+      upowerd, obj_upower = self.spawn_server_template(
+            'upower', {'DaemonVersion': '0.99', 'OnBattery': False}, stdout=subprocess.PIPE)
+
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'intel_pstate')
+      self.assertEqual(profiles[0]['Profile'], 'power-saver')
+
+      contents = None
+      with open(os.path.join(dir1, "energy_performance_preference"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'balance_performance')
+
+      # Unplug from the mains
+      obj_upower.Set('org.freedesktop.UPower', 'OnBattery', True)
+      obj_upower.EmitSignal('', 'Changed', '', [], dbus_interface='org.freedesktop.DBus.Mock')
+
+      contents = None
+      with open(os.path.join(dir1, "energy_performance_preference"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'balance_power')
+
+      self.stop_daemon()
+
+      upowerd.terminate()
+      upowerd.wait()
 
     def test_dytc_performance_driver(self):
       '''Lenovo DYTC performance driver'''
