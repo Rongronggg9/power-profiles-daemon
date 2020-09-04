@@ -24,12 +24,50 @@
       The object path will be "/net/hadess/PowerProfiles".
   -->
   <interface name="net.hadess.PowerProfiles">
+
+    <!--
+        HoldProfile:
+
+        This forces the passed profile to be activated until either the caller
+        quits, "ReleaseProfile" is called, or the "ActiveProfile" is changed
+        externally.
+
+        This should be used programmatically by OS components when, eg. high-
+        performance workloads are started with the "performance" profile, or
+        battery will soon be critically low with the "power-saver" profile.
+    -->
+    <method name="HoldProfile">
+      <arg name="profile" type="s" direction="in"/>
+      <arg name="reason" type="s" direction="in"/>
+      <arg name="cookie" type="u" direction="out"/>
+    </method>
+
+    <!--
+        ReleaseProfile:
+
+        This removes the hold that was set on a profile.
+    -->
+    <method name="ReleaseProfile">
+      <arg name="cookie" type="u" direction="in"/>
+    </method>
+
+    <!--
+        ProfileReleased:
+
+        This signal will be emitted if the profile is released because the
+        "ActiveProfile" was manually changed.
+    -->
+    <signal name="ProfileReleased">
+      <arg name="cookie" type="u" direction="out"/>
+    </signal>
+
     <!--
         ActiveProfile:
 
         The type of the currently active profile. It might change automatically
         if the "performance" profile was selected but it got inhibited, in which
-        case the "PerformanceInhibited" property will reflect the reason.
+        case the "PerformanceInhibited" property will reflect the reason, or if
+        a profile is held, using the "HoldProfile" function.
     -->
     <property name="ActiveProfile" type="s" access="readwrite"/>
 
