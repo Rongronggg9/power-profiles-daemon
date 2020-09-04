@@ -8,17 +8,10 @@ resources = gnome.compile_resources(
 )
 
 sources = [
-  'power-profiles-daemon.c',
   'ppd-profile.c',
   'ppd-utils.c',
   'ppd-action.c',
-  'ppd-action-trickle-charge.c',
   'ppd-driver.c',
-  'ppd-driver-intel-pstate.c',
-  'ppd-driver-lenovo-dytc.c',
-  'ppd-driver-balanced.c',
-  'ppd-driver-power-saver.c',
-  'ppd-driver-fake.c',
   resources,
 ]
 
@@ -29,6 +22,28 @@ sources += gnome.mkenums(
   c_template: enums + '.c.in',
   h_template: enums + '.h.in'
 )
+
+lib_libpower_profiles_daemon = shared_library(
+  'libppd',
+  sources,
+  dependencies: deps,
+  install: false
+)
+
+libpower_profiles_daemon_dep = declare_dependency(
+  dependencies: deps,
+  link_with: lib_libpower_profiles_daemon,
+)
+
+sources += [
+  'power-profiles-daemon.c',
+  'ppd-action-trickle-charge.c',
+  'ppd-driver-intel-pstate.c',
+  'ppd-driver-lenovo-dytc.c',
+  'ppd-driver-balanced.c',
+  'ppd-driver-power-saver.c',
+  'ppd-driver-fake.c',
+]
 
 executable('power-profiles-daemon',
   sources,
