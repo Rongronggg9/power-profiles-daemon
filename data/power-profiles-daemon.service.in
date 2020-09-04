@@ -1,6 +1,6 @@
 [Unit]
 Description=Power Profiles daemon
-Conflicts=tuned.service tlp.service
+Conflicts=tuned.service tlp.service auto-cpufreq.service
 
 [Service]
 Type=dbus
