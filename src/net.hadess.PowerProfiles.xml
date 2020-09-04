@@ -11,7 +11,15 @@
       desktop environment to switch system power profiles based on user choice,
       or user intent.
 
-      FIXME move more from README
+      OS components would typically use the "Profiles" property to construct
+      their UI (2 or 3 profiles available), and monitor the "ActiveProfile"
+      and the "PerformanceInhibited" properties to update that UI. The UI
+      would try to set the "ActiveProfile" property if the user selected
+      a different one.
+
+      Note that the reason why the project exists and how it is different from
+      existing projects is explained <ulink href=" https://gitlab.freedesktop.org/hadess/power-profiles-daemon/-/blob/master/README.md">
+      in the project's README file</ulink>.
 
       The object path will be "/net/hadess/PowerProfiles".
   -->
