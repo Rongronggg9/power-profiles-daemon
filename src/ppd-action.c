@@ -10,6 +10,29 @@
 #include "ppd-action.h"
 #include "ppd-enums.h"
 
+/**
+ * SECTION:ppd-action
+ * @Short_description: Profile Actions
+ * @Title: Profile Actions
+ *
+ * Profile actions are actions to run on profile change that do not affect
+ * the overall power usage, or performance level of the system, but instead
+ * of individual components.
+ *
+ * For example, an action might want to save energy when in the `power-saver`
+ * profile, and thus reduce the charging speed of a particular device. Or it
+ * could automatically reduce the speed of animations, or luminosity of an
+ * RGB keyboard.
+ *
+ * The list of actions that are currently running is available through the
+ * D-Bus API.
+ *
+ * Note that `power-profiles-daemon` can only accept #PpdAction<!-- -->s that
+ * will not make devices appear “broken” to users not in the know, so actions
+ * will never disable Wi-Fi or Bluetooth, or make some buttons stop working
+ * until power saving is turned off.
+ */
+
 typedef struct
 {
   char          *action_name;
@@ -82,6 +105,11 @@ ppd_action_class_init (PpdActionClass *klass)
   object_class->get_property = ppd_action_get_property;
   object_class->set_property = ppd_action_set_property;
 
+  /**
+   * PpdAction::action-name:
+   *
+   * A unique action name, only used for debugging.
+   */
   g_object_class_install_property (object_class, PROP_ACTION_NAME,
                                    g_param_spec_string("action-name",
                                                        "Action name",

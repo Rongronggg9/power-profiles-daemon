@@ -15,6 +15,15 @@
 #define PPD_TYPE_ACTION (ppd_action_get_type())
 G_DECLARE_DERIVABLE_TYPE(PpdAction, ppd_action, PPD, ACTION, GObject)
 
+/**
+ * PpdActionClass:
+ * @parent_class: The parent class.
+ * @probe: Called by the daemon on startup.
+ * @activate_profile: Called by the daemon when the profile changes.
+ *
+ * New profile actions should derive from #PpdAction and implement
+ * at least @activate_profile.
+ */
 struct _PpdActionClass
 {
   GObjectClass   parent_class;
