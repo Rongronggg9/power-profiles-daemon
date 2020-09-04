@@ -15,6 +15,15 @@
 #define PPD_TYPE_DRIVER (ppd_driver_get_type())
 G_DECLARE_DERIVABLE_TYPE(PpdDriver, ppd_driver, PPD, DRIVER, GObject)
 
+/**
+ * PpdDriverClass:
+ * @parent_class: The parent class.
+ * @probe: Called by the daemon on startup.
+ * @activate_profile: Called by the daemon for every profile change.
+ *
+ * New profile drivers should derive from #PpdDriver and implement
+ * at least one of probe() and @activate_profile.
+ */
 struct _PpdDriverClass
 {
   GObjectClass   parent_class;

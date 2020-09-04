@@ -10,6 +10,34 @@
 #include "ppd-driver.h"
 #include "ppd-enums.h"
 
+/**
+ * SECTION:ppd-driver
+ * @Short_description: Profile Drivers
+ * @Title: Profile Drivers
+ *
+ * Profile drivers are the implementation of the different profiles for
+ * the whole system. A driver will implement support for one or more
+ * profiles, usually one or both of the `performance` and `power-saver`
+ * profiles, for a particular system. Only one driver will be selected and
+ * running per profile.
+ *
+ * If no system-specific driver is available, some placeholder `balanced`
+ * and `power-saver` drivers will be put in place, and the `performance`
+ * profile will be unavailable.
+ *
+ * Common implementation of drivers might be:
+ * - a driver handling all three profiles, relying on a firmware feature
+ *   exposed in the kernel,
+ * - a driver that only implements the `performance` profile on a particular
+ *   system it has intimate knowledge of, leaving the `balanced` and
+ *   `power-saver` profiles using placeholder
+ *
+ * When a driver implements the `performance` profile, it might set the
+ * #PpdDriver:performance-inhibited property if the profile isn't available for any
+ * reason, such as thermal limits being reached, or because a part of the
+ * user's body is too close for safety, for example.
+ */
+
 typedef struct
 {
   char          *driver_name;
@@ -100,12 +128,23 @@ ppd_driver_class_init (PpdDriverClass *klass)
   object_class->get_property = ppd_driver_get_property;
   object_class->set_property = ppd_driver_set_property;
 
+  /**
+   * PpdDriver::driver-name:
+   *
+   * A unique driver name, only used for debugging.
+   */
   g_object_class_install_property (object_class, PROP_DRIVER_NAME,
                                    g_param_spec_string("driver-name",
                                                        "Driver name",
                                                        "Profile driver name",
                                                        NULL,
                                                        G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+  /**
+   * PpdDriver::profiles:
+   *
+   * The bitmask of #PpdProfile<!-- -->s implemented by this driver.
+   */
   g_object_class_install_property (object_class, PROP_PROFILES,
                                    g_param_spec_flags("profiles",
                                                       "Profiles",
@@ -113,6 +152,13 @@ ppd_driver_class_init (PpdDriverClass *klass)
                                                       PPD_TYPE_PROFILE,
                                                       0,
                                                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+  /**
+   * PpdDriver:performance-inhibited:
+   *
+   * If set to a non-%NULL value, the reason why the performance profile is unavailable.
+   * The value must be one of the options listed in the D-Bus API reference.
+   */
   g_object_class_install_property (object_class, PROP_PERFORMANCE_INHIBITED,
                                    g_param_spec_string("performance-inhibited",
                                                        "Performance Inhibited",
