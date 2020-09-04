@@ -41,6 +41,8 @@ typedef enum {
  *   because drivers are getting reprobed.
  * @PPD_PROFILE_ACTIVATION_REASON_USER: setting profile because the user
  *   requested it.
+ * @PPD_PROFILE_ACTIVATION_REASON_PROGRAM_HOLD: setting profile because a program
+ *   requested it through the `HoldProfile` method.
  *
  * Those are possible reasons for a profile being activated. Based on those
  * reasons, drivers can choose whether or not that changes the effective
@@ -49,7 +51,8 @@ typedef enum {
 typedef enum{
   PPD_PROFILE_ACTIVATION_REASON_INTERNAL = 0,
   PPD_PROFILE_ACTIVATION_REASON_RESET,
-  PPD_PROFILE_ACTIVATION_REASON_USER
+  PPD_PROFILE_ACTIVATION_REASON_USER,
+  PPD_PROFILE_ACTIVATION_REASON_PROGRAM_HOLD
 } PpdProfileActivationReason;
 
 /**

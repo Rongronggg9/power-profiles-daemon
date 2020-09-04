@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2014-2016, 2020 Bastien Nocera <hadess@hadess.net>
+ * Copyright (c) 2014-2016, 2020-2021 Bastien Nocera <hadess@hadess.net>
+ * Copyright (c) 2021 David Redondo <kde@david-redondo.de>
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 3 as published by
@@ -28,10 +29,30 @@ typedef struct {
   int ret;
 
   PpdProfile active_profile;
+  PpdProfile selected_profile;
   GPtrArray *probed_drivers;
   PpdDriver *driver;
   GPtrArray *actions;
+  GHashTable *profile_holds;
 } PpdApp;
+
+typedef struct {
+  PpdProfile profile;
+  char *reason;
+  char *application_id;
+  char *requester;
+} ProfileHold;
+
+static void
+profile_hold_free (ProfileHold *hold)
+{
+  if (hold == NULL)
+    return;
+  g_free (hold->reason);
+  g_free (hold->application_id);
+  g_free (hold->requester);
+  g_free (hold);
+}
 
 static PpdApp *ppd_app = NULL;
 
@@ -69,9 +90,10 @@ typedef enum {
   PROP_PROFILES                   = 1 << 2,
   PROP_ACTIONS                    = 1 << 3,
   PROP_DEGRADED                   = 1 << 4,
+  PROP_ACTIVE_PROFILE_HOLDS       = 1 << 5
 } PropertiesMask;
 
-#define PROP_ALL (PROP_ACTIVE_PROFILE | PROP_INHIBITED | PROP_PROFILES | PROP_ACTIONS | PROP_DEGRADED)
+#define PROP_ALL (PROP_ACTIVE_PROFILE | PROP_INHIBITED | PROP_PROFILES | PROP_ACTIONS | PROP_DEGRADED | PROP_ACTIVE_PROFILE_HOLDS)
 
 static const char *
 get_active_profile (PpdApp *data)
@@ -137,6 +159,33 @@ get_actions_variant (PpdApp *data)
   return g_variant_builder_end (&builder);
 }
 
+static GVariant *
+get_profile_holds_variant (PpdApp *data)
+{
+  GVariantBuilder builder;
+  GHashTableIter iter;
+  gpointer value;
+
+  g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
+  g_hash_table_iter_init (&iter, data->profile_holds);
+
+  while (g_hash_table_iter_next (&iter, NULL, &value)) {
+    GVariantBuilder asv_builder;
+    ProfileHold *hold = value;
+
+    g_variant_builder_init (&asv_builder, G_VARIANT_TYPE ("a{sv}"));
+    g_variant_builder_add (&asv_builder, "{sv}", "ApplicationId",
+                           g_variant_new_string (hold->application_id));
+    g_variant_builder_add (&asv_builder, "{sv}", "Profile",
+                           g_variant_new_string (ppd_profile_to_str (hold->profile)));
+    g_variant_builder_add (&asv_builder, "{sv}", "Reason", g_variant_new_string (hold->reason));
+
+    g_variant_builder_add (&builder, "a{sv}", &asv_builder);
+  }
+
+  return g_variant_builder_end (&builder);
+}
+
 static void
 send_dbus_event (PpdApp     *data,
                  PropertiesMask  mask)
@@ -172,6 +221,10 @@ send_dbus_event (PpdApp     *data,
   if (mask & PROP_ACTIONS) {
     g_variant_builder_add (&props_builder, "{sv}", "Actions",
                            get_actions_variant (data));
+  }
+  if (mask & PROP_ACTIVE_PROFILE_HOLDS) {
+    g_variant_builder_add (&props_builder, "{sv}", "ActiveProfileHolds",
+                           get_profile_holds_variant (data));
   }
 
   props_changed = g_variant_new ("(s@a{sv}@as)", POWER_PROFILES_IFACE_NAME,
@@ -233,12 +286,32 @@ activate_target_profile (PpdApp                     *data,
   data->active_profile = target_profile;
 }
 
+static void
+release_all_profile_holds (PpdApp *data)
+{
+  GHashTableIter iter;
+  gpointer key, value;
+
+  g_hash_table_iter_init (&iter, data->profile_holds);
+  while (g_hash_table_iter_next (&iter, &key, &value)) {
+    ProfileHold *hold = value;
+    guint cookie = GPOINTER_TO_UINT (key);
+
+    g_dbus_connection_emit_signal (data->connection, hold->requester, POWER_PROFILES_DBUS_PATH,
+                                   POWER_PROFILES_IFACE_NAME, "ProfileReleased",
+                                   g_variant_new ("(u)", cookie), NULL);
+    g_bus_unwatch_name (cookie);
+  }
+  g_hash_table_remove_all (data->profile_holds);
+}
+
 static gboolean
 set_active_profile (PpdApp      *data,
                     const char  *profile,
                     GError     **error)
 {
   PpdProfile target_profile;
+  guint mask = PROP_ACTIVE_PROFILE;
 
   target_profile = ppd_profile_from_str (profile);
   if (target_profile == PPD_PROFILE_UNSET) {
@@ -253,10 +326,37 @@ set_active_profile (PpdApp      *data,
   g_debug ("Transitioning active profile from '%s' to '%s' by user request",
            ppd_profile_to_str (data->active_profile), profile);
 
+  if (g_hash_table_size (data->profile_holds) != 0 ) {
+    g_debug ("Releasing active profile holds");
+    release_all_profile_holds (data);
+    mask |= PROP_ACTIVE_PROFILE_HOLDS;
+  }
+
   activate_target_profile (data, target_profile, PPD_PROFILE_ACTIVATION_REASON_USER);
-  send_dbus_event (data, PROP_ACTIVE_PROFILE);
+  data->selected_profile = target_profile;
+  send_dbus_event (data, mask);
 
   return TRUE;
+}
+
+static PpdProfile
+effective_hold_profile (PpdApp *data)
+{
+  GHashTableIter iter;
+  gpointer value;
+  PpdProfile profile = PPD_PROFILE_UNSET;
+
+  g_hash_table_iter_init (&iter, data->profile_holds);
+  while (g_hash_table_iter_next (&iter, NULL, &value)) {
+    ProfileHold *hold = value;
+
+    if (hold->profile == PPD_PROFILE_POWER_SAVER) {
+      profile = PPD_PROFILE_POWER_SAVER;
+      break;
+    }
+    profile = hold->profile;
+  }
+  return profile;
 }
 
 static void
@@ -301,6 +401,139 @@ driver_profile_changed_cb (PpdDriver *driver,
   send_dbus_event (data, PROP_ACTIVE_PROFILE);
 }
 
+static void
+release_profile_hold (PpdApp *data,
+                      guint   cookie)
+{
+  guint mask = PROP_ACTIVE_PROFILE_HOLDS;
+  ProfileHold *hold;
+  PpdProfile hold_profile, next_profile;
+
+  hold = g_hash_table_lookup (data->profile_holds, GUINT_TO_POINTER (cookie));
+  if (!hold) {
+    g_debug("No hold with cookie %d", cookie);
+    return;
+  }
+
+  g_bus_unwatch_name (cookie);
+  hold_profile = hold->profile;
+  g_hash_table_remove (data->profile_holds, GUINT_TO_POINTER (cookie));
+
+  if (g_hash_table_size (data->profile_holds) == 0 &&
+      hold_profile != data->selected_profile) {
+    g_debug ("No profile holds anymore going back to last manually activated profile");
+    activate_target_profile (data, data->selected_profile, PPD_PROFILE_ACTIVATION_REASON_PROGRAM_HOLD);
+    mask |= PROP_ACTIVE_PROFILE;
+  } else if (hold_profile == data->active_profile) {
+    next_profile = effective_hold_profile (data);
+    if (next_profile != PPD_PROFILE_UNSET &&
+        next_profile != data->active_profile) {
+      g_debug ("Next profile is %s", ppd_profile_to_str (next_profile));
+      activate_target_profile (data, next_profile, PPD_PROFILE_ACTIVATION_REASON_PROGRAM_HOLD);
+      mask |= PROP_ACTIVE_PROFILE;
+    }
+  }
+
+  send_dbus_event (data, mask);
+}
+
+static void
+holder_disappeared (GDBusConnection *connection,
+                    const gchar     *name,
+                    gpointer         user_data)
+{
+  PpdApp *data = user_data;
+  GHashTableIter iter;
+  gpointer key, value;
+  GPtrArray *cookies;
+  guint i;
+
+  cookies = g_ptr_array_new ();
+  g_hash_table_iter_init (&iter, data->profile_holds);
+  while (g_hash_table_iter_next (&iter, &key, (gpointer *) &value)) {
+    guint cookie = GPOINTER_TO_UINT (key);
+    ProfileHold *hold = value;
+
+    if (g_strcmp0 (hold->requester, name) != 0)
+      continue;
+
+    g_debug ("Holder %s with cookie %u disappeared, adding to list", name, cookie);
+    g_ptr_array_add (cookies, GUINT_TO_POINTER (cookie));
+  }
+
+  for (i = 0; i < cookies->len; i++) {
+    guint cookie = GPOINTER_TO_UINT (cookies->pdata[i]);
+    g_debug ("Removing profile hold for cookie %u", cookie);
+    release_profile_hold (data, cookie);
+  }
+  g_ptr_array_free (cookies, TRUE);
+}
+
+static void
+hold_profile (PpdApp                *data,
+              GVariant              *parameters,
+              GDBusMethodInvocation *invocation)
+{
+  const char *profile_name;
+  const char *reason;
+  const char *application_id;
+  PpdProfile profile;
+  ProfileHold *hold;
+  guint watch_id;
+  guint mask;
+
+  g_variant_get (parameters, "(&s&s&s)", &profile_name, &reason, &application_id);
+  profile = ppd_profile_from_str (profile_name);
+  if (profile != PPD_PROFILE_PERFORMANCE &&
+      profile != PPD_PROFILE_POWER_SAVER) {
+    g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                           "Only profiles 'performance' and 'power-saver' can be a hold profile");
+    return;
+  }
+
+  hold = g_new0 (ProfileHold, 1);
+  hold->profile = profile;
+  hold->reason = g_strdup (reason);
+  hold->application_id = g_strdup (application_id);
+  hold->requester = g_strdup (g_dbus_method_invocation_get_sender (invocation));
+
+  g_debug ("%s(%s) requesting to hold profile '%s', reason: '%s'", application_id,
+           hold->requester, profile_name, reason);
+  watch_id = g_bus_watch_name_on_connection (data->connection, hold->requester,
+                                             G_BUS_NAME_WATCHER_FLAGS_NONE, NULL,
+                                             holder_disappeared, data, NULL);
+  g_hash_table_insert (data->profile_holds, GUINT_TO_POINTER (watch_id), hold);
+  g_dbus_method_invocation_return_value (invocation, g_variant_new ("(u)", watch_id));
+  mask = PROP_ACTIVE_PROFILE_HOLDS;
+
+  if (profile != data->active_profile) {
+    PpdProfile target_profile = effective_hold_profile (data);
+    if (target_profile != PPD_PROFILE_UNSET &&
+        target_profile != data->active_profile) {
+      activate_target_profile (data, target_profile, PPD_PROFILE_ACTIVATION_REASON_PROGRAM_HOLD);
+      mask |= PROP_ACTIVE_PROFILE;
+    }
+  }
+
+  send_dbus_event (data, mask);
+}
+
+static void
+release_profile (PpdApp                *data,
+                 GVariant              *parameters,
+                 GDBusMethodInvocation *invocation)
+{
+  guint cookie;
+  g_variant_get (parameters, "(u)", &cookie);
+  if (!g_hash_table_contains (data->profile_holds, GUINT_TO_POINTER (cookie))) {
+    g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                           "No hold with cookie  %d", cookie);
+    return;
+  }
+  release_profile_hold (data, cookie);
+  g_dbus_method_invocation_return_value (invocation, NULL);
+}
+
 static GVariant *
 handle_get_property (GDBusConnection *connection,
                      const gchar     *sender,
@@ -324,6 +557,8 @@ handle_get_property (GDBusConnection *connection,
     return get_actions_variant (data);
   if (g_strcmp0 (property_name, "PerformanceDegraded") == 0)
     return g_variant_new_string (get_performance_degraded (data));
+  if (g_strcmp0 (property_name, "ActiveProfileHolds") == 0)
+    return get_profile_holds_variant (data);
   return NULL;
 }
 
@@ -352,9 +587,40 @@ handle_set_property (GDBusConnection  *connection,
   return set_active_profile (data, profile, error);
 }
 
+static void
+handle_method_call (GDBusConnection       *connection,
+                    const gchar           *sender,
+                    const gchar           *object_path,
+                    const gchar           *interface_name,
+                    const gchar           *method_name,
+                    GVariant              *parameters,
+                    GDBusMethodInvocation *invocation,
+                    gpointer               user_data)
+{
+  PpdApp *data = user_data;
+  g_assert (data->connection);
+
+  if (g_strcmp0 (interface_name, POWER_PROFILES_IFACE_NAME) != 0) {
+    g_dbus_method_invocation_return_error (invocation,G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_INTERFACE,
+                                           "Unknown interface %s", interface_name);
+    return;
+  }
+
+  if (g_strcmp0 (method_name, "HoldProfile") == 0) {
+    hold_profile (data, parameters, invocation);
+  } else if (g_strcmp0 (method_name, "ReleaseProfile") == 0) {
+    release_profile (data, parameters, invocation);
+  } else {
+      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_METHOD,
+                                             "No such method %s in interface %s", interface_name,
+                                              method_name);
+  }
+}
+
+
 static const GDBusInterfaceVTable interface_vtable =
 {
-  NULL,
+  handle_method_call,
   handle_get_property,
   handle_set_property
 };
@@ -417,6 +683,7 @@ driver_probe_request_cb (PpdDriver *driver,
 static void
 stop_profile_drivers (PpdApp *data)
 {
+  release_all_profile_holds (data);
   g_ptr_array_set_size (data->probed_drivers, 0);
   g_ptr_array_set_size (data->actions, 0);
   g_clear_object (&data->driver);
@@ -581,6 +848,7 @@ free_app_data (PpdApp *data)
   g_ptr_array_free (data->probed_drivers, TRUE);
   g_ptr_array_free (data->actions, TRUE);
   g_clear_object (&data->driver);
+  g_hash_table_destroy (data->profile_holds);
 
   g_clear_pointer (&data->main_loop, g_main_loop_unref);
   g_clear_pointer (&data->introspection_data, g_dbus_node_info_unref);
@@ -626,7 +894,9 @@ int main (int argc, char **argv)
   data->main_loop = g_main_loop_new (NULL, TRUE);
   data->probed_drivers = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
   data->actions = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
+  data->profile_holds = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, (GDestroyNotify) profile_hold_free);
   data->active_profile = PPD_PROFILE_BALANCED;
+  data->selected_profile = PPD_PROFILE_BALANCED;
   ppd_app = data;
 
   /* Set up D-Bus */
