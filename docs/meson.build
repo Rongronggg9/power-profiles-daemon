@@ -18,16 +18,28 @@ content_files += gnome.gdbus_codegen(
   build_by_default: true,
 )
 
+private_headers = [
+  'power-profiles-daemon.h',
+  'ppd-action-trickle-charge.h',
+  'ppd-driver-balanced.h',
+  'ppd-driver-fake.h',
+  'ppd-driver-lenovo-dytc.h',
+  'ppd-driver-power-saver.h',
+  'ppd-utils.h',
+  'power-profiles-daemon-resources.h',
+]
+
 gnome.gtkdoc(
   meson.project_name(),
   main_xml: meson.project_name() + '-docs.xml',
   content_files: content_files,
+  dependencies: libpower_profiles_daemon_dep,
+  gobject_typesfile: [join_paths(meson.current_source_dir(), 'power-profiles-daemon.types')],
   src_dir: [
     meson.source_root() /'src',
     meson.build_root() / 'src',
   ],
-  ignore_headers: ['ppd-action.h', 'ppd-mode-driver.h'],
-  scan_args: ['--rebuild-sections'],
+  ignore_headers: private_headers,
 )
 
 man1_dir = join_paths(get_option('prefix'), get_option('mandir'), 'man1')

@@ -1,0 +1,32 @@
+<SECTION>
+<FILE>ppd-action</FILE>
+<TITLE>Profile Actions</TITLE>
+PpdActionClass
+PpdAction
+<SUBSECTION Private>
+PPD_TYPE_ACTION
+</SECTION>
+
+<SECTION>
+<FILE>ppd-driver</FILE>
+<TITLE>Profile Drivers</TITLE>
+PpdDriverClass
+PpdDriver
+<SUBSECTION Private>
+PPD_TYPE_DRIVER
+</SECTION>
+
+<SECTION>
+<FILE>ppd-profile</FILE>
+<TITLE>Constants</TITLE>
+PpdProfile
+PPD_PROFILE_ALL
+PPD_PROFILE_UNSET
+ppd_profile_to_str
+ppd_profile_from_str
+ppd_profile_has_single_flag
+<SUBSECTION Private>
+PPD_TYPE_PROFILE
+ppd_profile_get_type
+</SECTION>
+

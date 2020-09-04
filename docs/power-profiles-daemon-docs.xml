@@ -66,6 +66,13 @@
     <xi:include href="docs-net.hadess.PowerProfiles.xml"/>
   </reference>
 
+  <reference id="internal-api">
+    <title>Internal API</title>
+    <xi:include href="xml/ppd-profile.xml"/>
+    <xi:include href="xml/ppd-driver.xml"/>
+    <xi:include href="xml/ppd-action.xml"/>
+  </reference>
+
   <index>
     <title>Index</title>
   </index>
