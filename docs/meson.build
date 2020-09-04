@@ -23,6 +23,7 @@ private_headers = [
   'ppd-action-trickle-charge.h',
   'ppd-driver-balanced.h',
   'ppd-driver-fake.h',
+  'ppd-driver-intel-pstate.h',
   'ppd-driver-lenovo-dytc.h',
   'ppd-driver-power-saver.h',
   'ppd-utils.h',
