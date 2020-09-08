@@ -41,6 +41,7 @@
         reasons can be added, it is recommended that front-ends show a generic
         reason if they do not recognise the value. Possible values are:
         - "lap-detected" (the computer is sitting on the user's lap)
+        - "high-operating-temperature" (the computer is close to overheating)
         - "" (the empty string, if not inhibited)
     -->
     <property name="PerformanceInhibited" type="s" access="read"/>
