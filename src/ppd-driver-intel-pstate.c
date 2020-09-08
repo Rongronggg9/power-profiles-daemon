@@ -13,6 +13,7 @@
 #include "ppd-driver-intel-pstate.h"
 
 #define CPUFREQ_POLICY_DIR "/devices/system/cpu/cpufreq/"
+#define NO_TURBO_PATH "/devices/system/cpu/intel_pstate/no_turbo"
 
 struct _PpdDriverIntelPstate
 {
@@ -22,6 +23,8 @@ struct _PpdDriverIntelPstate
   PpdProfile activated_profile;
   gboolean on_battery;
   GList *devices; /* GList of paths */
+  GFileMonitor *no_turbo_mon;
+  char *no_turbo_path;
 };
 
 G_DEFINE_TYPE (PpdDriverIntelPstate, ppd_driver_intel_pstate, PPD_TYPE_DRIVER)
@@ -68,6 +71,65 @@ on_battery_changed (GObject    *gobject,
   g_debug ("Battery status changed from %s to %s",
            old_on_battery ? "on battery" : "on mains",
            pstate->on_battery ? "on battery" : "on mains");
+}
+
+static void
+update_no_turbo (PpdDriverIntelPstate *pstate)
+{
+  g_autofree char *contents = NULL;
+  gboolean turbo_disabled = FALSE;
+
+  if (g_file_get_contents (pstate->no_turbo_path, &contents, NULL, NULL)) {
+    if (g_strcmp0 (contents, "1") == 0)
+      turbo_disabled = TRUE;
+  }
+
+  g_object_set (G_OBJECT (pstate), "performance-inhibited",
+                turbo_disabled ? "high-operating-temperature" : NULL,
+                NULL);
+}
+
+static void
+no_turbo_changed (GFileMonitor     *monitor,
+                  GFile            *file,
+                  GFile            *other_file,
+                  GFileMonitorEvent event_type,
+                  gpointer          user_data)
+{
+  PpdDriverIntelPstate *pstate = user_data;
+  g_autofree char *path = NULL;
+
+  path = g_file_get_path (file);
+  g_debug ("File monitor change happened for '%s'", path);
+  update_no_turbo (pstate);
+}
+
+static GFileMonitor *
+monitor_no_turbo_prop (const char *path)
+{
+  g_autoptr(GFile) no_turbo = NULL;
+
+  if (!g_file_test (path, G_FILE_TEST_EXISTS)) {
+    g_debug ("Not monitoring '%s' as it does not exist", path);
+    return NULL;
+  }
+
+  g_debug ("About to start monitoring '%s'", path);
+  no_turbo = g_file_new_for_path (path);
+  return g_file_monitor (no_turbo, G_FILE_MONITOR_NONE, NULL, NULL);
+}
+
+static char *
+get_no_turbo_path (void)
+{
+  const char *root;
+  g_autofree char *dir = NULL;
+
+  root = g_getenv ("UMOCKDEV_DIR");
+  if (!root || *root == '\0')
+    root = "/sys";
+
+  return g_build_filename (root, NO_TURBO_PATH, NULL);
 }
 
 static char *
@@ -119,14 +181,24 @@ ppd_driver_intel_pstate_probe (PpdDriver *driver)
     ret = TRUE;
   }
 
-  if (ret)
-    pstate->client = up_client_new ();
+  if (!ret)
+    goto out;
 
+  pstate->client = up_client_new ();
   if (pstate->client) {
     g_signal_connect (G_OBJECT (pstate->client), "notify::on-battery",
                       G_CALLBACK (on_battery_changed), pstate);
     pstate->on_battery = up_client_get_on_battery (pstate->client);
   }
+
+  /* Monitor the first "no_turbo" */
+  pstate->no_turbo_path = get_no_turbo_path ();
+  pstate->no_turbo_mon = monitor_no_turbo_prop (pstate->no_turbo_path);
+  if (pstate->no_turbo_mon) {
+    g_signal_connect (G_OBJECT (pstate->no_turbo_mon), "changed",
+                      G_CALLBACK (no_turbo_changed), pstate);
+  }
+  update_no_turbo (pstate);
 
 out:
   g_debug ("%s p-state settings",
@@ -190,6 +262,8 @@ ppd_driver_intel_pstate_finalize (GObject *object)
   driver = PPD_DRIVER_INTEL_PSTATE (object);
   g_clear_list (&driver->devices, g_free);
   g_clear_object (&driver->client);
+  g_clear_pointer (&driver->no_turbo_path, g_free);
+  g_clear_object (&driver->no_turbo_mon);
   G_OBJECT_CLASS (ppd_driver_intel_pstate_parent_class)->finalize (object);
 }
 

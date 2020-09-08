@@ -292,6 +292,12 @@ class Tests(dbusmock.DBusTestCase):
       with open(os.path.join(dir2, "energy_performance_preference")  ,'w') as prefs:
         prefs.write("performance")
 
+      # Create no_turbo pref
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "devices/system/cpu/intel_pstate")
+      os.makedirs(pstate_dir)
+      with open(os.path.join(pstate_dir, "no_turbo")  ,'w') as no_turbo:
+        no_turbo.write("0")
+
       self.start_daemon()
 
       profiles = self.get_dbus_property('Profiles')
@@ -312,6 +318,14 @@ class Tests(dbusmock.DBusTestCase):
       with open(os.path.join(dir2, "energy_performance_preference"), 'rb') as f:
         contents = f.read()
       self.assertEqual(contents, b'performance')
+
+      # Disable turbo
+      with open(os.path.join(pstate_dir, "no_turbo")  ,'w') as no_turbo:
+        no_turbo.write("1")
+
+      self.assertEventually(lambda: self.have_text_in_log('File monitor change happened for '))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'high-operating-temperature')
 
       self.stop_daemon()
 
