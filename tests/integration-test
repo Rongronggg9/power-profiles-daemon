@@ -208,6 +208,11 @@ class Tests(dbusmock.DBusTestCase):
             return f.read()
         return None
 
+    def read_file(self, path):
+        with open(path, 'rb') as f:
+            return f.read()
+        return None
+
     def assertEventually(self, condition, message=None, timeout=50):
         '''Assert that condition function eventually returns True.
 
@@ -370,9 +375,7 @@ class Tests(dbusmock.DBusTestCase):
       obj_upower.EmitSignal('', 'Changed', '', [], dbus_interface='org.freedesktop.DBus.Mock')
 
       contents = None
-      with open(os.path.join(dir1, "energy_performance_preference"), 'rb') as f:
-        contents = f.read()
-      self.assertEqual(contents, b'balance_power')
+      self.assertEventually(lambda: self.read_file(os.path.join(dir1, "energy_performance_preference")) == b'balance_power')
 
       self.stop_daemon()
 
