@@ -23,6 +23,10 @@ struct _PpdDriverLenovoDytc
   GUdevClient *client;
   GUdevDevice *device;
   gboolean lapmode;
+  PpdProfile perfmode;
+  GFileMonitor *lapmode_mon;
+  GFileMonitor *perfmode_mon;
+  guint perfmode_changed_id;
 };
 
 G_DEFINE_TYPE (PpdDriverLenovoDytc, ppd_driver_lenovo_dytc, PPD_TYPE_DRIVER)
@@ -60,39 +64,88 @@ profile_to_perfmode_value (PpdProfile profile)
   g_assert_not_reached ();
 }
 
+static PpdProfile
+perfmode_value_to_profile (const char *str)
+{
+  if (str == NULL)
+    return PPD_PROFILE_UNSET;
+
+  switch (str[0]) {
+  case 'L':
+    return PPD_PROFILE_POWER_SAVER;
+  case 'M':
+    return PPD_PROFILE_BALANCED;
+  case 'H':
+    return PPD_PROFILE_PERFORMANCE;
+  default:
+    g_debug ("Got unsupported perfmode value '%s'", str);
+  }
+
+  return PPD_PROFILE_UNSET;
+}
+
 static void
-update_dytc_state (PpdDriverLenovoDytc *dytc)
+update_dytc_lapmode_state (PpdDriverLenovoDytc *dytc)
 {
   gboolean new_lapmode;
 
   new_lapmode = g_udev_device_get_sysfs_attr_as_boolean_uncached (dytc->device, LAPMODE_SYSFS_NAME);
-  if (new_lapmode != dytc->lapmode) {
-    dytc->lapmode = new_lapmode;
-    g_debug ("dytc_lapmode is now %s, so profile is %s",
-             dytc->lapmode ? "on" : "off",
-             dytc->lapmode ? "inhibited" : "uninhibited");
-    g_object_set (G_OBJECT (dytc),
-                  "performance-inhibited", dytc->lapmode ? "lap-detected" : NULL,
-                  NULL);
-  }
+  if (new_lapmode == dytc->lapmode)
+    return;
+
+  dytc->lapmode = new_lapmode;
+  g_debug ("dytc_lapmode is now %s, so profile is %s",
+           dytc->lapmode ? "on" : "off",
+           dytc->lapmode ? "inhibited" : "uninhibited");
+  g_object_set (G_OBJECT (dytc),
+                "performance-inhibited", dytc->lapmode ? "lap-detected" : NULL,
+                NULL);
 }
 
 static void
-uevent_cb (GUdevClient *client,
-           gchar       *action,
-           GUdevDevice *device,
-           gpointer     user_data)
+update_dytc_perfmode_state (PpdDriverLenovoDytc *dytc)
 {
-  PpdDriverLenovoDytc *dytc = user_data;
+  const char *new_profile_str;
+  PpdProfile new_profile;
 
-  if (g_strcmp0 (action, "change") != 0)
+  new_profile_str = g_udev_device_get_sysfs_attr_uncached (dytc->device, PERFMODE_SYSFS_NAME);
+  if (!new_profile_str)
     return;
 
-  if (g_strcmp0 (g_udev_device_get_sysfs_path (device),
-                 g_udev_device_get_sysfs_path (dytc->device)) != 0)
-      return;
+  new_profile = perfmode_value_to_profile (new_profile_str);
+  if (new_profile == PPD_PROFILE_UNSET ||
+      new_profile == dytc->perfmode)
+    return;
 
-  update_dytc_state (dytc);
+  g_debug ("dytc_perfmode is now %c, so profile is %s",
+           new_profile_str[0],
+           ppd_profile_to_str (new_profile));
+  dytc->perfmode = new_profile;
+  ppd_driver_emit_profile_changed (PPD_DRIVER (dytc), new_profile);
+}
+
+static void
+lapmode_changed (GFileMonitor      *monitor,
+                 GFile             *file,
+                 GFile             *other_file,
+                 GFileMonitorEvent  event_type,
+                 gpointer           user_data)
+{
+  PpdDriverLenovoDytc *dytc = user_data;
+  g_debug (LAPMODE_SYSFS_NAME " attribute changed");
+  update_dytc_lapmode_state (dytc);
+}
+
+static void
+perfmode_changed (GFileMonitor      *monitor,
+                  GFile             *file,
+                  GFile             *other_file,
+                  GFileMonitorEvent  event_type,
+                  gpointer           user_data)
+{
+  PpdDriverLenovoDytc *dytc = user_data;
+  g_debug (PERFMODE_SYSFS_NAME " attribute changed");
+  update_dytc_perfmode_state (dytc);
 }
 
 static gboolean
@@ -104,6 +157,12 @@ ppd_driver_lenovo_dytc_activate_profile (PpdDriver   *driver,
 
   g_return_val_if_fail (dytc->client, FALSE);
 
+  if (dytc->perfmode == profile) {
+    g_debug ("Can't switch to %s mode, already there",
+             ppd_profile_to_str (profile));
+    return TRUE;
+  }
+
   if (profile == PPD_PROFILE_PERFORMANCE &&
       dytc->lapmode) {
     g_debug ("Can't switch to performance mode, lapmode is detected");
@@ -111,12 +170,16 @@ ppd_driver_lenovo_dytc_activate_profile (PpdDriver   *driver,
     return FALSE;
   }
 
+  g_signal_handler_block (G_OBJECT (dytc->perfmode_mon), dytc->perfmode_changed_id);
   if (!ppd_utils_write_sysfs (dytc->device, PERFMODE_SYSFS_NAME, profile_to_perfmode_value (profile), error)) {
     g_debug ("Failed to write to perfmode: %s", (* error)->message);
+    g_signal_handler_unblock (G_OBJECT (dytc->perfmode_mon), dytc->perfmode_changed_id);
     return FALSE;
   }
+  g_signal_handler_unblock (G_OBJECT (dytc->perfmode_mon), dytc->perfmode_changed_id);
 
   g_debug ("Successfully switched to profile %s", ppd_profile_to_str (profile));
+  dytc->perfmode = profile;
   return TRUE;
 }
 
@@ -151,9 +214,18 @@ ppd_driver_lenovo_dytc_probe (PpdDriver *driver)
   }
 
   if (ret) {
-    g_signal_connect (G_OBJECT (dytc->client), "uevent",
-                      G_CALLBACK (uevent_cb), dytc);
-    update_dytc_state (dytc);
+    dytc->lapmode_mon = ppd_utils_monitor_sysfs_attr (dytc->device,
+                                                      LAPMODE_SYSFS_NAME,
+                                                      NULL);
+    g_signal_connect (G_OBJECT (dytc->lapmode_mon), "changed",
+                      G_CALLBACK (lapmode_changed), dytc);
+    dytc->perfmode_mon = ppd_utils_monitor_sysfs_attr (dytc->device,
+                                                      PERFMODE_SYSFS_NAME,
+                                                      NULL);
+    dytc->perfmode_changed_id = g_signal_connect (G_OBJECT (dytc->perfmode_mon), "changed",
+                                                  G_CALLBACK (perfmode_changed), dytc);
+    update_dytc_lapmode_state (dytc);
+    update_dytc_perfmode_state (dytc);
   }
 
 out:
@@ -172,6 +244,8 @@ ppd_driver_lenovo_dytc_finalize (GObject *object)
   driver = PPD_DRIVER_LENOVO_DYTC (object);
   g_clear_object (&driver->device);
   g_clear_object (&driver->client);
+  g_clear_object (&driver->lapmode_mon);
+  g_clear_object (&driver->perfmode_mon);
   G_OBJECT_CLASS (ppd_driver_lenovo_dytc_parent_class)->finalize (object);
 }
 
