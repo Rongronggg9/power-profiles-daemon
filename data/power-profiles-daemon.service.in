@@ -1,6 +1,7 @@
 [Unit]
 Description=Power Profiles daemon
 Conflicts=tuned.service tlp.service auto-cpufreq.service
+Before=multi-user.target display-manager.target
 
 [Service]
 Type=dbus
@@ -18,3 +19,6 @@ PrivateTmp=true
 RestrictAddressFamilies=AF_UNIX AF_LOCAL AF_NETLINK
 MemoryDenyWriteExecute=true
 RestrictRealtime=true
+
+[Install]
+WantedBy=graphical.target
