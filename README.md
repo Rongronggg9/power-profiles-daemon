@@ -125,11 +125,12 @@ A fair number of the tweaks that could apply to devices running GNOME or
 another free desktop are either potentially destructive (eg. some of the
 SATA power-saving mode resulting in corrupted data), or working well
 enough to be put into place by default (eg. audio codec power-saving), even
-if some quirks might be needed on some hardware.
+if we need to disable the power saving on some hardware that reacts
+badly to it.
 
-Both are good projects to use if the intent is to experiment with particular
+Both are good projects to use for the purpose of experimenting with particular
 settings to see if they'd be something that can be implemented by default,
-or to put some fine-grained policies in place on server-type workloads
+or to put some fine-grained, static, policies in place on server-type workloads
 which are not as fluid and changing as desktop workloads can be.
 
 ### [auto-cpufreq](https://github.com/AdnanHodzic/auto-cpufreq)
