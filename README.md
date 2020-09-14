@@ -139,3 +139,14 @@ It doesn't take user-intent into account, doesn't have a D-Bus interface and
 seems to want to work automatically by monitoring the CPU usage, which kind
 of goes against a user's wishes as a user might still want to conserve as
 much energy as possible under high-CPU usage.
+
+### [slimbookbattery](https://launchpad.net/~slimbook)
+This is **not** free software (*Source code available but not modifiable
+without express authorization.*). The application does a lot of things in
+addition to the "3 profiles" selection:
+- replaces part of the suspend mechanism with its own hybrid sleep implementation
+  (systemd already implements one)
+- implements charging limits for batteries
+- implements some power saving tricks, which could also be implemented
+A lot of those power-saving tricks could be analysed and used, but we
+obviously can't rely on "source available" software for our free desktops.
