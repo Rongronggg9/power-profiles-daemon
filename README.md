@@ -44,7 +44,7 @@ gdbus introspect --system --dest net.hadess.PowerProfiles --object-path /net/had
 You can change the selected profile by running (change `power-saver` for the
 chosen profile):
 ```
-gdbus call --system --dest net.hadess.PowerProfiles --object-path /net/hadess/PowerProfiles --method org.freedesktop.DBus.Properties.Set 'net.hadess.PowerProfiles' 'SelectedProfile' "<'power-saver'>"
+gdbus call --system --dest net.hadess.PowerProfiles --object-path /net/hadess/PowerProfiles --method org.freedesktop.DBus.Properties.Set 'net.hadess.PowerProfiles' 'ActiveProfile' "<'power-saver'>"
 ```
 
 If that doesn't work, please file an issue, make sure any running power-profiles-daemon
