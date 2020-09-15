@@ -76,10 +76,11 @@ class Tests(dbusmock.DBusTestCase):
             cls.local_daemon = False
             print('Testing installed system binary (%s)' % cls.daemon_path)
 
-        # fail on CRITICALs on client side
+        # fail on CRITICALs on client and server side
         GLib.log_set_always_fatal(GLib.LogLevelFlags.LEVEL_WARNING |
                                   GLib.LogLevelFlags.LEVEL_ERROR |
                                   GLib.LogLevelFlags.LEVEL_CRITICAL)
+        os.environ['G_DEBUG'] = 'fatal_warnings'
 
         # set up a fake system D-BUS
         cls.test_bus = Gio.TestDBus.new(Gio.TestDBusFlags.NONE)
