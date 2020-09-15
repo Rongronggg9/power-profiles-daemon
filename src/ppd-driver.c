@@ -53,6 +53,13 @@ enum {
   PROP_PERFORMANCE_INHIBITED
 };
 
+enum {
+  PROFILE_CHANGED,
+  LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
 #define PPD_DRIVER_GET_PRIVATE(o) (ppd_driver_get_instance_private (o))
 G_DEFINE_TYPE_WITH_PRIVATE (PpdDriver, ppd_driver, G_TYPE_OBJECT)
 
@@ -127,6 +134,24 @@ ppd_driver_class_init (PpdDriverClass *klass)
   object_class->finalize = ppd_driver_finalize;
   object_class->get_property = ppd_driver_get_property;
   object_class->set_property = ppd_driver_set_property;
+
+  /**
+   * PpdDriver::profile-changed:
+   * @profile: the updated #PpdProfile
+   *
+   * Emitted when the profile was changed from the outside, usually
+   * by key combinations implemented in firmware.
+   */
+  signals[PROFILE_CHANGED] = g_signal_new ("profile-changed",
+                                           G_TYPE_FROM_CLASS (klass),
+                                           G_SIGNAL_RUN_LAST,
+                                           0,
+                                           NULL,
+                                           NULL,
+                                           g_cclosure_marshal_generic,
+                                           G_TYPE_NONE,
+                                           1,
+                                           PPD_TYPE_PROFILE);
 
   /**
    * PpdDriver::driver-name:
@@ -251,4 +276,16 @@ ppd_driver_is_performance_inhibited (PpdDriver *driver)
   priv = PPD_DRIVER_GET_PRIVATE (driver);
 
   return (priv->performance_inhibited != NULL);
+}
+
+void
+ppd_driver_emit_profile_changed (PpdDriver  *driver,
+                                 PpdProfile  profile)
+{
+  g_return_if_fail (PPD_IS_DRIVER (driver));
+  g_return_if_fail (ppd_profile_has_single_flag (profile));
+
+  g_signal_emit_by_name (G_OBJECT (driver),
+                         "profile-changed",
+                         profile);
 }
