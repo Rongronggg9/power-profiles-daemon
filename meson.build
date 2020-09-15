@@ -35,7 +35,7 @@ if systemd_system_unit_dir == 'auto'
     systemd_system_unit_dir = systemd_dep.get_pkgconfig_variable('systemdsystemunitdir')
 endif
 gio_dep = dependency('gio-2.0')
-gudev_dep = dependency('gudev-1.0', version: '>= 232')
+gudev_dep = dependency('gudev-1.0', version: '>= 234')
 upower_dep = dependency('upower-glib')
 
 gnome = import('gnome')

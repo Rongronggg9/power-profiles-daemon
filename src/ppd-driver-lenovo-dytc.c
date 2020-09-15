@@ -45,21 +45,6 @@ ppd_driver_lenovo_dytc_constructor (GType                  type,
   return object;
 }
 
-static gboolean
-sysfs_attr_as_boolean (GUdevDevice *device,
-                       const char  *attribute)
-{
-  g_autofree char *contents = NULL;
-  g_autofree char *filename = NULL;
-
-  filename = g_build_filename (g_udev_device_get_sysfs_path (device), attribute, NULL);
-  if (!g_file_get_contents (filename, &contents, NULL, NULL))
-    return FALSE;
-
-  g_strdelimit (contents, "\n", '\0');
-  return (g_strcmp0 (contents, "1") == 0);
-}
-
 static const char *
 profile_to_perfmode_value (PpdProfile profile)
 {
@@ -80,7 +65,7 @@ update_dytc_state (PpdDriverLenovoDytc *dytc)
 {
   gboolean new_lapmode;
 
-  new_lapmode = sysfs_attr_as_boolean (dytc->device, LAPMODE_SYSFS_NAME);
+  new_lapmode = g_udev_device_get_sysfs_attr_as_boolean_uncached (dytc->device, LAPMODE_SYSFS_NAME);
   if (new_lapmode != dytc->lapmode) {
     dytc->lapmode = new_lapmode;
     g_debug ("dytc_lapmode is now %s, so profile is %s",
