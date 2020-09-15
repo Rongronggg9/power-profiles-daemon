@@ -19,6 +19,7 @@ struct _PpdDriverFake
 {
   PpdDriver  parent_instance;
 
+  gboolean tio_set;
   struct termios old_tio;
   gboolean inhibited;
 };
@@ -117,6 +118,7 @@ setup_keyboard (PpdDriverFake *fake)
   }
 
   g_io_add_watch (channel, G_IO_IN, (GIOFunc) check_keyboard, fake);
+  fake->tio_set = TRUE;
   return TRUE;
 }
 
@@ -156,7 +158,8 @@ ppd_driver_fake_finalize (GObject *object)
   PpdDriverFake *fake;
 
   fake = PPD_DRIVER_FAKE (object);
-  tcsetattr(STDIN_FILENO, TCSANOW, &fake->old_tio);
+  if (fake->tio_set)
+    tcsetattr(STDIN_FILENO, TCSANOW, &fake->old_tio);
   G_OBJECT_CLASS (ppd_driver_fake_parent_class)->finalize (object);
 }
 
