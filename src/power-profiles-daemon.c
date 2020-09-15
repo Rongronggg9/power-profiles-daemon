@@ -311,6 +311,24 @@ driver_performance_inhibited_changed_cb (GObject    *gobject,
   send_dbus_event (data, PROP_ACTIVE_PROFILE);
 }
 
+static void
+driver_profile_changed_cb (PpdDriver *driver,
+                           PpdProfile new_profile,
+                           gpointer   user_data)
+{
+  PpdApp *data = user_data;
+
+  g_debug ("Driver '%s' switched internally to profile '%s' (current: '%s')",
+           ppd_driver_get_driver_name (driver),
+           ppd_profile_to_str (new_profile),
+           ppd_profile_to_str (data->active_profile));
+  if (new_profile == data->active_profile)
+    return;
+
+  activate_target_profile (data, new_profile);
+  send_dbus_event (data, PROP_ACTIVE_PROFILE);
+}
+
 static GVariant *
 handle_get_property (GDBusConnection *connection,
                      const gchar     *sender,
@@ -478,6 +496,8 @@ name_acquired_handler (GDBusConnection *connection,
 
       g_signal_connect (G_OBJECT (driver), "notify::performance-inhibited",
                         G_CALLBACK (driver_performance_inhibited_changed_cb), data);
+      g_signal_connect (G_OBJECT (driver), "profile-changed",
+                        G_CALLBACK (driver_profile_changed_cb), data);
     } else if (PPD_IS_ACTION (object)) {
       PpdAction *action = PPD_ACTION (object);
 
