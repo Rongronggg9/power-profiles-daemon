@@ -10,6 +10,7 @@
 #pragma once
 
 #include <gudev/gudev.h>
+#include <gio/gio.h>
 
 gboolean ppd_utils_write (const char  *filename,
                           const char  *value,
@@ -18,3 +19,6 @@ gboolean ppd_utils_write_sysfs (GUdevDevice  *device,
                                 const char   *attribute,
                                 const char   *value,
                                 GError      **error);
+GFileMonitor *ppd_utils_monitor_sysfs_attr (GUdevDevice  *device,
+                                            const char   *attribute,
+                                            GError      **error);

@@ -54,3 +54,19 @@ gboolean ppd_utils_write_sysfs (GUdevDevice  *device,
   filename = g_build_filename (g_udev_device_get_sysfs_path (device), attribute, NULL);
   return ppd_utils_write (filename, value, error);
 }
+
+GFileMonitor *
+ppd_utils_monitor_sysfs_attr (GUdevDevice  *device,
+                              const char   *attribute,
+                              GError      **error)
+{
+  g_autofree char *path = NULL;
+  g_autoptr(GFile) file = NULL;
+
+  path = g_build_filename (g_udev_device_get_sysfs_path (device), attribute, NULL);
+  file = g_file_new_for_path (path);
+  return g_file_monitor_file (file,
+                              G_FILE_MONITOR_NONE,
+                              NULL,
+                              error);
+}
