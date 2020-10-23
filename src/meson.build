@@ -12,6 +12,7 @@ sources = [
   'ppd-utils.c',
   'ppd-action.c',
   'ppd-driver.c',
+  'up-input.c',
   resources,
 ]
 

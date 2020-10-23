@@ -27,6 +27,7 @@ private_headers = [
   'ppd-driver-lenovo-dytc.h',
   'ppd-driver-power-saver.h',
   'ppd-utils.h',
+  'up-input.h',
   'power-profiles-daemon-resources.h',
 ]
 
