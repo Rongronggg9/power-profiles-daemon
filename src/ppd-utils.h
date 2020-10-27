@@ -22,3 +22,6 @@ gboolean ppd_utils_write_sysfs (GUdevDevice  *device,
 GFileMonitor *ppd_utils_monitor_sysfs_attr (GUdevDevice  *device,
                                             const char   *attribute,
                                             GError      **error);
+GUdevDevice *ppd_utils_find_device (const char   *subsystem,
+                                    GCompareFunc  func,
+                                    gpointer      user_data);

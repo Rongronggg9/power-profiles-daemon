@@ -70,3 +70,36 @@ ppd_utils_monitor_sysfs_attr (GUdevDevice  *device,
                               NULL,
                               error);
 }
+
+GUdevDevice *
+ppd_utils_find_device (const char   *subsystem,
+                       GCompareFunc  func,
+                       gpointer      user_data)
+{
+  const gchar * subsystems[] = { NULL, NULL };
+  g_autoptr(GUdevClient) client = NULL;
+  GUdevDevice *ret = NULL;
+  GList *devices, *l;
+
+  g_return_val_if_fail (subsystem != NULL, NULL);
+  g_return_val_if_fail (func != NULL, NULL);
+
+  subsystems[0] = subsystem;
+  client = g_udev_client_new (subsystems);
+  devices = g_udev_client_query_by_subsystem (client, subsystem);
+  if (devices == NULL)
+    return NULL;
+
+  for (l = devices; l != NULL; l = l->next) {
+    GUdevDevice *dev = l->data;
+
+    if ((func) (dev, user_data) != 0)
+      continue;
+
+    ret = g_object_ref (dev);
+    break;
+  }
+  g_list_free_full (devices, g_object_unref);
+
+  return ret;
+}
