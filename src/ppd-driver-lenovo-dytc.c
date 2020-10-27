@@ -20,7 +20,6 @@ struct _PpdDriverLenovoDytc
 {
   PpdDriver  parent_instance;
 
-  GUdevClient *client;
   GUdevDevice *device;
   gboolean lapmode;
   PpdProfile perfmode;
@@ -155,7 +154,7 @@ ppd_driver_lenovo_dytc_activate_profile (PpdDriver   *driver,
 {
   PpdDriverLenovoDytc *dytc = PPD_DRIVER_LENOVO_DYTC (driver);
 
-  g_return_val_if_fail (dytc->client, FALSE);
+  g_return_val_if_fail (dytc->device, FALSE);
 
   if (dytc->perfmode == profile) {
     g_debug ("Can't switch to %s mode, already there",
@@ -183,57 +182,50 @@ ppd_driver_lenovo_dytc_activate_profile (PpdDriver   *driver,
   return TRUE;
 }
 
+static int
+find_dytc (GUdevDevice *dev,
+           gpointer     user_data)
+{
+  if (g_strcmp0 (g_udev_device_get_name (dev), "thinkpad_acpi") != 0)
+    return 1;
+
+  if (!g_udev_device_get_sysfs_attr (dev, LAPMODE_SYSFS_NAME) ||
+      !g_udev_device_get_sysfs_attr (dev, PERFMODE_SYSFS_NAME))
+    return 1;
+
+  return 0;
+}
+
 static gboolean
 ppd_driver_lenovo_dytc_probe (PpdDriver *driver)
 {
-  const gchar * const subsystem[] = { "platform", NULL };
-  GList *devices, *l;
-  gboolean ret = FALSE;
   PpdDriverLenovoDytc *dytc = PPD_DRIVER_LENOVO_DYTC (driver);
 
-  g_return_val_if_fail (!dytc->client, FALSE);
+  g_return_val_if_fail (!dytc->device, FALSE);
 
-  dytc->client = g_udev_client_new (subsystem);
-  devices = g_udev_client_query_by_subsystem (dytc->client, "platform");
-  if (devices == NULL)
+  dytc->device = ppd_utils_find_device ("platform",
+                                        (GCompareFunc) find_dytc,
+                                        NULL);
+  if (!dytc->device)
     goto out;
 
-  for (l = devices; l != NULL; l = l->next) {
-    GUdevDevice *dev = l->data;
-
-    if (g_strcmp0 (g_udev_device_get_name (dev), "thinkpad_acpi") != 0)
-      continue;
-
-    if (!g_udev_device_get_sysfs_attr (dev, LAPMODE_SYSFS_NAME) ||
-        !g_udev_device_get_sysfs_attr (dev, PERFMODE_SYSFS_NAME))
-      break;
-
-    dytc->device = g_object_ref (dev);
-    ret = TRUE;
-    break;
-  }
-
-  if (ret) {
-    dytc->lapmode_mon = ppd_utils_monitor_sysfs_attr (dytc->device,
-                                                      LAPMODE_SYSFS_NAME,
-                                                      NULL);
-    g_signal_connect (G_OBJECT (dytc->lapmode_mon), "changed",
-                      G_CALLBACK (lapmode_changed), dytc);
-    dytc->perfmode_mon = ppd_utils_monitor_sysfs_attr (dytc->device,
-                                                      PERFMODE_SYSFS_NAME,
-                                                      NULL);
-    dytc->perfmode_changed_id = g_signal_connect (G_OBJECT (dytc->perfmode_mon), "changed",
-                                                  G_CALLBACK (perfmode_changed), dytc);
-    update_dytc_lapmode_state (dytc);
-    update_dytc_perfmode_state (dytc);
-  }
+  dytc->lapmode_mon = ppd_utils_monitor_sysfs_attr (dytc->device,
+                                                    LAPMODE_SYSFS_NAME,
+                                                    NULL);
+  g_signal_connect (G_OBJECT (dytc->lapmode_mon), "changed",
+                    G_CALLBACK (lapmode_changed), dytc);
+  dytc->perfmode_mon = ppd_utils_monitor_sysfs_attr (dytc->device,
+                                                    PERFMODE_SYSFS_NAME,
+                                                    NULL);
+  dytc->perfmode_changed_id = g_signal_connect (G_OBJECT (dytc->perfmode_mon), "changed",
+                                                G_CALLBACK (perfmode_changed), dytc);
+  update_dytc_lapmode_state (dytc);
+  update_dytc_perfmode_state (dytc);
 
 out:
-  g_list_free_full (devices, g_object_unref);
-
   g_debug ("%s a dytc_lapmode sysfs attribute to thinkpad_acpi",
-           ret ? "Found" : "Didn't find");
-  return ret;
+           dytc->device ? "Found" : "Didn't find");
+  return (dytc->device != NULL);
 }
 
 static void
@@ -243,7 +235,6 @@ ppd_driver_lenovo_dytc_finalize (GObject *object)
 
   driver = PPD_DRIVER_LENOVO_DYTC (object);
   g_clear_object (&driver->device);
-  g_clear_object (&driver->client);
   g_clear_object (&driver->lapmode_mon);
   g_clear_object (&driver->perfmode_mon);
   G_OBJECT_CLASS (ppd_driver_lenovo_dytc_parent_class)->finalize (object);
