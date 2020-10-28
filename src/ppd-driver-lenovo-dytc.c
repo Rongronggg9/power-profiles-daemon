@@ -12,8 +12,11 @@
 
 #include "ppd-driver-lenovo-dytc.h"
 #include "ppd-utils.h"
+#include "up-input.h"
+#ifndef SW_LAP_PROXIMITY
+#include "input-event-codes.h"
+#endif
 
-#define LAPMODE_SYSFS_NAME "dytc_lapmode"
 #define PERFMODE_SYSFS_NAME "dytc_perfmode"
 
 struct _PpdDriverLenovoDytc
@@ -23,7 +26,7 @@ struct _PpdDriverLenovoDytc
   GUdevDevice *device;
   gboolean lapmode;
   PpdProfile perfmode;
-  GFileMonitor *lapmode_mon;
+  UpInput *lapmode_mon;
   GFileMonitor *perfmode_mon;
   guint perfmode_changed_id;
 };
@@ -88,7 +91,7 @@ update_dytc_lapmode_state (PpdDriverLenovoDytc *dytc)
 {
   gboolean new_lapmode;
 
-  new_lapmode = g_udev_device_get_sysfs_attr_as_boolean_uncached (dytc->device, LAPMODE_SYSFS_NAME);
+  new_lapmode = up_input_get_switch_value (dytc->lapmode_mon);
   if (new_lapmode == dytc->lapmode)
     return;
 
@@ -124,14 +127,12 @@ update_dytc_perfmode_state (PpdDriverLenovoDytc *dytc)
 }
 
 static void
-lapmode_changed (GFileMonitor      *monitor,
-                 GFile             *file,
-                 GFile             *other_file,
-                 GFileMonitorEvent  event_type,
-                 gpointer           user_data)
+lapmode_changed (UpInput  *lapmode_mon,
+                 gboolean  new_state,
+                 gpointer  user_data)
 {
   PpdDriverLenovoDytc *dytc = user_data;
-  g_debug (LAPMODE_SYSFS_NAME " attribute changed");
+  g_debug ("Lapmode switch changed");
   update_dytc_lapmode_state (dytc);
 }
 
@@ -189,31 +190,56 @@ find_dytc (GUdevDevice *dev,
   if (g_strcmp0 (g_udev_device_get_name (dev), "thinkpad_acpi") != 0)
     return 1;
 
-  if (!g_udev_device_get_sysfs_attr (dev, LAPMODE_SYSFS_NAME) ||
-      !g_udev_device_get_sysfs_attr (dev, PERFMODE_SYSFS_NAME))
+  if (!g_udev_device_get_sysfs_attr (dev, PERFMODE_SYSFS_NAME))
     return 1;
 
   return 0;
+}
+
+static int
+find_lap_prox_switch (GUdevDevice *dev,
+                      gpointer     user_data)
+{
+  g_autoptr(GUdevDevice) parent = NULL;
+  parent = g_udev_device_get_parent (dev);
+  if (!parent)
+    return -1;
+  return g_strcmp0 (g_udev_device_get_property (parent, "NAME"), "\"Thinkpad proximity switches\"");
 }
 
 static gboolean
 ppd_driver_lenovo_dytc_probe (PpdDriver *driver)
 {
   PpdDriverLenovoDytc *dytc = PPD_DRIVER_LENOVO_DYTC (driver);
+  g_autoptr(GUdevDevice) lap_prox_switch = NULL;
 
   g_return_val_if_fail (!dytc->device, FALSE);
+
+  lap_prox_switch = ppd_utils_find_device ("input",
+                                           (GCompareFunc) find_lap_prox_switch,
+                                           NULL);
+  if (!lap_prox_switch) {
+    g_debug ("Could not find lap proximity switch");
+    goto out;
+  }
 
   dytc->device = ppd_utils_find_device ("platform",
                                         (GCompareFunc) find_dytc,
                                         NULL);
-  if (!dytc->device)
+  if (!dytc->device) {
+    g_debug ("Could not find perfmode sysfs attribute");
     goto out;
+  }
 
-  dytc->lapmode_mon = ppd_utils_monitor_sysfs_attr (dytc->device,
-                                                    LAPMODE_SYSFS_NAME,
-                                                    NULL);
-  g_signal_connect (G_OBJECT (dytc->lapmode_mon), "changed",
+  dytc->lapmode_mon = up_input_new_for_switch (SW_LAP_PROXIMITY);
+  if (!up_input_coldplug (dytc->lapmode_mon, lap_prox_switch)) {
+    g_debug ("Could not monitor lap proximity switch");
+    g_clear_object (&dytc->device);
+    goto out;
+  }
+  g_signal_connect (G_OBJECT (dytc->lapmode_mon), "switch-changed",
                     G_CALLBACK (lapmode_changed), dytc);
+
   dytc->perfmode_mon = ppd_utils_monitor_sysfs_attr (dytc->device,
                                                     PERFMODE_SYSFS_NAME,
                                                     NULL);
@@ -223,7 +249,7 @@ ppd_driver_lenovo_dytc_probe (PpdDriver *driver)
   update_dytc_perfmode_state (dytc);
 
 out:
-  g_debug ("%s a dytc_lapmode sysfs attribute to thinkpad_acpi",
+  g_debug ("%s a lap proximity input device, or perfmode sysfs attribute",
            dytc->device ? "Found" : "Didn't find");
   return (dytc->device != NULL);
 }

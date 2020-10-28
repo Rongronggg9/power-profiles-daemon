@@ -214,9 +214,16 @@ class Tests(dbusmock.DBusTestCase):
 
     def create_dytc_device(self):
       self.tp_acpi = self.testbed.add_device('platform', 'thinkpad_acpi', None,
-          ['dytc_lapmode', '0', 'dytc_perfmode', 'H'],
+          ['dytc_perfmode', 'H'],
           [ 'DEVPATH', '/devices/platform/thinkpad_acpi' ]
       )
+
+      srcdir = os.getenv('top_srcdir', '.') + '/tests/'
+      self.testbed.add_from_file(srcdir + 'lap-proximity-switch.umockdev')
+      self.testbed.load_ioctl('/dev/input/event18',
+          srcdir + 'lap-proximity-switch.ioctl')
+      self.testbed.load_evemu_events('/dev/input/event18',
+          srcdir + 'lap-proximity-switch.events')
 
     def assertEventually(self, condition, message=None, timeout=50):
         '''Assert that condition function eventually returns True.
