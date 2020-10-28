@@ -29,6 +29,7 @@ private_headers = [
   'ppd-utils.h',
   'up-input.h',
   'power-profiles-daemon-resources.h',
+  'input-event-codes.h',
 ]
 
 gnome.gtkdoc(
