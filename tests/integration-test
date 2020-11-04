@@ -59,12 +59,10 @@ class Tests(dbusmock.DBusTestCase):
         if os.access(os.path.join(builddir, 'src', 'power-profiles-daemon'), os.X_OK):
             cls.daemon_path = os.path.join(builddir, 'src', 'power-profiles-daemon')
             print('Testing binaries from local build tree (%s)' % cls.daemon_path)
-            cls.local_daemon = True
         elif os.environ.get('UNDER_JHBUILD', False):
             jhbuild_prefix = os.environ['JHBUILD_PREFIX']
             cls.daemon_path = os.path.join(jhbuild_prefix, 'libexec', 'power-profiles-daemon')
             print('Testing binaries from JHBuild (%s)' % cls.daemon_path)
-            cls.local_daemon = False
         else:
             cls.daemon_path = None
             with open('/usr/lib/systemd/system/power-profiles-daemon.service') as f:
@@ -73,7 +71,6 @@ class Tests(dbusmock.DBusTestCase):
                         cls.daemon_path = line.split('=', 1)[1].strip()
                         break
             assert cls.daemon_path, 'could not determine daemon path from systemd .service file'
-            cls.local_daemon = False
             print('Testing installed system binary (%s)' % cls.daemon_path)
 
         # fail on CRITICALs on client and server side
@@ -139,10 +136,7 @@ class Tests(dbusmock.DBusTestCase):
         env['UMOCKDEV_DIR'] = self.testbed.get_root_dir()
         self.log = tempfile.NamedTemporaryFile()
         if os.getenv('VALGRIND') != None:
-            if self.local_daemon:
-                daemon_path = ['libtool', '--mode=execute', 'valgrind', self.daemon_path, '-v']
-            else:
-                daemon_path = ['valgrind', self.daemon_path, '-v']
+            daemon_path = ['valgrind', self.daemon_path, '-v']
         else:
             daemon_path = [self.daemon_path, '-v']
 
