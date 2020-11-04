@@ -1,0 +1,50 @@
+P: /devices/virtual/input/input39/event18
+N: input/event18
+E: DEVNAME=/dev/input/event18
+E: MAJOR=13
+E: MINOR=82
+E: SUBSYSTEM=input
+E: ID_INPUT=1
+E: ID_INPUT_SWITCH=1
+E: TAGS=:power-switch:
+A: dev=13:82
+L: device=../../input39
+A: power/control=auto
+A: power/runtime_active_time=0
+A: power/runtime_status=unsupported
+A: power/runtime_suspended_time=0
+
+P: /devices/virtual/input/input39
+E: PRODUCT=6/0/0/0
+E: NAME="Thinkpad proximity switches"
+E: PROP=0
+E: EV=21
+E: SW=20000
+E: MODALIAS=input:b0006v0000p0000e0000-e0,5,kramlsfw11,
+E: SUBSYSTEM=input
+E: ID_INPUT=1
+E: ID_INPUT_SWITCH=1
+E: TAGS=:seat:
+A: capabilities/abs=0
+A: capabilities/ev=21
+A: capabilities/ff=0
+A: capabilities/key=0
+A: capabilities/led=0
+A: capabilities/msc=0
+A: capabilities/rel=0
+A: capabilities/snd=0
+A: capabilities/sw=20000
+A: id/bustype=0006
+A: id/product=0000
+A: id/vendor=0000
+A: id/version=0000
+A: modalias=input:b0006v0000p0000e0000-e0,5,kramlsfw11,
+A: name=Thinkpad proximity switches
+A: phys=
+A: power/control=auto
+A: power/runtime_active_time=0
+A: power/runtime_status=unsupported
+A: power/runtime_suspended_time=0
+A: properties=0
+A: uniq=
+
