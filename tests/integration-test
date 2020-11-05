@@ -282,17 +282,18 @@ class Tests(dbusmock.DBusTestCase):
       '''Intel P-State driver (no UPower)'''
 
       # Create 2 CPUs with preferences
-      dir1 = os.path.join(self.testbed.get_root_dir(), "devices/system/cpu/cpufreq/policy0/")
+      dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
       os.makedirs(dir1)
+      print ('dir1: ' + dir1)
       with open(os.path.join(dir1, "energy_performance_preference")  ,'w') as prefs:
         prefs.write("performance")
-      dir2 = os.path.join(self.testbed.get_root_dir(), "devices/system/cpu/cpufreq/policy1/")
+      dir2 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy1/")
       os.makedirs(dir2)
       with open(os.path.join(dir2, "energy_performance_preference")  ,'w') as prefs:
         prefs.write("performance")
 
       # Create no_turbo pref
-      pstate_dir = os.path.join(self.testbed.get_root_dir(), "devices/system/cpu/intel_pstate")
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate")
       os.makedirs(pstate_dir)
       with open(os.path.join(pstate_dir, "no_turbo")  ,'w') as no_turbo:
         no_turbo.write("0")
@@ -344,7 +345,7 @@ class Tests(dbusmock.DBusTestCase):
       '''Intel P-State driver (balance)'''
 
       # Create CPU with preference
-      dir1 = os.path.join(self.testbed.get_root_dir(), "devices/system/cpu/cpufreq/policy0/")
+      dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
       os.makedirs(dir1)
       with open(os.path.join(dir1, "energy_performance_preference")  ,'w') as prefs:
         prefs.write("performance")

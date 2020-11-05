@@ -12,8 +12,8 @@
 #include "ppd-utils.h"
 #include "ppd-driver-intel-pstate.h"
 
-#define CPUFREQ_POLICY_DIR "/devices/system/cpu/cpufreq/"
-#define NO_TURBO_PATH "/devices/system/cpu/intel_pstate/no_turbo"
+#define CPUFREQ_POLICY_DIR "/sys/devices/system/cpu/cpufreq/"
+#define NO_TURBO_PATH "/sys/devices/system/cpu/intel_pstate/no_turbo"
 
 struct _PpdDriverIntelPstate
 {
@@ -123,11 +123,10 @@ static char *
 get_no_turbo_path (void)
 {
   const char *root;
-  g_autofree char *dir = NULL;
 
   root = g_getenv ("UMOCKDEV_DIR");
   if (!root || *root == '\0')
-    root = "/sys";
+    root = "/";
 
   return g_build_filename (root, NO_TURBO_PATH, NULL);
 }
@@ -136,11 +135,10 @@ static char *
 get_policy_dir (void)
 {
   const char *root;
-  g_autofree char *dir = NULL;
 
   root = g_getenv ("UMOCKDEV_DIR");
   if (!root || *root == '\0')
-    root = "/sys";
+    root = "/";
 
   return g_build_filename (root, CPUFREQ_POLICY_DIR, NULL);
 }
@@ -150,6 +148,7 @@ open_policy_dir (void)
 {
   g_autofree char *dir = NULL;
   dir = get_policy_dir ();
+  g_debug ("Opening policy dir '%s'", dir);
   return g_dir_open (dir, 0, NULL);
 }
 
