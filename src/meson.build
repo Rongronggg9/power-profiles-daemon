@@ -52,3 +52,9 @@ executable('power-profiles-daemon',
   install: true,
   install_dir: libexecdir
 )
+
+executable('up-input-test',
+  [ 'up-input-test.c', 'up-input.c', 'ppd-utils.c' ],
+  dependencies: deps,
+  install: false
+)
