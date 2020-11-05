@@ -135,6 +135,7 @@ class Tests(dbusmock.DBusTestCase):
         env = os.environ.copy()
         env['G_DEBUG'] = 'fatal-criticals'
         env['G_MESSAGES_DEBUG'] = 'all'
+        env['UMOCKDEV_DEBUG'] = 'all'
         # note: Python doesn't propagate the setenv from Testbed.new(), so we
         # have to do that ourselves
         env['UMOCKDEV_DIR'] = self.testbed.get_root_dir()
@@ -224,6 +225,10 @@ class Tests(dbusmock.DBusTestCase):
           srcdir + 'lap-proximity-switch.ioctl')
       self.testbed.load_evemu_events('/dev/input/event18',
           srcdir + 'lap-proximity-switch.events')
+
+      process = subprocess.Popen(['udevadm', 'info', '--export-db'])
+      process = subprocess.Popen(['ls', '-l', '/sys/devices/virtual/input/input39'])
+      process = subprocess.Popen(['ls', '-lR', self.testbed.get_root_dir() + '/sys/'])
 
     def assertEventually(self, condition, message=None, timeout=50):
         '''Assert that condition function eventually returns True.
