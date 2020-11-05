@@ -26,6 +26,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <linux/input.h>
+#undef SW_MAX
+#include "input-event-codes.h"
 
 #include <glib.h>
 #include <glib/gstdio.h>
