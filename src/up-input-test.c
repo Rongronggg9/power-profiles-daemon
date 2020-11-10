@@ -13,22 +13,11 @@ find_lap_prox_switch (GUdevDevice *dev,
   return g_strcmp0 (g_udev_device_get_property (parent, "NAME"), "\"Thinkpad proximity switches\"");
 }
 
-static void
-usage (char **argv)
-{
-  g_print ("Usage: %s /dev/input/eventXX\n", argv[0]);
-}
-
 int main (int argc, char **argv)
 {
   GMainLoop *loop;
   g_autoptr(UpInput) input = NULL;
   g_autoptr(GUdevDevice) device = NULL;
-
-  if (argc != 2) {
-    usage (argv);
-    return 1;
-  }
 
   device = ppd_utils_find_device ("input",
                                   (GCompareFunc) find_lap_prox_switch,
