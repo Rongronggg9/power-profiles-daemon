@@ -1,4 +1,4 @@
-P: /devices/virtual/input/input39/event18
+P: /devices/virtual/input/input64/event18
 N: input/event18
 E: DEVNAME=/dev/input/event18
 E: MAJOR=13
@@ -8,13 +8,13 @@ E: ID_INPUT=1
 E: ID_INPUT_SWITCH=1
 E: TAGS=:power-switch:
 A: dev=13:82
-L: device=../../input39
+L: device=../../input64
 A: power/control=auto
 A: power/runtime_active_time=0
 A: power/runtime_status=unsupported
 A: power/runtime_suspended_time=0
 
-P: /devices/virtual/input/input39
+P: /devices/virtual/input/input64
 E: PRODUCT=6/0/0/0
 E: NAME="Thinkpad proximity switches"
 E: PROP=0

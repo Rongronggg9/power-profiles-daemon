@@ -224,7 +224,7 @@ class Tests(dbusmock.DBusTestCase):
       self.testbed.load_ioctl('/dev/input/event18',
           srcdir + 'lap-proximity-switch.ioctl')
       self.testbed.load_evemu_events('/dev/input/event18',
-          srcdir + 'lap-proximity-switch.events')
+          srcdir + 'lap-proximity-switch.events') # FIXME
 
       process = subprocess.Popen(['udevadm', 'info', '--export-db'])
       process = subprocess.Popen(['ls', '-l', '/sys/devices/virtual/input/input39'])
@@ -276,7 +276,7 @@ class Tests(dbusmock.DBusTestCase):
     def test_inhibited_transition(self):
       '''Test that transitions work as expected when inhibited'''
 
-      self.create_dytc_device()
+      self.create_dytc_device('inhibited-transition')
       self.start_daemon()
 
       profiles = self.get_dbus_property('Profiles')
@@ -287,7 +287,7 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
 
       # Inhibit
-      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1')
+      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1') #FIXME
       self.assertEventually(lambda: self.have_text_in_log('dytc_lapmode is now on'))
       self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
@@ -395,7 +395,7 @@ class Tests(dbusmock.DBusTestCase):
       '''Lenovo DYTC performance driver'''
 
       tp_acpi = self.testbed.add_device('platform', 'thinkpad_acpi', None,
-          ['dytc_lapmode', '0', 'dytc_perfmode', 'H'],
+          ['dytc_perfmode', 'H'],
           [ 'DEVPATH', '/devices/platform/thinkpad_acpi' ]
       )
 
@@ -413,12 +413,12 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEventually(lambda: self.read_sysfs_attr(tp_acpi, 'dytc_perfmode') == b'M')
 
       # lapmode detected, but performance wasn't selected anyway
-      self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '1')
+      self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '1') # FIXME
       self.assertEventually(lambda: self.get_dbus_property('PerformanceInhibited') == 'lap-detected')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
 
       # Reset lapmode
-      self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '0')
+      self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '0') # FIXME
       self.assertEventually(lambda: self.get_dbus_property('PerformanceInhibited') == '')
 
       # Set performance mode
@@ -427,14 +427,14 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEventually(lambda: self.read_sysfs_attr(tp_acpi, 'dytc_perfmode') == b'H')
 
       # And turn on lapmode
-      self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '1')
+      self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '1') # FIXME
       self.assertEventually(lambda: self.read_sysfs_attr(tp_acpi, 'dytc_perfmode') == b'M')
 
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
       self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
 
       # Turn off lapmode, profile stays balanced
-      self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '0')
+      self.testbed.set_attribute(tp_acpi, 'dytc_lapmode', '0') # FIXME
       self.assertEventually(lambda: self.get_dbus_property('PerformanceInhibited') == '')
       self.assertEqual(self.read_sysfs_attr(tp_acpi, 'dytc_perfmode'), b'M')
 
