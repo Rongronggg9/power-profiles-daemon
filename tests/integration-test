@@ -296,7 +296,6 @@ class Tests(dbusmock.DBusTestCase):
       # Create 2 CPUs with preferences
       dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
       os.makedirs(dir1)
-      print ('dir1: ' + dir1)
       with open(os.path.join(dir1, "energy_performance_preference")  ,'w') as prefs:
         prefs.write("performance")
       dir2 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy1/")
