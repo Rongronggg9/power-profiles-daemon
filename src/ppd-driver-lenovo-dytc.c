@@ -14,7 +14,8 @@
 #include "ppd-utils.h"
 
 #define LAPMODE_SYSFS_NAME "dytc_lapmode"
-#define PERFMODE_SYSFS_NAME "dytc_perfmode"
+#define ACPI_PLATFORM_PROFILE_PATH "/sys/firmware/acpi/platform_profile"
+#define ACPI_PLATFORM_PROFILE_CHOICES_PATH "/sys/firmware/acpi/platform_profile_choices"
 
 struct _PpdDriverLenovoDytc
 {
@@ -22,10 +23,10 @@ struct _PpdDriverLenovoDytc
 
   GUdevDevice *device;
   gboolean lapmode;
-  PpdProfile perfmode;
+  PpdProfile acpi_platform_profile;
   GFileMonitor *lapmode_mon;
-  GFileMonitor *perfmode_mon;
-  guint perfmode_changed_id;
+  GFileMonitor *acpi_platform_profile_mon;
+  guint acpi_platform_profile_changed_id;
 };
 
 G_DEFINE_TYPE (PpdDriverLenovoDytc, ppd_driver_lenovo_dytc, PPD_TYPE_DRIVER)
@@ -49,38 +50,60 @@ ppd_driver_lenovo_dytc_constructor (GType                  type,
 }
 
 static const char *
-profile_to_perfmode_value (PpdProfile profile)
+profile_to_acpi_platform_profile_value (PpdProfile profile)
 {
   switch (profile) {
   case PPD_PROFILE_POWER_SAVER:
-    return "L";
+    return "low-power";
   case PPD_PROFILE_BALANCED:
-    return "M";
+    return "balanced";
   case PPD_PROFILE_PERFORMANCE:
-    return "H";
+    return "performance";
   }
 
   g_assert_not_reached ();
 }
 
 static PpdProfile
-perfmode_value_to_profile (const char *str)
+acpi_platform_profile_value_to_profile (const char *str)
 {
   if (str == NULL)
     return PPD_PROFILE_UNSET;
 
   switch (str[0]) {
-  case 'L':
+  case 'l': /* low-power */
+  case 'c': /* cool */
+  case 'q': /* quiet */
     return PPD_PROFILE_POWER_SAVER;
-  case 'M':
+  case 'b':
     return PPD_PROFILE_BALANCED;
-  case 'H':
+  case 'p':
     return PPD_PROFILE_PERFORMANCE;
   default:
-    g_debug ("Got unsupported perfmode value '%s'", str);
+    g_debug ("Got unsupported performance_profile value '%s'", str);
   }
 
   return PPD_PROFILE_UNSET;
+}
+
+static gboolean
+verify_acpi_platform_profile_choices (void)
+{
+  g_autofree char *choices_str = NULL;
+  g_autofree char *platform_profile_choices_path = NULL;
+  g_autoptr(GError) error = NULL;
+  g_auto(GStrv) choices = NULL;
+
+  platform_profile_choices_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_CHOICES_PATH);
+  if (!g_file_get_contents (platform_profile_choices_path,
+                            &choices_str, NULL, NULL)) {
+    return FALSE;
+  }
+
+  choices = g_strsplit (choices_str, "\n", -1);
+  return (g_strv_contains ((const char * const*) choices, "low-power") &&
+          g_strv_contains ((const char * const*) choices, "balanced") &&
+          g_strv_contains ((const char * const*) choices, "performance"));
 }
 
 static void
@@ -102,24 +125,31 @@ update_dytc_lapmode_state (PpdDriverLenovoDytc *dytc)
 }
 
 static void
-update_dytc_perfmode_state (PpdDriverLenovoDytc *dytc)
+update_acpi_platform_profile_state (PpdDriverLenovoDytc *dytc)
 {
-  const char *new_profile_str;
+  g_autofree char *platform_profile_path = NULL;
+  g_autofree char *new_profile_str = NULL;
+  g_autoptr(GError) error = NULL;
   PpdProfile new_profile;
 
-  new_profile_str = g_udev_device_get_sysfs_attr_uncached (dytc->device, PERFMODE_SYSFS_NAME);
-  if (!new_profile_str)
+  platform_profile_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_PATH);
+  if (!g_file_get_contents (platform_profile_path,
+                            &new_profile_str, NULL, NULL)) {
+    g_debug ("Failed to get contents for '%s': %s",
+             platform_profile_path,
+             error->message);
     return;
+  }
 
-  new_profile = perfmode_value_to_profile (new_profile_str);
+  new_profile = acpi_platform_profile_value_to_profile (new_profile_str);
   if (new_profile == PPD_PROFILE_UNSET ||
-      new_profile == dytc->perfmode)
+      new_profile == dytc->acpi_platform_profile)
     return;
 
-  g_debug ("dytc_perfmode is now %c, so profile is %s",
+  g_debug ("ACPI performance_profile is now %c, so profile is %s",
            new_profile_str[0],
            ppd_profile_to_str (new_profile));
-  dytc->perfmode = new_profile;
+  dytc->acpi_platform_profile = new_profile;
   ppd_driver_emit_profile_changed (PPD_DRIVER (dytc), new_profile);
 }
 
@@ -136,15 +166,15 @@ lapmode_changed (GFileMonitor      *monitor,
 }
 
 static void
-perfmode_changed (GFileMonitor      *monitor,
-                  GFile             *file,
-                  GFile             *other_file,
-                  GFileMonitorEvent  event_type,
-                  gpointer           user_data)
+acpi_platform_profile_changed (GFileMonitor      *monitor,
+                               GFile             *file,
+                               GFile             *other_file,
+                               GFileMonitorEvent  event_type,
+                               gpointer           user_data)
 {
   PpdDriverLenovoDytc *dytc = user_data;
-  g_debug (PERFMODE_SYSFS_NAME " attribute changed");
-  update_dytc_perfmode_state (dytc);
+  g_debug (ACPI_PLATFORM_PROFILE_PATH " changed");
+  update_acpi_platform_profile_state (dytc);
 }
 
 static gboolean
@@ -153,10 +183,11 @@ ppd_driver_lenovo_dytc_activate_profile (PpdDriver   *driver,
                                          GError     **error)
 {
   PpdDriverLenovoDytc *dytc = PPD_DRIVER_LENOVO_DYTC (driver);
+  g_autofree char *platform_profile_path = NULL;
 
   g_return_val_if_fail (dytc->device, FALSE);
 
-  if (dytc->perfmode == profile) {
+  if (dytc->acpi_platform_profile == profile) {
     g_debug ("Can't switch to %s mode, already there",
              ppd_profile_to_str (profile));
     return TRUE;
@@ -169,16 +200,17 @@ ppd_driver_lenovo_dytc_activate_profile (PpdDriver   *driver,
     return FALSE;
   }
 
-  g_signal_handler_block (G_OBJECT (dytc->perfmode_mon), dytc->perfmode_changed_id);
-  if (!ppd_utils_write_sysfs (dytc->device, PERFMODE_SYSFS_NAME, profile_to_perfmode_value (profile), error)) {
-    g_debug ("Failed to write to perfmode: %s", (* error)->message);
-    g_signal_handler_unblock (G_OBJECT (dytc->perfmode_mon), dytc->perfmode_changed_id);
+  g_signal_handler_block (G_OBJECT (dytc->acpi_platform_profile_mon), dytc->acpi_platform_profile_changed_id);
+  platform_profile_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_PATH);
+  if (!ppd_utils_write (platform_profile_path, profile_to_acpi_platform_profile_value (profile), error)) {
+    g_debug ("Failed to write to acpi_platform_profile: %s", (* error)->message);
+    g_signal_handler_unblock (G_OBJECT (dytc->acpi_platform_profile_mon), dytc->acpi_platform_profile_changed_id);
     return FALSE;
   }
-  g_signal_handler_unblock (G_OBJECT (dytc->perfmode_mon), dytc->perfmode_changed_id);
+  g_signal_handler_unblock (G_OBJECT (dytc->acpi_platform_profile_mon), dytc->acpi_platform_profile_changed_id);
 
   g_debug ("Successfully switched to profile %s", ppd_profile_to_str (profile));
-  dytc->perfmode = profile;
+  dytc->acpi_platform_profile = profile;
   return TRUE;
 }
 
@@ -189,8 +221,7 @@ find_dytc (GUdevDevice *dev,
   if (g_strcmp0 (g_udev_device_get_name (dev), "thinkpad_acpi") != 0)
     return 1;
 
-  if (!g_udev_device_get_sysfs_attr (dev, LAPMODE_SYSFS_NAME) ||
-      !g_udev_device_get_sysfs_attr (dev, PERFMODE_SYSFS_NAME))
+  if (!g_udev_device_get_sysfs_attr (dev, LAPMODE_SYSFS_NAME))
     return 1;
 
   return 0;
@@ -200,8 +231,16 @@ static gboolean
 ppd_driver_lenovo_dytc_probe (PpdDriver *driver)
 {
   PpdDriverLenovoDytc *dytc = PPD_DRIVER_LENOVO_DYTC (driver);
+  g_autoptr(GFile) acpi_platform_profile = NULL;
+  g_autofree char *platform_profile_path = NULL;
 
   g_return_val_if_fail (!dytc->device, FALSE);
+
+  platform_profile_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_PATH);
+  if (!g_file_test (platform_profile_path, G_FILE_TEST_EXISTS))
+    goto out;
+  if (!verify_acpi_platform_profile_choices ())
+    goto out;
 
   dytc->device = ppd_utils_find_device ("platform",
                                         (GCompareFunc) find_dytc,
@@ -214,13 +253,17 @@ ppd_driver_lenovo_dytc_probe (PpdDriver *driver)
                                                     NULL);
   g_signal_connect (G_OBJECT (dytc->lapmode_mon), "changed",
                     G_CALLBACK (lapmode_changed), dytc);
-  dytc->perfmode_mon = ppd_utils_monitor_sysfs_attr (dytc->device,
-                                                    PERFMODE_SYSFS_NAME,
-                                                    NULL);
-  dytc->perfmode_changed_id = g_signal_connect (G_OBJECT (dytc->perfmode_mon), "changed",
-                                                G_CALLBACK (perfmode_changed), dytc);
+
+  acpi_platform_profile = g_file_new_for_path (platform_profile_path);
+  dytc->acpi_platform_profile_mon = g_file_monitor (acpi_platform_profile,
+                                                G_FILE_MONITOR_NONE,
+                                                NULL,
+                                                NULL);
+  dytc->acpi_platform_profile_changed_id =
+    g_signal_connect (G_OBJECT (dytc->acpi_platform_profile_mon), "changed",
+                      G_CALLBACK (acpi_platform_profile_changed), dytc);
   update_dytc_lapmode_state (dytc);
-  update_dytc_perfmode_state (dytc);
+  update_acpi_platform_profile_state (dytc);
 
 out:
   g_debug ("%s a dytc_lapmode sysfs attribute to thinkpad_acpi",
@@ -236,7 +279,7 @@ ppd_driver_lenovo_dytc_finalize (GObject *object)
   driver = PPD_DRIVER_LENOVO_DYTC (object);
   g_clear_object (&driver->device);
   g_clear_object (&driver->lapmode_mon);
-  g_clear_object (&driver->perfmode_mon);
+  g_clear_object (&driver->acpi_platform_profile_mon);
   G_OBJECT_CLASS (ppd_driver_lenovo_dytc_parent_class)->finalize (object);
 }
 

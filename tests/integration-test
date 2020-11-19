@@ -214,9 +214,15 @@ class Tests(dbusmock.DBusTestCase):
 
     def create_dytc_device(self):
       self.tp_acpi = self.testbed.add_device('platform', 'thinkpad_acpi', None,
-          ['dytc_lapmode', '0', 'dytc_perfmode', 'H'],
+          ['dytc_lapmode', '0'],
           [ 'DEVPATH', '/devices/platform/thinkpad_acpi' ]
       )
+      acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
+      os.makedirs(acpi_dir)
+      with open(os.path.join(acpi_dir, "platform_profile")  ,'w') as profile:
+        profile.write("performance")
+      with open(os.path.join(acpi_dir, "platform_profile_choices")  ,'w') as choices:
+        choices.write("low-power\nbalanced\nperformance\n")
 
     def assertEventually(self, condition, message=None, timeout=50):
         '''Assert that condition function eventually returns True.
@@ -393,8 +399,8 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(profiles[2]['Profile'], 'performance')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
 
-      # Verify that perfmode got reset
-      self.assertEventually(lambda: self.read_sysfs_attr(self.tp_acpi, 'dytc_perfmode') == b'M')
+      # Verify that platform_profile got reset
+      self.assertEventually(lambda: self.read_file (os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile")) == b'balanced')
 
       # lapmode detected, but performance wasn't selected anyway
       self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1')
@@ -408,11 +414,11 @@ class Tests(dbusmock.DBusTestCase):
       # Set performance mode
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
-      self.assertEventually(lambda: self.read_sysfs_attr(self.tp_acpi, 'dytc_perfmode') == b'H')
+      self.assertEventually(lambda: self.read_file (os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile")) == b'performance')
 
       # And turn on lapmode
       self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1')
-      self.assertEventually(lambda: self.read_sysfs_attr(self.tp_acpi, 'dytc_perfmode') == b'M')
+      self.assertEventually(lambda: self.read_file (os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile")) == b'balanced')
 
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
       self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
@@ -420,16 +426,16 @@ class Tests(dbusmock.DBusTestCase):
       # Turn off lapmode, profile stays balanced
       self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '0')
       self.assertEventually(lambda: self.get_dbus_property('PerformanceInhibited') == '')
-      self.assertEqual(self.read_sysfs_attr(self.tp_acpi, 'dytc_perfmode'), b'M')
+      self.assertEventually(lambda: self.read_file (os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile")) == b'balanced')
 
       # Switch to power-saver mode
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
-      self.assertEventually(lambda: self.read_sysfs_attr(self.tp_acpi, 'dytc_perfmode') == b'L')
+      self.assertEventually(lambda: self.read_file (os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile")) == b'low-power')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
 
       # And mimick a user pressing a Fn+H
-      with open(os.path.join(self.testbed.get_root_dir() + self.tp_acpi, "dytc_perfmode"), 'w') as perfmode:
-        perfmode.write('H')
+      with open(os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile"), 'w') as platform_profile:
+        platform_profile.write('performance')
       self.assertEventually(lambda: self.get_dbus_property('ActiveProfile') == 'performance')
 
     def test_fake_driver(self):
