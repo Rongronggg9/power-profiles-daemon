@@ -119,35 +119,11 @@ monitor_no_turbo_prop (const char *path)
   return g_file_monitor (no_turbo, G_FILE_MONITOR_NONE, NULL, NULL);
 }
 
-static char *
-get_no_turbo_path (void)
-{
-  const char *root;
-
-  root = g_getenv ("UMOCKDEV_DIR");
-  if (!root || *root == '\0')
-    root = "/";
-
-  return g_build_filename (root, NO_TURBO_PATH, NULL);
-}
-
-static char *
-get_policy_dir (void)
-{
-  const char *root;
-
-  root = g_getenv ("UMOCKDEV_DIR");
-  if (!root || *root == '\0')
-    root = "/";
-
-  return g_build_filename (root, CPUFREQ_POLICY_DIR, NULL);
-}
-
 static GDir *
 open_policy_dir (void)
 {
   g_autofree char *dir = NULL;
-  dir = get_policy_dir ();
+  dir = ppd_utils_get_sysfs_path (CPUFREQ_POLICY_DIR);
   g_debug ("Opening policy dir '%s'", dir);
   return g_dir_open (dir, 0, NULL);
 }
@@ -165,7 +141,7 @@ ppd_driver_intel_pstate_probe (PpdDriver *driver)
   if (!dir)
     goto out;
 
-  policy_dir = get_policy_dir ();
+  policy_dir = ppd_utils_get_sysfs_path (CPUFREQ_POLICY_DIR);
   while ((dirname = g_dir_read_name (dir)) != NULL) {
     g_autofree char *path = NULL;
 
@@ -191,7 +167,7 @@ ppd_driver_intel_pstate_probe (PpdDriver *driver)
   }
 
   /* Monitor the first "no_turbo" */
-  pstate->no_turbo_path = get_no_turbo_path ();
+  pstate->no_turbo_path = ppd_utils_get_sysfs_path (NO_TURBO_PATH);
   pstate->no_turbo_mon = monitor_no_turbo_prop (pstate->no_turbo_path);
   if (pstate->no_turbo_mon) {
     g_signal_connect (G_OBJECT (pstate->no_turbo_mon), "changed",
