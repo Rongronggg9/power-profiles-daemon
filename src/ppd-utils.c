@@ -12,6 +12,18 @@
 #include <stdio.h>
 #include <errno.h>
 
+char *
+ppd_utils_get_sysfs_path (const char *filename)
+{
+  const char *root;
+
+  root = g_getenv ("UMOCKDEV_DIR");
+  if (!root || *root == '\0')
+    root = "/";
+
+  return g_build_filename (root, filename, NULL);
+}
+
 gboolean ppd_utils_write (const char  *filename,
                           const char  *value,
                           GError     **error)
