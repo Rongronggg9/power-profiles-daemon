@@ -25,12 +25,6 @@ build_stable:
     - dnf upgrade -y --nogpgcheck fedora-release fedora-repos*
     - dnf update -y && dnf install -y $DEPENDENCIES
   script:
-    # For when gudev gets updated/released
-    - git clone https://gitlab.gnome.org/GNOME/libgudev.git
-    - cd libgudev
-    - ./autogen.sh --prefix=/usr --disable-umockdev -disable-dependency-tracking
-    - make install
-    - cd ..
     - meson -Dgtk_doc=true -Dgtk-tests=true _build
     - ninja -v -C _build
     - ninja -v -C _build install
