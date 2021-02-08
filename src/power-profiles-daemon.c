@@ -459,6 +459,13 @@ profile_already_handled (PpdApp     *data,
 }
 
 static void
+stop_profile_drivers (PpdApp *data)
+{
+  g_ptr_array_set_size (data->actions, 0);
+  g_ptr_array_set_size (data->drivers, 0);
+}
+
+static void
 start_profile_drivers (PpdApp *data)
 {
   guint i;
