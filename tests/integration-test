@@ -217,6 +217,8 @@ class Tests(dbusmock.DBusTestCase):
           ['dytc_lapmode', '0'],
           [ 'DEVPATH', '/devices/platform/thinkpad_acpi' ]
       )
+
+    def create_platform_profile(self):
       acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
       os.makedirs(acpi_dir)
       with open(os.path.join(acpi_dir, "platform_profile")  ,'w') as profile:
@@ -271,6 +273,7 @@ class Tests(dbusmock.DBusTestCase):
       '''Test that transitions work as expected when inhibited'''
 
       self.create_dytc_device()
+      self.create_platform_profile()
       self.start_daemon()
 
       profiles = self.get_dbus_property('Profiles')
@@ -342,6 +345,7 @@ class Tests(dbusmock.DBusTestCase):
 
       # Verify that the Lenovo DYTC driver still gets preferred
       self.create_dytc_device()
+      self.create_platform_profile()
       self.start_daemon()
 
       profiles = self.get_dbus_property('Profiles')
@@ -388,6 +392,7 @@ class Tests(dbusmock.DBusTestCase):
       '''Lenovo DYTC performance driver'''
 
       self.create_dytc_device()
+      self.create_platform_profile()
       self.start_daemon()
 
       profiles = self.get_dbus_property('Profiles')
