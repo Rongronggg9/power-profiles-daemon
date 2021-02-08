@@ -25,6 +25,7 @@ typedef struct {
   GDBusNodeInfo *introspection_data;
   GDBusConnection *connection;
   guint name_id;
+  gboolean was_started;
   int ret;
 
   PpdProfile active_profile;
@@ -390,7 +391,10 @@ name_lost_handler (GDBusConnection *connection,
                    const gchar     *name,
                    gpointer         user_data)
 {
+  PpdApp *data = user_data;
   g_debug ("power-profiles-daemon is already running, or it cannot own its D-Bus name. Verify installation.");
+  if (!data->was_started)
+    data->ret = 1;
   g_main_loop_quit (main_loop);
 }
 
@@ -526,10 +530,12 @@ name_acquired_handler (GDBusConnection *connection,
 
   send_dbus_event (data, PROP_ALL);
 
+  data->was_started = TRUE;
+
   return;
 
 bail:
-  data->ret = 0;
+  data->ret = 1;
   g_debug ("Exiting because some non recoverable error occurred during startup");
   g_main_loop_quit (main_loop);
 }

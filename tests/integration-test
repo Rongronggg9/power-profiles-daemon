@@ -246,6 +246,13 @@ class Tests(dbusmock.DBusTestCase):
     #
     # Actual test cases
     #
+    def test_dbus_startup_error(self):
+      '''D-Bus startup error'''
+
+      self.start_daemon()
+      out = subprocess.run([self.daemon_path], capture_output=True)
+      self.assertEqual(out.returncode, 1, "power-profile-daemon started but should have failed")
+      self.stop_daemon()
 
     def test_no_performance_driver(self):
       '''no performance driver'''
