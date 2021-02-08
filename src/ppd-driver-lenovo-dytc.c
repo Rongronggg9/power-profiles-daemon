@@ -237,10 +237,14 @@ ppd_driver_lenovo_dytc_probe (PpdDriver *driver)
   g_return_val_if_fail (!dytc->device, FALSE);
 
   platform_profile_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_PATH);
-  if (!g_file_test (platform_profile_path, G_FILE_TEST_EXISTS))
+  if (!g_file_test (platform_profile_path, G_FILE_TEST_EXISTS)) {
+    g_debug ("No platform_profile sysfs file");
     goto out;
-  if (!verify_acpi_platform_profile_choices ())
+  }
+  if (!verify_acpi_platform_profile_choices ()) {
+    g_debug ("No supported platform_profile choices");
     goto out;
+  }
 
   dytc->device = ppd_utils_find_device ("platform",
                                         (GCompareFunc) find_dytc,
