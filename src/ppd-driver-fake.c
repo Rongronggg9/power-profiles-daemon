@@ -13,7 +13,7 @@
 #include <stdio.h>
 #include <termios.h>
 
-extern GMainLoop *main_loop;
+extern void main_loop_quit (void);
 
 struct _PpdDriverFake
 {
@@ -85,7 +85,7 @@ check_keyboard (GIOChannel    *source,
     break;
   case 'q':
   case 'x':
-    g_main_loop_quit (main_loop);
+    main_loop_quit ();
     break;
   default:
     keyboard_usage ();

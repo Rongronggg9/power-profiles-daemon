@@ -19,9 +19,8 @@
 #define POWER_PROFILES_DBUS_PATH          "/net/hadess/PowerProfiles"
 #define POWER_PROFILES_IFACE_NAME         POWER_PROFILES_DBUS_NAME
 
-GMainLoop *main_loop = NULL;
-
 typedef struct {
+  GMainLoop *main_loop;
   GDBusNodeInfo *introspection_data;
   GDBusConnection *connection;
   guint name_id;
@@ -32,6 +31,8 @@ typedef struct {
   GPtrArray *drivers;
   GPtrArray *actions;
 } PpdApp;
+
+static PpdApp *ppd_app = NULL;
 
 static PpdDriver *
 get_driver_for_profile (PpdApp     *data,
@@ -395,7 +396,7 @@ name_lost_handler (GDBusConnection *connection,
   g_debug ("power-profiles-daemon is already running, or it cannot own its D-Bus name. Verify installation.");
   if (!data->was_started)
     data->ret = 1;
-  g_main_loop_quit (main_loop);
+  g_main_loop_quit (data->main_loop);
 }
 
 static void
@@ -537,7 +538,7 @@ name_acquired_handler (GDBusConnection *connection,
 bail:
   data->ret = 1;
   g_debug ("Exiting because some non recoverable error occurred during startup");
-  g_main_loop_quit (main_loop);
+  g_main_loop_quit (data->main_loop);
 }
 
 static gboolean
@@ -584,10 +585,17 @@ free_app_data (PpdApp *data)
   g_ptr_array_free (data->actions, TRUE);
   g_ptr_array_free (data->drivers, TRUE);
 
+  g_clear_pointer (&data->main_loop, g_main_loop_unref);
   g_clear_pointer (&data->introspection_data, g_dbus_node_info_unref);
   g_clear_object (&data->connection);
-  g_clear_pointer (&main_loop, g_main_loop_unref);
   g_free (data);
+  ppd_app = NULL;
+}
+
+void
+main_loop_quit (void)
+{
+  g_main_loop_quit (ppd_app->main_loop);
 }
 
 int main (int argc, char **argv)
@@ -618,15 +626,16 @@ int main (int argc, char **argv)
     g_setenv ("G_MESSAGES_DEBUG", "all", TRUE);
 
   data = g_new0 (PpdApp, 1);
+  data->main_loop = g_main_loop_new (NULL, TRUE);
   data->actions = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
   data->drivers = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
   data->active_profile = PPD_PROFILE_BALANCED;
+  ppd_app = data;
 
   /* Set up D-Bus */
   setup_dbus (data, replace);
 
-  main_loop = g_main_loop_new (NULL, TRUE);
-  g_main_loop_run (main_loop);
+  g_main_loop_run (data->main_loop);
   ret = data->ret;
   free_app_data (data);
 
