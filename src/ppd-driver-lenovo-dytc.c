@@ -185,7 +185,7 @@ ppd_driver_lenovo_dytc_activate_profile (PpdDriver   *driver,
   PpdDriverLenovoDytc *dytc = PPD_DRIVER_LENOVO_DYTC (driver);
   g_autofree char *platform_profile_path = NULL;
 
-  g_return_val_if_fail (dytc->device, FALSE);
+  g_return_val_if_fail (dytc->acpi_platform_profile_mon, FALSE);
 
   if (dytc->acpi_platform_profile == profile) {
     g_debug ("Can't switch to %s mode, already there",
@@ -234,18 +234,29 @@ ppd_driver_lenovo_dytc_probe (PpdDriver *driver)
   g_autoptr(GFile) acpi_platform_profile = NULL;
   g_autofree char *platform_profile_path = NULL;
 
-  g_return_val_if_fail (!dytc->device, FALSE);
+  g_return_val_if_fail (!dytc->acpi_platform_profile_mon, FALSE);
 
+  /* Profile interface */
   platform_profile_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_PATH);
   if (!g_file_test (platform_profile_path, G_FILE_TEST_EXISTS)) {
     g_debug ("No platform_profile sysfs file");
-    goto out;
+    return FALSE;
   }
   if (!verify_acpi_platform_profile_choices ()) {
     g_debug ("No supported platform_profile choices");
-    goto out;
+    return FALSE;
   }
 
+  acpi_platform_profile = g_file_new_for_path (platform_profile_path);
+  dytc->acpi_platform_profile_mon = g_file_monitor (acpi_platform_profile,
+                                                G_FILE_MONITOR_NONE,
+                                                NULL,
+                                                NULL);
+  dytc->acpi_platform_profile_changed_id =
+    g_signal_connect (G_OBJECT (dytc->acpi_platform_profile_mon), "changed",
+                      G_CALLBACK (acpi_platform_profile_changed), dytc);
+
+  /* Lenovo-specific proximity sensor */
   dytc->device = ppd_utils_find_device ("platform",
                                         (GCompareFunc) find_dytc,
                                         NULL);
@@ -257,22 +268,14 @@ ppd_driver_lenovo_dytc_probe (PpdDriver *driver)
                                                     NULL);
   g_signal_connect (G_OBJECT (dytc->lapmode_mon), "changed",
                     G_CALLBACK (lapmode_changed), dytc);
-
-  acpi_platform_profile = g_file_new_for_path (platform_profile_path);
-  dytc->acpi_platform_profile_mon = g_file_monitor (acpi_platform_profile,
-                                                G_FILE_MONITOR_NONE,
-                                                NULL,
-                                                NULL);
-  dytc->acpi_platform_profile_changed_id =
-    g_signal_connect (G_OBJECT (dytc->acpi_platform_profile_mon), "changed",
-                      G_CALLBACK (acpi_platform_profile_changed), dytc);
   update_dytc_lapmode_state (dytc);
-  update_acpi_platform_profile_state (dytc);
 
 out:
+  update_acpi_platform_profile_state (dytc);
+
   g_debug ("%s a dytc_lapmode sysfs attribute to thinkpad_acpi",
            dytc->device ? "Found" : "Didn't find");
-  return (dytc->device != NULL);
+  return TRUE;
 }
 
 static void
