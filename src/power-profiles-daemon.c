@@ -545,6 +545,13 @@ bail:
   g_main_loop_quit (data->main_loop);
 }
 
+void
+restart_profile_drivers (void)
+{
+  stop_profile_drivers (ppd_app);
+  start_profile_drivers (ppd_app);
+}
+
 static void
 name_acquired_handler (GDBusConnection *connection,
                        const gchar     *name,

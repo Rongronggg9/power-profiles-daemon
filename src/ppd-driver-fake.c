@@ -14,6 +14,7 @@
 #include <termios.h>
 
 extern void main_loop_quit (void);
+void restart_profile_drivers (void);
 
 struct _PpdDriverFake
 {
@@ -57,7 +58,7 @@ toggle_inhibition (PpdDriverFake *fake)
 static void
 keyboard_usage (void)
 {
-  g_print ("Valid keys are: i (toggle inhibition), q/x (quit)\n");
+  g_print ("Valid keys are: i (toggle inhibition), r (restart drivers), q/x (quit)\n");
 }
 
 static gboolean
@@ -82,6 +83,10 @@ check_keyboard (GIOChannel    *source,
   case 'i':
     g_print ("Toggling inhibition\n");
     toggle_inhibition (fake);
+    break;
+  case 'r':
+    g_print ("Restarting profile drivers\n");
+    restart_profile_drivers ();
     break;
   case 'q':
   case 'x':
