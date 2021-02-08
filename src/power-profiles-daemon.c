@@ -459,11 +459,8 @@ profile_already_handled (PpdApp     *data,
 }
 
 static void
-name_acquired_handler (GDBusConnection *connection,
-                       const gchar     *name,
-                       gpointer         user_data)
+start_profile_drivers (PpdApp *data)
 {
-  PpdApp *data = user_data;
   guint i;
 
   for (i = 0; i < G_N_ELEMENTS (objects); i++) {
@@ -539,6 +536,16 @@ bail:
   data->ret = 1;
   g_debug ("Exiting because some non recoverable error occurred during startup");
   g_main_loop_quit (data->main_loop);
+}
+
+static void
+name_acquired_handler (GDBusConnection *connection,
+                       const gchar     *name,
+                       gpointer         user_data)
+{
+  PpdApp *data = user_data;
+
+  start_profile_drivers (data);
 }
 
 static gboolean
