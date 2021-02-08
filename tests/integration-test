@@ -344,7 +344,6 @@ class Tests(dbusmock.DBusTestCase):
       self.stop_daemon()
 
       # Verify that the Lenovo DYTC driver still gets preferred
-      self.create_dytc_device()
       self.create_platform_profile()
       self.start_daemon()
 
