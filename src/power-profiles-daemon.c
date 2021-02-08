@@ -391,7 +391,7 @@ name_lost_handler (GDBusConnection *connection,
                    gpointer         user_data)
 {
   g_debug ("power-profiles-daemon is already running, or it cannot own its D-Bus name. Verify installation.");
-  exit (0);
+  g_main_loop_quit (main_loop);
 }
 
 static void
