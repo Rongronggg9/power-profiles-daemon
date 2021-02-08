@@ -24,7 +24,7 @@ private_headers = [
   'ppd-driver-balanced.h',
   'ppd-driver-fake.h',
   'ppd-driver-intel-pstate.h',
-  'ppd-driver-lenovo-dytc.h',
+  'ppd-driver-platform-profile.h',
   'ppd-driver-power-saver.h',
   'ppd-utils.h',
   'power-profiles-daemon-resources.h',

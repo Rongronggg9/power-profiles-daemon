@@ -11,5 +11,5 @@
 
 #include "ppd-driver.h"
 
-#define PPD_TYPE_DRIVER_LENOVO_DYTC (ppd_driver_lenovo_dytc_get_type())
-G_DECLARE_FINAL_TYPE(PpdDriverLenovoDytc, ppd_driver_lenovo_dytc, PPD, DRIVER_LENOVO_DYTC, PpdDriver)
+#define PPD_TYPE_DRIVER_PLATFORM_PROFILE (ppd_driver_platform_profile_get_type())
+G_DECLARE_FINAL_TYPE(PpdDriverPlatformProfile, ppd_driver_platform_profile, PPD, DRIVER_PLATFORM_PROFILE, PpdDriver)

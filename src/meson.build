@@ -39,7 +39,7 @@ sources += [
   'power-profiles-daemon.c',
   'ppd-action-trickle-charge.c',
   'ppd-driver-intel-pstate.c',
-  'ppd-driver-lenovo-dytc.c',
+  'ppd-driver-platform-profile.c',
   'ppd-driver-balanced.c',
   'ppd-driver-power-saver.c',
   'ppd-driver-fake.c',

@@ -10,14 +10,14 @@
 #include <gudev/gudev.h>
 #include <gio/gio.h>
 
-#include "ppd-driver-lenovo-dytc.h"
+#include "ppd-driver-platform-profile.h"
 #include "ppd-utils.h"
 
 #define LAPMODE_SYSFS_NAME "dytc_lapmode"
 #define ACPI_PLATFORM_PROFILE_PATH "/sys/firmware/acpi/platform_profile"
 #define ACPI_PLATFORM_PROFILE_CHOICES_PATH "/sys/firmware/acpi/platform_profile_choices"
 
-struct _PpdDriverLenovoDytc
+struct _PpdDriverPlatformProfile
 {
   PpdDriver  parent_instance;
 
@@ -29,20 +29,20 @@ struct _PpdDriverLenovoDytc
   guint acpi_platform_profile_changed_id;
 };
 
-G_DEFINE_TYPE (PpdDriverLenovoDytc, ppd_driver_lenovo_dytc, PPD_TYPE_DRIVER)
+G_DEFINE_TYPE (PpdDriverPlatformProfile, ppd_driver_platform_profile, PPD_TYPE_DRIVER)
 
 static GObject*
-ppd_driver_lenovo_dytc_constructor (GType                  type,
+ppd_driver_platform_profile_constructor (GType                  type,
                                     guint                  n_construct_params,
                                     GObjectConstructParam *construct_params)
 {
   GObject *object;
 
-  object = G_OBJECT_CLASS (ppd_driver_lenovo_dytc_parent_class)->constructor (type,
+  object = G_OBJECT_CLASS (ppd_driver_platform_profile_parent_class)->constructor (type,
                                                                               n_construct_params,
                                                                               construct_params);
   g_object_set (object,
-                "driver-name", "lenovo_dytc",
+                "driver-name", "platform_profile",
                 "profiles", PPD_PROFILE_PERFORMANCE | PPD_PROFILE_BALANCED | PPD_PROFILE_POWER_SAVER,
                 NULL);
 
@@ -107,7 +107,7 @@ verify_acpi_platform_profile_choices (void)
 }
 
 static void
-update_dytc_lapmode_state (PpdDriverLenovoDytc *dytc)
+update_dytc_lapmode_state (PpdDriverPlatformProfile *dytc)
 {
   gboolean new_lapmode;
 
@@ -125,7 +125,7 @@ update_dytc_lapmode_state (PpdDriverLenovoDytc *dytc)
 }
 
 static void
-update_acpi_platform_profile_state (PpdDriverLenovoDytc *dytc)
+update_acpi_platform_profile_state (PpdDriverPlatformProfile *dytc)
 {
   g_autofree char *platform_profile_path = NULL;
   g_autofree char *new_profile_str = NULL;
@@ -160,7 +160,7 @@ lapmode_changed (GFileMonitor      *monitor,
                  GFileMonitorEvent  event_type,
                  gpointer           user_data)
 {
-  PpdDriverLenovoDytc *dytc = user_data;
+  PpdDriverPlatformProfile *dytc = user_data;
   g_debug (LAPMODE_SYSFS_NAME " attribute changed");
   update_dytc_lapmode_state (dytc);
 }
@@ -172,17 +172,17 @@ acpi_platform_profile_changed (GFileMonitor      *monitor,
                                GFileMonitorEvent  event_type,
                                gpointer           user_data)
 {
-  PpdDriverLenovoDytc *dytc = user_data;
+  PpdDriverPlatformProfile *dytc = user_data;
   g_debug (ACPI_PLATFORM_PROFILE_PATH " changed");
   update_acpi_platform_profile_state (dytc);
 }
 
 static gboolean
-ppd_driver_lenovo_dytc_activate_profile (PpdDriver   *driver,
+ppd_driver_platform_profile_activate_profile (PpdDriver   *driver,
                                          PpdProfile   profile,
                                          GError     **error)
 {
-  PpdDriverLenovoDytc *dytc = PPD_DRIVER_LENOVO_DYTC (driver);
+  PpdDriverPlatformProfile *dytc = PPD_DRIVER_PLATFORM_PROFILE (driver);
   g_autofree char *platform_profile_path = NULL;
 
   g_return_val_if_fail (dytc->acpi_platform_profile_mon, FALSE);
@@ -228,9 +228,9 @@ find_dytc (GUdevDevice *dev,
 }
 
 static gboolean
-ppd_driver_lenovo_dytc_probe (PpdDriver *driver)
+ppd_driver_platform_profile_probe (PpdDriver *driver)
 {
-  PpdDriverLenovoDytc *dytc = PPD_DRIVER_LENOVO_DYTC (driver);
+  PpdDriverPlatformProfile *dytc = PPD_DRIVER_PLATFORM_PROFILE (driver);
   g_autoptr(GFile) acpi_platform_profile = NULL;
   g_autofree char *platform_profile_path = NULL;
 
@@ -279,33 +279,33 @@ out:
 }
 
 static void
-ppd_driver_lenovo_dytc_finalize (GObject *object)
+ppd_driver_platform_profile_finalize (GObject *object)
 {
-  PpdDriverLenovoDytc *driver;
+  PpdDriverPlatformProfile *driver;
 
-  driver = PPD_DRIVER_LENOVO_DYTC (object);
+  driver = PPD_DRIVER_PLATFORM_PROFILE (object);
   g_clear_object (&driver->device);
   g_clear_object (&driver->lapmode_mon);
   g_clear_object (&driver->acpi_platform_profile_mon);
-  G_OBJECT_CLASS (ppd_driver_lenovo_dytc_parent_class)->finalize (object);
+  G_OBJECT_CLASS (ppd_driver_platform_profile_parent_class)->finalize (object);
 }
 
 static void
-ppd_driver_lenovo_dytc_class_init (PpdDriverLenovoDytcClass *klass)
+ppd_driver_platform_profile_class_init (PpdDriverPlatformProfileClass *klass)
 {
   GObjectClass *object_class;
   PpdDriverClass *driver_class;
 
   object_class = G_OBJECT_CLASS(klass);
-  object_class->constructor = ppd_driver_lenovo_dytc_constructor;
-  object_class->finalize = ppd_driver_lenovo_dytc_finalize;
+  object_class->constructor = ppd_driver_platform_profile_constructor;
+  object_class->finalize = ppd_driver_platform_profile_finalize;
 
   driver_class = PPD_DRIVER_CLASS(klass);
-  driver_class->probe = ppd_driver_lenovo_dytc_probe;
-  driver_class->activate_profile = ppd_driver_lenovo_dytc_activate_profile;
+  driver_class->probe = ppd_driver_platform_profile_probe;
+  driver_class->activate_profile = ppd_driver_platform_profile_activate_profile;
 }
 
 static void
-ppd_driver_lenovo_dytc_init (PpdDriverLenovoDytc *self)
+ppd_driver_platform_profile_init (PpdDriverPlatformProfile *self)
 {
 }
