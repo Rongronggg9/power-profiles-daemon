@@ -28,11 +28,15 @@ typedef struct {
   int ret;
 
   PpdProfile active_profile;
+  GPtrArray *probed_drivers;
   GPtrArray *drivers;
   GPtrArray *actions;
 } PpdApp;
 
 static PpdApp *ppd_app = NULL;
+
+static void stop_profile_drivers (PpdApp *data);
+static void start_profile_drivers (PpdApp *data);
 
 static PpdDriver *
 get_driver_for_profile (PpdApp     *data,
@@ -459,8 +463,19 @@ profile_already_handled (PpdApp     *data,
 }
 
 static void
+driver_probe_request_cb (PpdDriver *driver,
+                         gpointer   user_data)
+{
+  PpdApp *data = user_data;
+
+  stop_profile_drivers (data);
+  start_profile_drivers (data);
+}
+
+static void
 stop_profile_drivers (PpdApp *data)
 {
+  g_ptr_array_set_size (data->probed_drivers, 0);
   g_ptr_array_set_size (data->actions, 0);
   g_ptr_array_set_size (data->drivers, 0);
 }
@@ -477,6 +492,7 @@ start_profile_drivers (PpdApp *data)
     if (PPD_IS_DRIVER (object)) {
       PpdDriver *driver = PPD_DRIVER (object);
       PpdProfile profiles;
+      ProbeResult result;
 
       g_debug ("Handling driver '%s'", ppd_driver_get_driver_name (driver));
 
@@ -494,10 +510,16 @@ start_profile_drivers (PpdApp *data)
         continue;
       }
 
-      if (ppd_driver_probe (driver) != PROBE_RESULT_SUCCESS) {
+      result = ppd_driver_probe (driver);
+      if (result == PROBE_RESULT_FAIL) {
         g_debug ("probe() failed for driver %s, skipping",
                  ppd_driver_get_driver_name (driver));
         g_object_unref (object);
+        continue;
+      } else if (result == PROBE_RESULT_DEFER) {
+        g_signal_connect (G_OBJECT (driver), "probe-request",
+                          G_CALLBACK (driver_probe_request_cb), data);
+        g_ptr_array_add (data->probed_drivers, driver);
         continue;
       }
 
@@ -603,6 +625,7 @@ free_app_data (PpdApp *data)
     data->name_id = 0;
   }
 
+  g_ptr_array_free (data->probed_drivers, TRUE);
   g_ptr_array_free (data->actions, TRUE);
   g_ptr_array_free (data->drivers, TRUE);
 
@@ -648,6 +671,7 @@ int main (int argc, char **argv)
 
   data = g_new0 (PpdApp, 1);
   data->main_loop = g_main_loop_new (NULL, TRUE);
+  data->probed_drivers = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
   data->actions = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
   data->drivers = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
   data->active_profile = PPD_PROFILE_BALANCED;
