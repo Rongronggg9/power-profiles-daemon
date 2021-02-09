@@ -494,7 +494,7 @@ start_profile_drivers (PpdApp *data)
         continue;
       }
 
-      if (!ppd_driver_probe (driver)) {
+      if (ppd_driver_probe (driver) != PROBE_RESULT_SUCCESS) {
         g_debug ("probe() failed for driver %s, skipping",
                  ppd_driver_get_driver_name (driver));
         g_object_unref (object);

@@ -15,6 +15,13 @@
 #define PPD_TYPE_DRIVER (ppd_driver_get_type())
 G_DECLARE_DERIVABLE_TYPE(PpdDriver, ppd_driver, PPD, DRIVER, GObject)
 
+typedef enum {
+  PROBE_RESULT_UNSET = -2,
+  PROBE_RESULT_DEFER = -1,
+  PROBE_RESULT_FAIL = 0,
+  PROBE_RESULT_SUCCESS = 1
+} ProbeResult;
+
 /**
  * PpdDriverClass:
  * @parent_class: The parent class.
@@ -28,14 +35,14 @@ struct _PpdDriverClass
 {
   GObjectClass   parent_class;
 
-  gboolean       (* probe)            (PpdDriver   *driver);
+  ProbeResult    (* probe)            (PpdDriver   *driver);
   gboolean       (* activate_profile) (PpdDriver   *driver,
                                        PpdProfile   profile,
                                        GError     **error);
 };
 
 #ifndef __GTK_DOC_IGNORE__
-gboolean ppd_driver_probe (PpdDriver *driver);
+ProbeResult ppd_driver_probe (PpdDriver *driver);
 gboolean ppd_driver_activate_profile (PpdDriver *driver, PpdProfile profile, GError **error);
 const char *ppd_driver_get_driver_name (PpdDriver *driver);
 PpdProfile ppd_driver_get_profiles (PpdDriver *driver);

@@ -227,24 +227,24 @@ find_dytc (GUdevDevice *dev,
   return 0;
 }
 
-static gboolean
+static ProbeResult
 ppd_driver_platform_profile_probe (PpdDriver *driver)
 {
   PpdDriverPlatformProfile *dytc = PPD_DRIVER_PLATFORM_PROFILE (driver);
   g_autoptr(GFile) acpi_platform_profile = NULL;
   g_autofree char *platform_profile_path = NULL;
 
-  g_return_val_if_fail (!dytc->acpi_platform_profile_mon, FALSE);
+  g_return_val_if_fail (!dytc->acpi_platform_profile_mon, PROBE_RESULT_FAIL);
 
   /* Profile interface */
   platform_profile_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_PATH);
   if (!g_file_test (platform_profile_path, G_FILE_TEST_EXISTS)) {
     g_debug ("No platform_profile sysfs file");
-    return FALSE;
+    return PROBE_RESULT_FAIL;
   }
   if (!verify_acpi_platform_profile_choices ()) {
     g_debug ("No supported platform_profile choices");
-    return FALSE;
+    return PROBE_RESULT_FAIL;
   }
 
   acpi_platform_profile = g_file_new_for_path (platform_profile_path);
@@ -275,7 +275,7 @@ out:
 
   g_debug ("%s a dytc_lapmode sysfs attribute to thinkpad_acpi",
            dytc->device ? "Found" : "Didn't find");
-  return TRUE;
+  return PROBE_RESULT_SUCCESS;
 }
 
 static void
