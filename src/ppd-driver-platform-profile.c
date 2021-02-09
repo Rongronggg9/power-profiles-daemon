@@ -33,14 +33,14 @@ G_DEFINE_TYPE (PpdDriverPlatformProfile, ppd_driver_platform_profile, PPD_TYPE_D
 
 static GObject*
 ppd_driver_platform_profile_constructor (GType                  type,
-                                    guint                  n_construct_params,
-                                    GObjectConstructParam *construct_params)
+                                         guint                  n_construct_params,
+                                         GObjectConstructParam *construct_params)
 {
   GObject *object;
 
   object = G_OBJECT_CLASS (ppd_driver_platform_profile_parent_class)->constructor (type,
-                                                                              n_construct_params,
-                                                                              construct_params);
+                                                                                   n_construct_params,
+                                                                                   construct_params);
   g_object_set (object,
                 "driver-name", "platform_profile",
                 "profiles", PPD_PROFILE_PERFORMANCE | PPD_PROFILE_BALANCED | PPD_PROFILE_POWER_SAVER,
@@ -107,25 +107,25 @@ verify_acpi_platform_profile_choices (void)
 }
 
 static void
-update_dytc_lapmode_state (PpdDriverPlatformProfile *dytc)
+update_dytc_lapmode_state (PpdDriverPlatformProfile *self)
 {
   gboolean new_lapmode;
 
-  new_lapmode = g_udev_device_get_sysfs_attr_as_boolean_uncached (dytc->device, LAPMODE_SYSFS_NAME);
-  if (new_lapmode == dytc->lapmode)
+  new_lapmode = g_udev_device_get_sysfs_attr_as_boolean_uncached (self->device, LAPMODE_SYSFS_NAME);
+  if (new_lapmode == self->lapmode)
     return;
 
-  dytc->lapmode = new_lapmode;
+  self->lapmode = new_lapmode;
   g_debug ("dytc_lapmode is now %s, so profile is %s",
-           dytc->lapmode ? "on" : "off",
-           dytc->lapmode ? "inhibited" : "uninhibited");
-  g_object_set (G_OBJECT (dytc),
-                "performance-inhibited", dytc->lapmode ? "lap-detected" : NULL,
+           self->lapmode ? "on" : "off",
+           self->lapmode ? "inhibited" : "uninhibited");
+  g_object_set (G_OBJECT (self),
+                "performance-inhibited", self->lapmode ? "lap-detected" : NULL,
                 NULL);
 }
 
 static void
-update_acpi_platform_profile_state (PpdDriverPlatformProfile *dytc)
+update_acpi_platform_profile_state (PpdDriverPlatformProfile *self)
 {
   g_autofree char *platform_profile_path = NULL;
   g_autofree char *new_profile_str = NULL;
@@ -143,14 +143,14 @@ update_acpi_platform_profile_state (PpdDriverPlatformProfile *dytc)
 
   new_profile = acpi_platform_profile_value_to_profile (new_profile_str);
   if (new_profile == PPD_PROFILE_UNSET ||
-      new_profile == dytc->acpi_platform_profile)
+      new_profile == self->acpi_platform_profile)
     return;
 
   g_debug ("ACPI performance_profile is now %c, so profile is %s",
            new_profile_str[0],
            ppd_profile_to_str (new_profile));
-  dytc->acpi_platform_profile = new_profile;
-  ppd_driver_emit_profile_changed (PPD_DRIVER (dytc), new_profile);
+  self->acpi_platform_profile = new_profile;
+  ppd_driver_emit_profile_changed (PPD_DRIVER (self), new_profile);
 }
 
 static void
@@ -160,9 +160,9 @@ lapmode_changed (GFileMonitor      *monitor,
                  GFileMonitorEvent  event_type,
                  gpointer           user_data)
 {
-  PpdDriverPlatformProfile *dytc = user_data;
+  PpdDriverPlatformProfile *self = user_data;
   g_debug (LAPMODE_SYSFS_NAME " attribute changed");
-  update_dytc_lapmode_state (dytc);
+  update_dytc_lapmode_state (self);
 }
 
 static void
@@ -172,45 +172,45 @@ acpi_platform_profile_changed (GFileMonitor      *monitor,
                                GFileMonitorEvent  event_type,
                                gpointer           user_data)
 {
-  PpdDriverPlatformProfile *dytc = user_data;
+  PpdDriverPlatformProfile *self = user_data;
   g_debug (ACPI_PLATFORM_PROFILE_PATH " changed");
-  update_acpi_platform_profile_state (dytc);
+  update_acpi_platform_profile_state (self);
 }
 
 static gboolean
 ppd_driver_platform_profile_activate_profile (PpdDriver   *driver,
-                                         PpdProfile   profile,
-                                         GError     **error)
+                                              PpdProfile   profile,
+                                              GError     **error)
 {
-  PpdDriverPlatformProfile *dytc = PPD_DRIVER_PLATFORM_PROFILE (driver);
+  PpdDriverPlatformProfile *self = PPD_DRIVER_PLATFORM_PROFILE (driver);
   g_autofree char *platform_profile_path = NULL;
 
-  g_return_val_if_fail (dytc->acpi_platform_profile_mon, FALSE);
+  g_return_val_if_fail (self->acpi_platform_profile_mon, FALSE);
 
-  if (dytc->acpi_platform_profile == profile) {
+  if (self->acpi_platform_profile == profile) {
     g_debug ("Can't switch to %s mode, already there",
              ppd_profile_to_str (profile));
     return TRUE;
   }
 
   if (profile == PPD_PROFILE_PERFORMANCE &&
-      dytc->lapmode) {
+      self->lapmode) {
     g_debug ("Can't switch to performance mode, lapmode is detected");
     g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "Mode is inhibited");
     return FALSE;
   }
 
-  g_signal_handler_block (G_OBJECT (dytc->acpi_platform_profile_mon), dytc->acpi_platform_profile_changed_id);
+  g_signal_handler_block (G_OBJECT (self->acpi_platform_profile_mon), self->acpi_platform_profile_changed_id);
   platform_profile_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_PATH);
   if (!ppd_utils_write (platform_profile_path, profile_to_acpi_platform_profile_value (profile), error)) {
     g_debug ("Failed to write to acpi_platform_profile: %s", (* error)->message);
-    g_signal_handler_unblock (G_OBJECT (dytc->acpi_platform_profile_mon), dytc->acpi_platform_profile_changed_id);
+    g_signal_handler_unblock (G_OBJECT (self->acpi_platform_profile_mon), self->acpi_platform_profile_changed_id);
     return FALSE;
   }
-  g_signal_handler_unblock (G_OBJECT (dytc->acpi_platform_profile_mon), dytc->acpi_platform_profile_changed_id);
+  g_signal_handler_unblock (G_OBJECT (self->acpi_platform_profile_mon), self->acpi_platform_profile_changed_id);
 
   g_debug ("Successfully switched to profile %s", ppd_profile_to_str (profile));
-  dytc->acpi_platform_profile = profile;
+  self->acpi_platform_profile = profile;
   return TRUE;
 }
 
@@ -230,11 +230,11 @@ find_dytc (GUdevDevice *dev,
 static ProbeResult
 ppd_driver_platform_profile_probe (PpdDriver *driver)
 {
-  PpdDriverPlatformProfile *dytc = PPD_DRIVER_PLATFORM_PROFILE (driver);
+  PpdDriverPlatformProfile *self = PPD_DRIVER_PLATFORM_PROFILE (driver);
   g_autoptr(GFile) acpi_platform_profile = NULL;
   g_autofree char *platform_profile_path = NULL;
 
-  g_return_val_if_fail (!dytc->acpi_platform_profile_mon, PROBE_RESULT_FAIL);
+  g_return_val_if_fail (!self->acpi_platform_profile_mon, PROBE_RESULT_FAIL);
 
   /* Profile interface */
   platform_profile_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_PATH);
@@ -248,33 +248,33 @@ ppd_driver_platform_profile_probe (PpdDriver *driver)
   }
 
   acpi_platform_profile = g_file_new_for_path (platform_profile_path);
-  dytc->acpi_platform_profile_mon = g_file_monitor (acpi_platform_profile,
-                                                G_FILE_MONITOR_NONE,
-                                                NULL,
-                                                NULL);
-  dytc->acpi_platform_profile_changed_id =
-    g_signal_connect (G_OBJECT (dytc->acpi_platform_profile_mon), "changed",
-                      G_CALLBACK (acpi_platform_profile_changed), dytc);
+  self->acpi_platform_profile_mon = g_file_monitor (acpi_platform_profile,
+                                                    G_FILE_MONITOR_NONE,
+                                                    NULL,
+                                                    NULL);
+  self->acpi_platform_profile_changed_id =
+    g_signal_connect (G_OBJECT (self->acpi_platform_profile_mon), "changed",
+                      G_CALLBACK (acpi_platform_profile_changed), self);
 
   /* Lenovo-specific proximity sensor */
-  dytc->device = ppd_utils_find_device ("platform",
+  self->device = ppd_utils_find_device ("platform",
                                         (GCompareFunc) find_dytc,
                                         NULL);
-  if (!dytc->device)
+  if (!self->device)
     goto out;
 
-  dytc->lapmode_mon = ppd_utils_monitor_sysfs_attr (dytc->device,
+  self->lapmode_mon = ppd_utils_monitor_sysfs_attr (self->device,
                                                     LAPMODE_SYSFS_NAME,
                                                     NULL);
-  g_signal_connect (G_OBJECT (dytc->lapmode_mon), "changed",
-                    G_CALLBACK (lapmode_changed), dytc);
-  update_dytc_lapmode_state (dytc);
+  g_signal_connect (G_OBJECT (self->lapmode_mon), "changed",
+                    G_CALLBACK (lapmode_changed), self);
+  update_dytc_lapmode_state (self);
 
 out:
-  update_acpi_platform_profile_state (dytc);
+  update_acpi_platform_profile_state (self);
 
   g_debug ("%s a dytc_lapmode sysfs attribute to thinkpad_acpi",
-           dytc->device ? "Found" : "Didn't find");
+           self->device ? "Found" : "Didn't find");
   return PROBE_RESULT_SUCCESS;
 }
 
