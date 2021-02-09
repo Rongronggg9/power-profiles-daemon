@@ -490,6 +490,32 @@ class Tests(dbusmock.DBusTestCase):
       # self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
       # self.assertEqual(self.read_sysfs_attr(fastcharge, 'charge_type'), 'Fast')
 
+    def test_platform_driver_late_load(self):
+      '''Test that we can handle the platform_profile driver getting loaded late'''
+      acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
+      os.makedirs(acpi_dir)
+      with open(os.path.join(acpi_dir, "platform_profile")  ,'w') as profile:
+        profile.write('')
+      with open(os.path.join(acpi_dir, "platform_profile_choices")  ,'w') as choices:
+        choices.write('')
+
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 2)
+
+      with open(os.path.join(acpi_dir, "platform_profile")  ,'w') as profile:
+        profile.write("performance")
+      with open(os.path.join(acpi_dir, "platform_profile_choices")  ,'w') as choices:
+        choices.write("low-power\nbalanced\nperformance\n")
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      self.assertEqual(self.get_dbus_property('PerformanceInhibited'), '')
+
+      self.stop_daemon()
+
     #
     # Helper methods
     #
