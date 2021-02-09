@@ -55,6 +55,7 @@ enum {
 
 enum {
   PROFILE_CHANGED,
+  PROBE_REQUEST,
   LAST_SIGNAL
 };
 
@@ -152,6 +153,23 @@ ppd_driver_class_init (PpdDriverClass *klass)
                                            G_TYPE_NONE,
                                            1,
                                            PPD_TYPE_PROFILE);
+
+
+  /**
+   * PpdDriver::probe-request
+   *
+   * The driver requested to be reprobed, because it became available.
+   */
+  signals[PROBE_REQUEST] = g_signal_new ("probe-request",
+                                         G_TYPE_FROM_CLASS (klass),
+                                         G_SIGNAL_RUN_LAST,
+                                         0,
+                                         NULL,
+                                         NULL,
+                                         g_cclosure_marshal_generic,
+                                         G_TYPE_NONE,
+                                         0,
+                                         G_TYPE_NONE);
 
   /**
    * PpdDriver::driver-name:
