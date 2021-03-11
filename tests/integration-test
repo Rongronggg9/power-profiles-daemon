@@ -7,6 +7,7 @@
 #
 # Copyright: (C) 2011 Martin Pitt <martin.pitt@ubuntu.com>
 # (C) 2020 Bastien Nocera <hadess@hadess.net>
+# (C) 2021 David Redondo <kde@david-redondo.de>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -50,6 +51,7 @@ except ImportError:
 
 PP = 'net.hadess.PowerProfiles'
 PP_PATH = '/net/hadess/PowerProfiles'
+PP_INTERFACE = 'net.hadess.PowerProfiles'
 
 class Tests(dbusmock.DBusTestCase):
     @classmethod
@@ -194,6 +196,15 @@ class Tests(dbusmock.DBusTestCase):
             self.dbus, Gio.DBusProxyFlags.DO_NOT_AUTO_START, None, PP,
             PP_PATH, 'org.freedesktop.DBus.Properties', None)
         return proxy.Set('(ssv)', PP, name, value)
+
+    def call_dbus_method(self, name, parameters):
+        '''Call a method of the daemon D-Bus interface.'''
+
+        proxy = Gio.DBusProxy.new_sync(
+            self.dbus, Gio.DBusProxyFlags.DO_NOT_AUTO_START, None, PP,
+            PP_PATH, PP_INTERFACE, None)
+        return proxy.call_sync(name, parameters, Gio.DBusCallFlags.NO_AUTO_START, -1, None)
+
 
     def have_text_in_log(self, text):
         return self.count_text_in_log(text) > 0
@@ -535,6 +546,100 @@ class Tests(dbusmock.DBusTestCase):
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
       self.assertEqual(self.read_sysfs_file("sys/firmware/acpi/platform_profile"), b'cool')
+
+      self.stop_daemon()
+
+    def test_hold_release_profile(self):
+      self.create_platform_profile()
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('balanced'))
+
+      cookie = self.call_dbus_method('HoldProfile', GLib.Variant("(sss)", ('performance', 'testReason', 'testApplication')))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+      profileHolds = self.get_dbus_property('ActiveProfileHolds')
+      self.assertEqual(len(profileHolds), 1)
+      self.assertEqual(profileHolds[0]["Profile"], "performance")
+      self.assertEqual(profileHolds[0]["Reason"], "testReason")
+      self.assertEqual(profileHolds[0]["ApplicationId"], "testApplication")
+
+      self.call_dbus_method('ReleaseProfile', GLib.Variant("(u)", cookie))
+      profileHolds = self.get_dbus_property('ActiveProfileHolds')
+      self.assertEqual(len(profileHolds), 0)
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      # When the profile is changed manually, holds should be released a
+      self.call_dbus_method('HoldProfile', GLib.Variant("(sss)", ('performance', '', '')))
+      self.assertEqual(len(self.get_dbus_property('ActiveProfileHolds')), 1)
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('balanced'))
+      self.assertEqual(len(self.get_dbus_property('ActiveProfileHolds')), 0)
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      # When all holds are released, the last manually selected profile should be activated
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+      cookie = self.call_dbus_method('HoldProfile', GLib.Variant("(sss)", ('performance', '', '')))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+      self.call_dbus_method('ReleaseProfile', GLib.Variant("(u)", cookie))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+
+      self.stop_daemon()
+
+    def test_hold_priority(self):
+      '''power-saver should take priority over performance'''
+      self.create_platform_profile()
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('balanced'))
+
+      # Test every order of holding and releasing power-saver and performance
+      # hold performance and then power-saver, release in the same order
+      performanceCookie = self.call_dbus_method('HoldProfile', GLib.Variant("(sss)", ('performance', '', '')))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+      powerSaverCookie = self.call_dbus_method('HoldProfile', GLib.Variant("(sss)", ('power-saver', '', '')))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+      self.call_dbus_method('ReleaseProfile', GLib.Variant("(u)", performanceCookie))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+      self.call_dbus_method('ReleaseProfile', GLib.Variant("(u)", powerSaverCookie))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      # hold performance and then power-saver, but release power-saver first
+      performanceCookie = self.call_dbus_method('HoldProfile', GLib.Variant("(sss)", ('performance', '', '')))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+      powerSaverCookie = self.call_dbus_method('HoldProfile', GLib.Variant("(sss)", ('power-saver', '', '')))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+      self.call_dbus_method('ReleaseProfile', GLib.Variant("(u)",powerSaverCookie))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+      self.call_dbus_method('ReleaseProfile', GLib.Variant("(u)", performanceCookie))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      # hold power-saver and then performance, release in the same order
+      powerSaverCookie = self.call_dbus_method('HoldProfile', GLib.Variant("(sss)", ('power-saver', '', '')))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+      performanceCookie = self.call_dbus_method('HoldProfile', GLib.Variant("(sss)", ('performance', '', '')))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+      self.call_dbus_method('ReleaseProfile', GLib.Variant("(u)",powerSaverCookie))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+      self.call_dbus_method('ReleaseProfile', GLib.Variant("(u)", performanceCookie))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      # hold power-saver and then performance, but release performance first
+      powerSaverCookie = self.call_dbus_method('HoldProfile', GLib.Variant("(sss)", ('power-saver', '', '')))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+      performanceCookie = self.call_dbus_method('HoldProfile', GLib.Variant("(sss)", ('performance', '', '')))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+      self.call_dbus_method('ReleaseProfile', GLib.Variant("(u)",performanceCookie))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+      self.call_dbus_method('ReleaseProfile', GLib.Variant("(u)", powerSaverCookie))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
 
       self.stop_daemon()
 
