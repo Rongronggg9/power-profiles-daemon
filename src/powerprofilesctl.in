@@ -1,5 +1,7 @@
 #!@PYTHON3@
 
+import signal
+import subprocess
 import sys
 from gi.repository import Gio, GLib
 
@@ -15,6 +17,8 @@ def usage_main():
     print('  get        Print the currently active power profile')
     print('  set        Set the currently active power profile')
     print('  list       List available power profiles')
+    print('  list-holds List current power profile holds')
+    print('  launch     Launch a command while holding a power profile')
     print('')
     print('Use “powerprofilesctl help COMMAND” to get detailed help.')
 
@@ -43,6 +47,28 @@ def usage_list():
     print('')
     print('List available power profiles.')
 
+def usage_list_holds():
+    print('Usage:')
+    print('  powerprofilesctl list-holds')
+    print('')
+    print('List current power profile holds.')
+
+def usage_launch():
+    print('Usage:')
+    print('  powerprofilesctl launch [COMMAND…]')
+    print('')
+    print('Launch a command while holding a power profile.')
+    print('')
+    print('Options:')
+    print('  -p, --profile=PROFILE           The power profile to hold')
+    print('  -r, --reason=REASON             The reason for the profile hold')
+    print('  -i, --appid=APP-ID              The application ID for the profile hold')
+    print('')
+    print('Launch the command while holding a power profile, either performance, ')
+    print('or power-saver. By default, the profile hold is for the performance ')
+    print('profile, but it might not be available on all systems. See the list ')
+    print('command for a list of available profiles.')
+
 def usage(_command=None):
     if not _command:
         usage_main()
@@ -52,6 +78,10 @@ def usage(_command=None):
         usage_set()
     elif _command == 'list':
         usage_list()
+    elif _command == 'list-holds':
+        usage_list_holds()
+    elif _command == 'launch':
+        usage_launch()
     elif _command == 'version':
         usage_version()
     else:
@@ -117,7 +147,46 @@ def _list():
                 print('    Degraded:  ', f'yes ({reason})' if degraded else 'no')
             index += 1
 
-def main(): # pylint: disable=too-many-branches
+def _list_holds():
+    try:
+        holds = get_profiles_property('ActiveProfileHolds')
+    except:
+        # print("Couldn\'t get ActiveProfileHolds: ", sys.exc_info()[0])
+        raise SystemError
+    else:
+        index = 0
+        for hold in holds:
+            if index > 0:
+                print('')
+            print('Hold:')
+            print('  Profile:        ', hold['Profile'])
+            print('  Application ID: ', hold['ApplicationId'])
+            print('  Reason:         ', hold['Reason'])
+            index += 1
+
+def _launch(args, profile, appid, reason):
+    try:
+        bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+        proxy = Gio.DBusProxy.new_sync(bus, Gio.DBusProxyFlags.NONE, None,
+                                       'net.hadess.PowerProfiles',
+                                       '/net/hadess/PowerProfiles',
+                                       'net.hadess.PowerProfiles', None)
+    except:
+        raise SystemError
+
+    cookie = proxy.HoldProfile('(sss)', profile, reason, appid)
+
+    # Kill child when we go away
+    def receive_signal(_signum, _stack):
+        launched_app.terminate()
+    signal.signal(signal.SIGTERM, receive_signal)
+
+    # print (f'Got {cookie} for {profile} hold')
+    launched_app = subprocess.Popen(args)
+    launched_app.wait()
+    proxy.ReleaseProfile('(u)', cookie)
+
+def main(): # pylint: disable=too-many-branches, disable=too-many-statements
     args = None
     if len(sys.argv) == 1:
         command = 'list'
@@ -146,6 +215,47 @@ def main(): # pylint: disable=too-many-branches
         _set(args[0])
     elif command == 'list':
         _list()
+    elif command == 'list-holds':
+        _list_holds()
+    elif command == 'launch':
+        if len(args) == 0:
+            sys.exit(0)
+        profile = None
+        reason = None
+        appid = None
+        while True:
+            if args[0] == '--':
+                args = args[1:]
+                break
+            if args[0][:9] == '--profile' or args[0] == '-p':
+                if args[0][:10] == '--profile=':
+                    args = args[0].split('=') + args[1:]
+                profile = args[1]
+                args = args[2:]
+                continue
+            if args[0][:8] == '--reason' or args[0] == '-r':
+                if args[0][:9] == '--reason=':
+                    args = args[0].split('=') + args[1:]
+                reason = args[1]
+                args = args[2:]
+                continue
+            if args[0][:7] == '--appid' or args[0] == '-i':
+                if args[0][:8] == '--appid=':
+                    args = args[0].split('=') + args[1:]
+                appid = args[1]
+                args = args[2:]
+                continue
+            break
+
+        if len(args) < 1:
+            sys.exit(0)
+        if not appid:
+            appid = args[0]
+        if not reason:
+            reason = 'Running ' + appid
+        if not profile:
+            profile = 'performance'
+        _launch(args, profile, appid, reason)
 
 if __name__ == '__main__':
     main()
