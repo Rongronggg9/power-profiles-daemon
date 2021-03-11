@@ -51,3 +51,17 @@ executable('power-profiles-daemon',
   install: true,
   install_dir: libexecdir
 )
+
+python = import('python')
+py_installation = python.find_installation('python3', required: true)
+
+ppd_conf = configuration_data()
+ppd_conf.set('VERSION', meson.project_version())
+ppd_conf.set('PYTHON3', py_installation.path())
+
+configure_file(
+  input: 'powerprofilesctl.in',
+  output: 'powerprofilesctl',
+  configuration: ppd_conf,
+  install_dir: get_option('bindir')
+)
