@@ -42,6 +42,9 @@ gnome = import('gnome')
 
 add_global_arguments('-D_GNU_SOURCE=1', language: 'c')
 
+pylint = find_program('pylint-3', 'pylint3', 'pylint', required: false)
+pylint_flags = ['-d', 'C0116', '-d', 'C0114', '-d', 'W0707']
+
 subdir('src')
 subdir('data')
 

@@ -59,9 +59,16 @@ ppd_conf = configuration_data()
 ppd_conf.set('VERSION', meson.project_version())
 ppd_conf.set('PYTHON3', py_installation.path())
 
-configure_file(
+script = configure_file(
   input: 'powerprofilesctl.in',
   output: 'powerprofilesctl',
   configuration: ppd_conf,
   install_dir: get_option('bindir')
 )
+
+if pylint.found()
+  test('pylint-powerprofilesctl',
+       pylint,
+       args: pylint_flags + [ script ],
+       )
+endif
