@@ -13,6 +13,7 @@ variables:
                 git
                 python3-gobject
                 python3-dbusmock
+                python3-pylint
                 umockdev
                 make
                 automake
