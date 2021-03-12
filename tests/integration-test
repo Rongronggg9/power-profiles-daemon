@@ -590,6 +590,31 @@ class Tests(dbusmock.DBusTestCase):
 
       self.stop_daemon()
 
+    def test_vanishing_hold(self):
+      self.create_platform_profile()
+      self.start_daemon()
+
+      builddir = os.getenv('top_builddir', '.')
+      tool_path = os.path.join(builddir, 'src', 'powerprofilesctl')
+
+      launch_process = subprocess.Popen([tool_path, 'launch', '-p', 'power-saver', 'sleep', '3600'],
+          stdout=sys.stdout, stderr=sys.stderr)
+      assert launch_process
+      time.sleep(1)
+      holds = self.get_dbus_property('ActiveProfileHolds')
+      self.assertEqual(len(holds), 1)
+      hold = holds[0]
+      self.assertEqual(hold['Profile'], 'power-saver')
+
+      # Make sure to handle vanishing clients
+      launch_process.terminate()
+      launch_process.wait()
+
+      holds = self.get_dbus_property('ActiveProfileHolds')
+      self.assertEqual(len(holds), 0)
+
+      self.stop_daemon()
+
     def test_hold_priority(self):
       '''power-saver should take priority over performance'''
       self.create_platform_profile()
