@@ -263,8 +263,10 @@ ppd_driver_platform_profile_probe (PpdDriver *driver)
   self->acpi_platform_profile_changed_id =
     g_signal_connect (G_OBJECT (self->acpi_platform_profile_mon), "changed",
                       G_CALLBACK (acpi_platform_profile_changed), self);
-  if (self->probe_result == PROBE_RESULT_DEFER)
+  if (self->probe_result == PROBE_RESULT_DEFER) {
+    g_debug ("Monitoring platform_profile sysfs file");
     return self->probe_result;
+  }
 
   /* Lenovo-specific proximity sensor */
   self->device = ppd_utils_find_device ("platform",
