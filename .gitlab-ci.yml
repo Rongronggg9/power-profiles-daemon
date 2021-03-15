@@ -31,3 +31,7 @@ build_stable:
     - ninja -v -C _build uninstall
     - ninja -v -C _build dist
     - meson test -C _build
+  artifacts:
+    when: always
+    paths:
+    - _build/meson-logs/*.txt
