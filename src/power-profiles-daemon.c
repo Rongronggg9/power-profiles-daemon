@@ -492,7 +492,7 @@ start_profile_drivers (PpdApp *data)
     if (PPD_IS_DRIVER (object)) {
       PpdDriver *driver = PPD_DRIVER (object);
       PpdProfile profiles;
-      ProbeResult result;
+      PpdProbeResult result;
 
       g_debug ("Handling driver '%s'", ppd_driver_get_driver_name (driver));
 
@@ -511,12 +511,12 @@ start_profile_drivers (PpdApp *data)
       }
 
       result = ppd_driver_probe (driver);
-      if (result == PROBE_RESULT_FAIL) {
+      if (result == PPD_PROBE_RESULT_FAIL) {
         g_debug ("probe() failed for driver %s, skipping",
                  ppd_driver_get_driver_name (driver));
         g_object_unref (object);
         continue;
-      } else if (result == PROBE_RESULT_DEFER) {
+      } else if (result == PPD_PROBE_RESULT_DEFER) {
         g_signal_connect (G_OBJECT (driver), "probe-request",
                           G_CALLBACK (driver_probe_request_cb), data);
         g_ptr_array_add (data->probed_drivers, driver);

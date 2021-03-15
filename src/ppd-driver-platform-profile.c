@@ -21,7 +21,7 @@ struct _PpdDriverPlatformProfile
 {
   PpdDriver  parent_instance;
 
-  ProbeResult probe_result;
+  PpdProbeResult probe_result;
   GUdevDevice *device;
   gboolean lapmode;
   PpdProfile acpi_platform_profile;
@@ -87,7 +87,7 @@ acpi_platform_profile_value_to_profile (const char *str)
   return PPD_PROFILE_UNSET;
 }
 
-static ProbeResult
+static PpdProbeResult
 verify_acpi_platform_profile_choices (void)
 {
   g_autofree char *choices_str = NULL;
@@ -98,15 +98,15 @@ verify_acpi_platform_profile_choices (void)
   platform_profile_choices_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_CHOICES_PATH);
   if (!g_file_get_contents (platform_profile_choices_path,
                             &choices_str, NULL, NULL)) {
-    return PROBE_RESULT_FAIL;
+    return PPD_PROBE_RESULT_FAIL;
   }
 
   choices = g_strsplit (choices_str, "\n", -1);
   if (g_strv_contains ((const char * const*) choices, "low-power") &&
       g_strv_contains ((const char * const*) choices, "balanced") &&
       g_strv_contains ((const char * const*) choices, "performance"))
-    return PROBE_RESULT_SUCCESS;
-  return PROBE_RESULT_DEFER;
+    return PPD_PROBE_RESULT_SUCCESS;
+  return PPD_PROBE_RESULT_DEFER;
 }
 
 static void
@@ -177,7 +177,7 @@ acpi_platform_profile_changed (GFileMonitor      *monitor,
 {
   PpdDriverPlatformProfile *self = user_data;
   g_debug (ACPI_PLATFORM_PROFILE_PATH " changed");
-  if (self->probe_result == PROBE_RESULT_DEFER) {
+  if (self->probe_result == PPD_PROBE_RESULT_DEFER) {
     g_signal_emit_by_name (G_OBJECT (self), "probe-request", 0);
     return;
   }
@@ -234,23 +234,23 @@ find_dytc (GUdevDevice *dev,
   return 0;
 }
 
-static ProbeResult
+static PpdProbeResult
 ppd_driver_platform_profile_probe (PpdDriver *driver)
 {
   PpdDriverPlatformProfile *self = PPD_DRIVER_PLATFORM_PROFILE (driver);
   g_autoptr(GFile) acpi_platform_profile = NULL;
   g_autofree char *platform_profile_path = NULL;
 
-  g_return_val_if_fail (self->probe_result == PROBE_RESULT_UNSET, PROBE_RESULT_FAIL);
+  g_return_val_if_fail (self->probe_result == PPD_PROBE_RESULT_UNSET, PPD_PROBE_RESULT_FAIL);
 
   /* Profile interface */
   platform_profile_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_PATH);
   if (!g_file_test (platform_profile_path, G_FILE_TEST_EXISTS)) {
     g_debug ("No platform_profile sysfs file");
-    return PROBE_RESULT_FAIL;
+    return PPD_PROBE_RESULT_FAIL;
   }
   self->probe_result = verify_acpi_platform_profile_choices ();
-  if (self->probe_result == PROBE_RESULT_FAIL) {
+  if (self->probe_result == PPD_PROBE_RESULT_FAIL) {
     g_debug ("No supported platform_profile choices");
     return self->probe_result;
   }
@@ -263,7 +263,7 @@ ppd_driver_platform_profile_probe (PpdDriver *driver)
   self->acpi_platform_profile_changed_id =
     g_signal_connect (G_OBJECT (self->acpi_platform_profile_mon), "changed",
                       G_CALLBACK (acpi_platform_profile_changed), self);
-  if (self->probe_result == PROBE_RESULT_DEFER) {
+  if (self->probe_result == PPD_PROBE_RESULT_DEFER) {
     g_debug ("Monitoring platform_profile sysfs file");
     return self->probe_result;
   }
@@ -287,7 +287,7 @@ out:
 
   g_debug ("%s a dytc_lapmode sysfs attribute to thinkpad_acpi",
            self->device ? "Found" : "Didn't find");
-  return PROBE_RESULT_SUCCESS;
+  return PPD_PROBE_RESULT_SUCCESS;
 }
 
 static void
@@ -320,5 +320,5 @@ ppd_driver_platform_profile_class_init (PpdDriverPlatformProfileClass *klass)
 static void
 ppd_driver_platform_profile_init (PpdDriverPlatformProfile *self)
 {
-  self->probe_result = PROBE_RESULT_UNSET;
+  self->probe_result = PPD_PROBE_RESULT_UNSET;
 }

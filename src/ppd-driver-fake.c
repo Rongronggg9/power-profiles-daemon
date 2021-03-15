@@ -141,20 +141,20 @@ envvar_set (const char *key)
   return TRUE;
 }
 
-static ProbeResult
+static PpdProbeResult
 ppd_driver_fake_probe (PpdDriver *driver)
 {
   PpdDriverFake *fake;
 
   if (!envvar_set ("POWER_PROFILE_DAEMON_FAKE_DRIVER"))
-    return PROBE_RESULT_FAIL;
+    return PPD_PROBE_RESULT_FAIL;
 
   fake = PPD_DRIVER_FAKE (driver);
   if (!setup_keyboard (fake))
-    return PROBE_RESULT_FAIL;
+    return PPD_PROBE_RESULT_FAIL;
   keyboard_usage ();
 
-  return PROBE_RESULT_SUCCESS;
+  return PPD_PROBE_RESULT_SUCCESS;
 }
 
 static void

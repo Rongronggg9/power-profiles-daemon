@@ -15,12 +15,23 @@
 #define PPD_TYPE_DRIVER (ppd_driver_get_type())
 G_DECLARE_DERIVABLE_TYPE(PpdDriver, ppd_driver, PPD, DRIVER, GObject)
 
+/**
+ * PpdProbeResult:
+ * @PPD_PROBE_RESULT_UNSET: unset
+ * @PPD_PROBE_RESULT_DEFER: driver should be kept alive, as kernel
+ *   support might appear.
+ * @PPD_PROBE_RESULT_FAIL: driver failed to load.
+ * @PPD_PROBE_RESULT_SUCCESS: driver successfully loaded.
+ *
+ * Those are the three possible values returned by a driver probe,
+ * along with an unset value for convenience.
+ */
 typedef enum {
-  PROBE_RESULT_UNSET = -2,
-  PROBE_RESULT_DEFER = -1,
-  PROBE_RESULT_FAIL = 0,
-  PROBE_RESULT_SUCCESS = 1
-} ProbeResult;
+  PPD_PROBE_RESULT_UNSET = -2,
+  PPD_PROBE_RESULT_DEFER = -1,
+  PPD_PROBE_RESULT_FAIL = 0,
+  PPD_PROBE_RESULT_SUCCESS = 1
+} PpdProbeResult;
 
 /**
  * PpdDriverClass:
@@ -35,14 +46,14 @@ struct _PpdDriverClass
 {
   GObjectClass   parent_class;
 
-  ProbeResult    (* probe)            (PpdDriver   *driver);
+  PpdProbeResult (* probe)            (PpdDriver   *driver);
   gboolean       (* activate_profile) (PpdDriver   *driver,
                                        PpdProfile   profile,
                                        GError     **error);
 };
 
 #ifndef __GTK_DOC_IGNORE__
-ProbeResult ppd_driver_probe (PpdDriver *driver);
+PpdProbeResult ppd_driver_probe (PpdDriver *driver);
 gboolean ppd_driver_activate_profile (PpdDriver *driver, PpdProfile profile, GError **error);
 const char *ppd_driver_get_driver_name (PpdDriver *driver);
 PpdProfile ppd_driver_get_profiles (PpdDriver *driver);

@@ -135,7 +135,7 @@ ppd_driver_intel_pstate_probe (PpdDriver *driver)
   g_autoptr(GDir) dir = NULL;
   g_autofree char *policy_dir = NULL;
   const char *dirname;
-  ProbeResult ret = PROBE_RESULT_FAIL;
+  PpdProbeResult ret = PPD_PROBE_RESULT_FAIL;
 
   dir = open_policy_dir ();
   if (!dir)
@@ -153,10 +153,10 @@ ppd_driver_intel_pstate_probe (PpdDriver *driver)
       continue;
 
     pstate->devices = g_list_prepend (pstate->devices, g_steal_pointer (&path));
-    ret = PROBE_RESULT_SUCCESS;
+    ret = PPD_PROBE_RESULT_SUCCESS;
   }
 
-  if (ret != PROBE_RESULT_SUCCESS)
+  if (ret != PPD_PROBE_RESULT_SUCCESS)
     goto out;
 
   pstate->client = up_client_new ();
@@ -177,7 +177,7 @@ ppd_driver_intel_pstate_probe (PpdDriver *driver)
 
 out:
   g_debug ("%s p-state settings",
-           ret == PROBE_RESULT_SUCCESS ? "Found" : "Didn't find");
+           ret == PPD_PROBE_RESULT_SUCCESS ? "Found" : "Didn't find");
   return ret;
 }
 

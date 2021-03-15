@@ -215,13 +215,13 @@ ppd_driver_init (PpdDriver *self)
 {
 }
 
-ProbeResult
+PpdProbeResult
 ppd_driver_probe (PpdDriver *driver)
 {
   g_return_val_if_fail (PPD_IS_DRIVER (driver), FALSE);
 
   if (!PPD_DRIVER_GET_CLASS (driver)->probe)
-    return PROBE_RESULT_SUCCESS;
+    return PPD_PROBE_RESULT_SUCCESS;
 
   return PPD_DRIVER_GET_CLASS (driver)->probe (driver);
 }
