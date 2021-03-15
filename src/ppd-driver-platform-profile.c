@@ -101,7 +101,7 @@ verify_acpi_platform_profile_choices (void)
     return PPD_PROBE_RESULT_FAIL;
   }
 
-  choices = g_strsplit (choices_str, "\n", -1);
+  choices = g_strsplit_set (choices_str, " \n", -1);
   if (g_strv_contains ((const char * const*) choices, "low-power") &&
       g_strv_contains ((const char * const*) choices, "balanced") &&
       g_strv_contains ((const char * const*) choices, "performance"))

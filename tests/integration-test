@@ -222,9 +222,9 @@ class Tests(dbusmock.DBusTestCase):
       acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
       os.makedirs(acpi_dir)
       with open(os.path.join(acpi_dir, "platform_profile")  ,'w') as profile:
-        profile.write("performance")
+        profile.write("performance\n")
       with open(os.path.join(acpi_dir, "platform_profile_choices")  ,'w') as choices:
-        choices.write("low-power\nbalanced\nperformance\n")
+        choices.write("low-power balanced performance\n")
 
     def assertEventually(self, condition, message=None, timeout=50):
         '''Assert that condition function eventually returns True.
