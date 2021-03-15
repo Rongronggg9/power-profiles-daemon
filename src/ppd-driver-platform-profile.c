@@ -23,7 +23,7 @@ struct _PpdDriverPlatformProfile
 
   PpdProbeResult probe_result;
   GUdevDevice *device;
-  gboolean lapmode;
+  int lapmode;
   PpdProfile acpi_platform_profile;
   GFileMonitor *lapmode_mon;
   GFileMonitor *acpi_platform_profile_mon;
@@ -112,9 +112,9 @@ verify_acpi_platform_profile_choices (void)
 static void
 update_dytc_lapmode_state (PpdDriverPlatformProfile *self)
 {
-  gboolean new_lapmode;
+  int new_lapmode;
 
-  new_lapmode = g_udev_device_get_sysfs_attr_as_boolean_uncached (self->device, LAPMODE_SYSFS_NAME);
+  new_lapmode = g_udev_device_get_sysfs_attr_as_int_uncached (self->device, LAPMODE_SYSFS_NAME);
   if (new_lapmode == self->lapmode)
     return;
 

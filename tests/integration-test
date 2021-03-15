@@ -214,7 +214,7 @@ class Tests(dbusmock.DBusTestCase):
 
     def create_dytc_device(self):
       self.tp_acpi = self.testbed.add_device('platform', 'thinkpad_acpi', None,
-          ['dytc_lapmode', '0'],
+          ['dytc_lapmode', '0\n'],
           [ 'DEVPATH', '/devices/platform/thinkpad_acpi' ]
       )
 
@@ -291,7 +291,7 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
 
       # Inhibit
-      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1')
+      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1\n')
       self.assertEventually(lambda: self.have_text_in_log('dytc_lapmode is now on'))
       self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
@@ -413,12 +413,12 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEventually(lambda: self.read_file (os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile")) == b'balanced')
 
       # lapmode detected, but performance wasn't selected anyway
-      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1')
+      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1\n')
       self.assertEventually(lambda: self.get_dbus_property('PerformanceInhibited') == 'lap-detected')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
 
       # Reset lapmode
-      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '0')
+      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '0\n')
       self.assertEventually(lambda: self.get_dbus_property('PerformanceInhibited') == '')
 
       # Set performance mode
@@ -427,14 +427,14 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEventually(lambda: self.read_file (os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile")) == b'performance')
 
       # And turn on lapmode
-      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1')
+      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1\n')
       self.assertEventually(lambda: self.read_file (os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile")) == b'balanced')
 
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
       self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
 
       # Turn off lapmode, profile stays balanced
-      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '0')
+      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '0\n')
       self.assertEventually(lambda: self.get_dbus_property('PerformanceInhibited') == '')
       self.assertEventually(lambda: self.read_file (os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile")) == b'balanced')
 
