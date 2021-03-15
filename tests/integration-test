@@ -504,10 +504,10 @@ class Tests(dbusmock.DBusTestCase):
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 2)
 
-      with open(os.path.join(acpi_dir, "platform_profile")  ,'w') as profile:
-        profile.write("performance")
       with open(os.path.join(acpi_dir, "platform_profile_choices")  ,'w') as choices:
         choices.write("low-power\nbalanced\nperformance\n")
+      with open(os.path.join(acpi_dir, "platform_profile")  ,'w') as profile:
+        profile.write("performance")
 
       # Wait for profiles to get reloaded
       self.assertEventually(lambda: len(self.get_dbus_property('Profiles')) == 3)
