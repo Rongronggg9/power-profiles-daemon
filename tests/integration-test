@@ -285,8 +285,9 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
-      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
 
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('balanced'))
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
 
@@ -409,10 +410,7 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
       self.assertEqual(profiles[2]['Driver'], 'platform_profile')
       self.assertEqual(profiles[2]['Profile'], 'performance')
-      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
-
-      # Verify that platform_profile got reset
-      self.assertEventually(lambda: self.read_file (os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile")) == b'balanced')
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
 
       # lapmode detected, but performance wasn't selected anyway
       self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1\n')
@@ -515,7 +513,8 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEventually(lambda: len(self.get_dbus_property('Profiles')) == 3)
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
-      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      # Was set in platform_profile before we loaded the drivers
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
       self.assertEqual(self.get_dbus_property('PerformanceInhibited'), '')
 
       self.stop_daemon()

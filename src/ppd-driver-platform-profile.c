@@ -278,6 +278,8 @@ ppd_driver_platform_profile_probe (PpdDriver  *driver,
     return self->probe_result;
   }
 
+  *prev_profile = read_platform_profile ();
+
   /* Lenovo-specific proximity sensor */
   self->device = ppd_utils_find_device ("platform",
                                         (GCompareFunc) find_dytc,
