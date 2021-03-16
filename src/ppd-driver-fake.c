@@ -142,7 +142,8 @@ envvar_set (const char *key)
 }
 
 static PpdProbeResult
-ppd_driver_fake_probe (PpdDriver *driver)
+ppd_driver_fake_probe (PpdDriver  *driver,
+                       PpdProfile *prev_profile)
 {
   PpdDriverFake *fake;
 

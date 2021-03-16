@@ -235,7 +235,8 @@ find_dytc (GUdevDevice *dev,
 }
 
 static PpdProbeResult
-ppd_driver_platform_profile_probe (PpdDriver *driver)
+ppd_driver_platform_profile_probe (PpdDriver  *driver,
+                                   PpdProfile *prev_profile)
 {
   PpdDriverPlatformProfile *self = PPD_DRIVER_PLATFORM_PROFILE (driver);
   g_autoptr(GFile) acpi_platform_profile = NULL;

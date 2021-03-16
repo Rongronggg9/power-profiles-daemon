@@ -216,14 +216,24 @@ ppd_driver_init (PpdDriver *self)
 }
 
 PpdProbeResult
-ppd_driver_probe (PpdDriver *driver)
+ppd_driver_probe (PpdDriver  *driver,
+                  PpdProfile *previous_profile)
 {
+  PpdProfile profile = PPD_PROFILE_UNSET;
+  PpdProbeResult ret;
+
   g_return_val_if_fail (PPD_IS_DRIVER (driver), FALSE);
+  g_return_val_if_fail (previous_profile != NULL, FALSE);
 
   if (!PPD_DRIVER_GET_CLASS (driver)->probe)
     return PPD_PROBE_RESULT_SUCCESS;
 
-  return PPD_DRIVER_GET_CLASS (driver)->probe (driver);
+  ret = PPD_DRIVER_GET_CLASS (driver)->probe (driver, &profile);
+  if (ret == PPD_PROBE_RESULT_SUCCESS &&
+      profile != PPD_PROFILE_UNSET &&
+      ppd_profile_has_single_flag (profile))
+    *previous_profile = profile;
+  return ret;
 }
 
 gboolean

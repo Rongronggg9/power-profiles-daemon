@@ -130,7 +130,8 @@ open_policy_dir (void)
 }
 
 static gboolean
-ppd_driver_intel_pstate_probe (PpdDriver *driver)
+ppd_driver_intel_pstate_probe (PpdDriver  *driver,
+                               PpdProfile *prev_profile)
 {
   PpdDriverIntelPstate *pstate = PPD_DRIVER_INTEL_PSTATE (driver);
   g_autoptr(GDir) dir = NULL;

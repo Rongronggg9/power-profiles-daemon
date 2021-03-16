@@ -484,6 +484,9 @@ static void
 start_profile_drivers (PpdApp *data)
 {
   guint i;
+  PpdProfile prev_profile;
+
+  prev_profile = data->active_profile;
 
   for (i = 0; i < G_N_ELEMENTS (objects); i++) {
     GObject *object;
@@ -510,7 +513,7 @@ start_profile_drivers (PpdApp *data)
         continue;
       }
 
-      result = ppd_driver_probe (driver);
+      result = ppd_driver_probe (driver, &prev_profile);
       if (result == PPD_PROBE_RESULT_FAIL) {
         g_debug ("probe() failed for driver %s, skipping",
                  ppd_driver_get_driver_name (driver));
@@ -550,6 +553,12 @@ start_profile_drivers (PpdApp *data)
   if (!has_required_drivers (data)) {
     g_warning ("Some non-optional profile drivers are missing, programmer error");
     goto bail;
+  }
+
+  if (prev_profile != data->active_profile) {
+    g_debug ("Using '%s' as current profile from probed driver",
+             ppd_profile_to_str (prev_profile));
+    data->active_profile = prev_profile;
   }
 
   /* Set initial state */
