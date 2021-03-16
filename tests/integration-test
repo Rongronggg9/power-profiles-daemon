@@ -447,7 +447,7 @@ class Tests(dbusmock.DBusTestCase):
 
       # And mimick a user pressing a Fn+H
       with open(os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile"), 'w') as platform_profile:
-        platform_profile.write('performance')
+        platform_profile.write('performance\n')
       self.assertEventually(lambda: self.get_dbus_property('ActiveProfile') == 'performance')
 
     def test_fake_driver(self):
@@ -497,9 +497,9 @@ class Tests(dbusmock.DBusTestCase):
       acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
       os.makedirs(acpi_dir)
       with open(os.path.join(acpi_dir, "platform_profile")  ,'w') as profile:
-        profile.write('')
+        profile.write('\n')
       with open(os.path.join(acpi_dir, "platform_profile_choices")  ,'w') as choices:
-        choices.write('')
+        choices.write('\n')
 
       self.start_daemon()
 
@@ -509,7 +509,7 @@ class Tests(dbusmock.DBusTestCase):
       with open(os.path.join(acpi_dir, "platform_profile_choices")  ,'w') as choices:
         choices.write("low-power\nbalanced\nperformance\n")
       with open(os.path.join(acpi_dir, "platform_profile")  ,'w') as profile:
-        profile.write("performance")
+        profile.write("performance\n")
 
       # Wait for profiles to get reloaded
       self.assertEventually(lambda: len(self.get_dbus_property('Profiles')) == 3)
