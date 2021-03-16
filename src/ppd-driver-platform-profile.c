@@ -87,6 +87,30 @@ acpi_platform_profile_value_to_profile (const char *str)
   return PPD_PROFILE_UNSET;
 }
 
+static PpdProfile
+read_platform_profile (void)
+{
+  g_autofree char *platform_profile_path = NULL;
+  g_autofree char *new_profile_str = NULL;
+  g_autoptr(GError) error = NULL;
+  PpdProfile new_profile;
+
+  platform_profile_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_PATH);
+  if (!g_file_get_contents (platform_profile_path,
+                            &new_profile_str, NULL, NULL)) {
+    g_debug ("Failed to get contents for '%s': %s",
+             platform_profile_path,
+             error->message);
+    return PPD_PROFILE_UNSET;
+  }
+
+  new_profile = acpi_platform_profile_value_to_profile (new_profile_str);
+  g_debug ("ACPI performance_profile is now %c, so profile is detected as %s",
+           new_profile_str[0],
+           ppd_profile_to_str (new_profile));
+  return new_profile;
+}
+
 static PpdProbeResult
 verify_acpi_platform_profile_choices (void)
 {
@@ -130,28 +154,13 @@ update_dytc_lapmode_state (PpdDriverPlatformProfile *self)
 static void
 update_acpi_platform_profile_state (PpdDriverPlatformProfile *self)
 {
-  g_autofree char *platform_profile_path = NULL;
-  g_autofree char *new_profile_str = NULL;
-  g_autoptr(GError) error = NULL;
   PpdProfile new_profile;
 
-  platform_profile_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_PATH);
-  if (!g_file_get_contents (platform_profile_path,
-                            &new_profile_str, NULL, NULL)) {
-    g_debug ("Failed to get contents for '%s': %s",
-             platform_profile_path,
-             error->message);
-    return;
-  }
-
-  new_profile = acpi_platform_profile_value_to_profile (new_profile_str);
+  new_profile = read_platform_profile ();
   if (new_profile == PPD_PROFILE_UNSET ||
       new_profile == self->acpi_platform_profile)
     return;
 
-  g_debug ("ACPI performance_profile is now %c, so profile is %s",
-           new_profile_str[0],
-           ppd_profile_to_str (new_profile));
   self->acpi_platform_profile = new_profile;
   ppd_driver_emit_profile_changed (PPD_DRIVER (self), new_profile);
 }
