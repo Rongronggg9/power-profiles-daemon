@@ -18,14 +18,14 @@ G_DEFINE_TYPE (PpdDriverBalanced, ppd_driver_balanced, PPD_TYPE_DRIVER)
 
 static GObject*
 ppd_driver_balanced_constructor (GType                  type,
-                                      guint                  n_construct_params,
-                                      GObjectConstructParam *construct_params)
+                                 guint                  n_construct_params,
+                                 GObjectConstructParam *construct_params)
 {
   GObject *object;
 
   object = G_OBJECT_CLASS (ppd_driver_balanced_parent_class)->constructor (type,
-                                                                                n_construct_params,
-                                                                                construct_params);
+                                                                           n_construct_params,
+                                                                           construct_params);
   g_object_set (object,
                 "driver-name", "balanced",
                 "profiles", PPD_PROFILE_BALANCED,
