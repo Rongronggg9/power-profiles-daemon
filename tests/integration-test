@@ -307,11 +307,11 @@ class Tests(dbusmock.DBusTestCase):
       dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
       os.makedirs(dir1)
       with open(os.path.join(dir1, "energy_performance_preference")  ,'w') as prefs:
-        prefs.write("performance")
+        prefs.write("performance\n")
       dir2 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy1/")
       os.makedirs(dir2)
       with open(os.path.join(dir2, "energy_performance_preference")  ,'w') as prefs:
-        prefs.write("performance")
+        prefs.write("performance\n")
 
       # Create no_turbo pref
       pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate")
@@ -365,7 +365,7 @@ class Tests(dbusmock.DBusTestCase):
       dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
       os.makedirs(dir1)
       with open(os.path.join(dir1, "energy_performance_preference")  ,'w') as prefs:
-        prefs.write("performance")
+        prefs.write("performance\n")
 
       upowerd, obj_upower = self.spawn_server_template(
             'upower', {'DaemonVersion': '0.99', 'OnBattery': False}, stdout=subprocess.PIPE)
@@ -380,6 +380,7 @@ class Tests(dbusmock.DBusTestCase):
       contents = None
       with open(os.path.join(dir1, "energy_performance_preference"), 'rb') as f:
         contents = f.read()
+      # This matches what's written by ppd-driver-intel-pstate.c
       self.assertEqual(contents, b'balance_performance')
 
       # Unplug from the mains
@@ -387,6 +388,7 @@ class Tests(dbusmock.DBusTestCase):
       obj_upower.EmitSignal('', 'Changed', '', [], dbus_interface='org.freedesktop.DBus.Mock')
 
       contents = None
+      # Ditto above
       self.assertEventually(lambda: self.read_file(os.path.join(dir1, "energy_performance_preference")) == b'balance_power')
 
       self.stop_daemon()
