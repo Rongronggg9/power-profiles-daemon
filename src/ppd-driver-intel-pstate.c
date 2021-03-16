@@ -80,6 +80,7 @@ update_no_turbo (PpdDriverIntelPstate *pstate)
   gboolean turbo_disabled = FALSE;
 
   if (g_file_get_contents (pstate->no_turbo_path, &contents, NULL, NULL)) {
+    contents = g_strchomp (contents);
     if (g_strcmp0 (contents, "1") == 0)
       turbo_disabled = TRUE;
   }

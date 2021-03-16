@@ -317,7 +317,7 @@ class Tests(dbusmock.DBusTestCase):
       pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate")
       os.makedirs(pstate_dir)
       with open(os.path.join(pstate_dir, "no_turbo")  ,'w') as no_turbo:
-        no_turbo.write("0")
+        no_turbo.write("0\n")
 
       self.start_daemon()
 
@@ -342,7 +342,7 @@ class Tests(dbusmock.DBusTestCase):
 
       # Disable turbo
       with open(os.path.join(pstate_dir, "no_turbo")  ,'w') as no_turbo:
-        no_turbo.write("1")
+        no_turbo.write("1\n")
 
       self.assertEventually(lambda: self.have_text_in_log('File monitor change happened for '))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
