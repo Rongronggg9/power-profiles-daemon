@@ -52,11 +52,14 @@ ppd_driver_platform_profile_constructor (GType                  type,
 }
 
 static const char *
-profile_to_acpi_platform_profile_value (PpdProfile profile)
+profile_to_acpi_platform_profile_value (PpdDriverPlatformProfile *self,
+                                        PpdProfile                profile)
 {
   switch (profile) {
   case PPD_PROFILE_POWER_SAVER:
-    return "low-power";
+    if (g_strv_contains ((const char * const*) self->profile_choices, "low-power"))
+      return "low-power";
+    return "cool";
   case PPD_PROFILE_BALANCED:
     return "balanced";
   case PPD_PROFILE_PERFORMANCE:
@@ -134,7 +137,8 @@ verify_acpi_platform_profile_choices (PpdDriverPlatformProfile *self)
 {
   const char * const *choices = (const char * const*) self->profile_choices;
 
-  if (g_strv_contains (choices, "low-power") &&
+  if ((g_strv_contains (choices, "low-power") ||
+       g_strv_contains (choices, "cool")) &&
       g_strv_contains (choices, "balanced") &&
       g_strv_contains (choices, "performance"))
     return PPD_PROBE_RESULT_SUCCESS;
@@ -226,7 +230,7 @@ ppd_driver_platform_profile_activate_profile (PpdDriver   *driver,
 
   g_signal_handler_block (G_OBJECT (self->acpi_platform_profile_mon), self->acpi_platform_profile_changed_id);
   platform_profile_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_PATH);
-  if (!ppd_utils_write (platform_profile_path, profile_to_acpi_platform_profile_value (profile), error)) {
+  if (!ppd_utils_write (platform_profile_path, profile_to_acpi_platform_profile_value (self, profile), error)) {
     g_debug ("Failed to write to acpi_platform_profile: %s", (* error)->message);
     g_signal_handler_unblock (G_OBJECT (self->acpi_platform_profile_mon), self->acpi_platform_profile_changed_id);
     return FALSE;
