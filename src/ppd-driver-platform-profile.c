@@ -25,6 +25,7 @@ struct _PpdDriverPlatformProfile
   GUdevDevice *device;
   int lapmode;
   PpdProfile acpi_platform_profile;
+  char **profile_choices;
   GFileMonitor *lapmode_mon;
   GFileMonitor *acpi_platform_profile_mon;
   guint acpi_platform_profile_changed_id;
@@ -111,24 +112,31 @@ read_platform_profile (void)
   return new_profile;
 }
 
-static PpdProbeResult
-verify_acpi_platform_profile_choices (void)
+static gboolean
+save_platform_profile_choices (PpdDriverPlatformProfile *self)
 {
-  g_autofree char *choices_str = NULL;
   g_autofree char *platform_profile_choices_path = NULL;
+  g_autofree char *choices_str = NULL;
   g_autoptr(GError) error = NULL;
-  g_auto(GStrv) choices = NULL;
 
   platform_profile_choices_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_CHOICES_PATH);
   if (!g_file_get_contents (platform_profile_choices_path,
                             &choices_str, NULL, NULL)) {
-    return PPD_PROBE_RESULT_FAIL;
+    return FALSE;
   }
 
-  choices = g_strsplit_set (choices_str, " \n", -1);
-  if (g_strv_contains ((const char * const*) choices, "low-power") &&
-      g_strv_contains ((const char * const*) choices, "balanced") &&
-      g_strv_contains ((const char * const*) choices, "performance"))
+  self->profile_choices = g_strsplit_set (choices_str, " \n", -1);
+  return TRUE;
+}
+
+static PpdProbeResult
+verify_acpi_platform_profile_choices (PpdDriverPlatformProfile *self)
+{
+  const char * const *choices = (const char * const*) self->profile_choices;
+
+  if (g_strv_contains (choices, "low-power") &&
+      g_strv_contains (choices, "balanced") &&
+      g_strv_contains (choices, "performance"))
     return PPD_PROBE_RESULT_SUCCESS;
   return PPD_PROBE_RESULT_DEFER;
 }
@@ -259,7 +267,9 @@ ppd_driver_platform_profile_probe (PpdDriver  *driver,
     g_debug ("No platform_profile sysfs file");
     return PPD_PROBE_RESULT_FAIL;
   }
-  self->probe_result = verify_acpi_platform_profile_choices ();
+  if (!save_platform_profile_choices (self))
+    return PPD_PROBE_RESULT_FAIL;
+  self->probe_result = verify_acpi_platform_profile_choices (self);
   if (self->probe_result == PPD_PROBE_RESULT_FAIL) {
     g_debug ("No supported platform_profile choices");
     return self->probe_result;
@@ -308,6 +318,7 @@ ppd_driver_platform_profile_finalize (GObject *object)
   PpdDriverPlatformProfile *driver;
 
   driver = PPD_DRIVER_PLATFORM_PROFILE (object);
+  g_clear_pointer (&driver->profile_choices, g_strfreev);
   g_clear_object (&driver->device);
   g_clear_object (&driver->lapmode_mon);
   g_clear_object (&driver->acpi_platform_profile_mon);
