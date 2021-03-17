@@ -396,6 +396,7 @@ class Tests(dbusmock.DBusTestCase):
 
       upowerd.terminate()
       upowerd.wait()
+      upowerd.stdout.close()
 
     def test_dytc_performance_driver(self):
       '''Lenovo DYTC performance driver'''
