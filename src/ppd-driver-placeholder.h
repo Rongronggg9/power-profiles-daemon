@@ -11,5 +11,5 @@
 
 #include "ppd-driver.h"
 
-#define PPD_TYPE_DRIVER_POWER_SAVER (ppd_driver_power_saver_get_type())
-G_DECLARE_FINAL_TYPE(PpdDriverPowerSaver, ppd_driver_power_saver, PPD, DRIVER_POWER_SAVER, PpdDriver)
+#define PPD_TYPE_DRIVER_PLACEHOLDER (ppd_driver_placeholder_get_type())
+G_DECLARE_FINAL_TYPE(PpdDriverPlaceholder, ppd_driver_placeholder, PPD, DRIVER_PLACEHOLDER, PpdDriver)

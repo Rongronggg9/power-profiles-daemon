@@ -29,7 +29,7 @@ typedef struct {
 
   PpdProfile active_profile;
   GPtrArray *probed_drivers;
-  GPtrArray *drivers;
+  PpdDriver *driver;
   GPtrArray *actions;
 } PpdApp;
 
@@ -38,31 +38,12 @@ static PpdApp *ppd_app = NULL;
 static void stop_profile_drivers (PpdApp *data);
 static void start_profile_drivers (PpdApp *data);
 
-static PpdDriver *
-get_driver_for_profile (PpdApp     *data,
-                        PpdProfile  profile)
-{
-  guint i;
-
-  g_return_val_if_fail (ppd_profile_has_single_flag (profile), NULL);
-
-  for (i = 0; i < data->drivers->len; i++) {
-    PpdDriver *driver = g_ptr_array_index (data->drivers, i);
-
-    if (ppd_driver_get_profiles (driver) & profile)
-      return driver;
-  }
-
-  return NULL;
-}
-
-#define GET_DRIVER(p) (get_driver_for_profile (data, p))
-#define ACTIVE_DRIVER (get_driver_for_profile (data, data->active_profile))
+#define GET_DRIVER(p) (ppd_driver_get_profiles (data->driver) & p ? data->driver : NULL)
+#define ACTIVE_DRIVER (data->driver)
 
 /* profile drivers and actions */
 #include "ppd-action-trickle-charge.h"
-#include "ppd-driver-balanced.h"
-#include "ppd-driver-power-saver.h"
+#include "ppd-driver-placeholder.h"
 #include "ppd-driver-platform-profile.h"
 #include "ppd-driver-intel-pstate.h"
 #include "ppd-driver-fake.h"
@@ -75,9 +56,8 @@ static GTypeGetFunc objects[] = {
   ppd_driver_platform_profile_get_type,
   ppd_driver_intel_pstate_get_type,
 
-  /* Generic profile drivers */
-  ppd_driver_balanced_get_type,
-  ppd_driver_power_saver_get_type,
+  /* Generic profile driver */
+  ppd_driver_placeholder_get_type,
 
   /* Actions */
   ppd_action_trickle_charge_get_type,
@@ -101,8 +81,8 @@ get_active_profile (PpdApp *data)
 static const char *
 get_performance_inhibited (PpdApp *data)
 {
-  PpdDriver *driver;
   const char *ret;
+  PpdDriver *driver;
 
   driver = GET_DRIVER(PPD_PROFILE_PERFORMANCE);
   if (!driver)
@@ -229,21 +209,16 @@ static void
 activate_target_profile (PpdApp     *data,
                          PpdProfile  target_profile)
 {
-  guint i;
+  g_autoptr(GError) error = NULL;
 
   g_debug ("Setting active profile '%s' (current: '%s')",
            ppd_profile_to_str (target_profile),
            ppd_profile_to_str (data->active_profile));
 
-  for (i = 0; i < data->drivers->len; i++) {
-    PpdDriver *driver = g_ptr_array_index (data->drivers, i);
-    g_autoptr(GError) error = NULL;
-
-    if (!ppd_driver_activate_profile (driver, target_profile, &error)) {
-      g_warning ("Failed to activate driver '%s': %s",
-                 ppd_driver_get_driver_name (driver),
-                 error->message);
-    }
+  if (!ppd_driver_activate_profile (data->driver, target_profile, &error)) {
+    g_warning ("Failed to activate driver '%s': %s",
+               ppd_driver_get_driver_name (data->driver),
+               error->message);
   }
 
   actions_activate_profile (data->actions, target_profile);
@@ -436,32 +411,6 @@ has_required_drivers (PpdApp *data)
   return TRUE;
 }
 
-static gboolean
-profile_already_handled (PpdApp     *data,
-                         PpdDriver  *driver,
-                         PpdProfile  profiles)
-{
-  guint i;
-
-  for (i = 0; i < NUM_PROFILES; i++) {
-    PpdDriver *existing_driver;
-
-    if (!(profiles & (1 << i)))
-      continue;
-
-    existing_driver = GET_DRIVER(1 << i);
-    if (existing_driver) {
-      g_debug ("Driver '%s' conflicts with already probed driver '%s' for profile %s",
-               ppd_driver_get_driver_name (driver),
-               ppd_driver_get_driver_name (existing_driver),
-               ppd_profile_to_str (1 << i));
-      return TRUE;
-    }
-  }
-
-  return FALSE;
-}
-
 static void
 driver_probe_request_cb (PpdDriver *driver,
                          gpointer   user_data)
@@ -477,7 +426,7 @@ stop_profile_drivers (PpdApp *data)
 {
   g_ptr_array_set_size (data->probed_drivers, 0);
   g_ptr_array_set_size (data->actions, 0);
-  g_ptr_array_set_size (data->drivers, 0);
+  g_clear_object (&data->driver);
 }
 
 static void
@@ -499,16 +448,18 @@ start_profile_drivers (PpdApp *data)
 
       g_debug ("Handling driver '%s'", ppd_driver_get_driver_name (driver));
 
+      if (data->driver != NULL) {
+        g_debug ("Driver '%s' already probed, skipping driver '%s'",
+                 ppd_driver_get_driver_name (data->driver),
+                 ppd_driver_get_driver_name (driver));
+        continue;
+      }
+
       profiles = ppd_driver_get_profiles (driver);
       if (!(profiles & PPD_PROFILE_ALL)) {
         g_warning ("Profile Driver '%s' implements invalid profiles '0x%X'",
                    ppd_driver_get_driver_name (driver),
                    profiles);
-        g_object_unref (object);
-        continue;
-      }
-
-      if (profile_already_handled (data, driver, profiles)) {
         g_object_unref (object);
         continue;
       }
@@ -526,7 +477,7 @@ start_profile_drivers (PpdApp *data)
         continue;
       }
 
-      g_ptr_array_add (data->drivers, driver);
+      data->driver = driver;
 
       g_signal_connect (G_OBJECT (driver), "notify::performance-inhibited",
                         G_CALLBACK (driver_performance_inhibited_changed_cb), data);
@@ -636,7 +587,7 @@ free_app_data (PpdApp *data)
 
   g_ptr_array_free (data->probed_drivers, TRUE);
   g_ptr_array_free (data->actions, TRUE);
-  g_ptr_array_free (data->drivers, TRUE);
+  g_clear_object (&data->driver);
 
   g_clear_pointer (&data->main_loop, g_main_loop_unref);
   g_clear_pointer (&data->introspection_data, g_dbus_node_info_unref);
@@ -682,7 +633,6 @@ int main (int argc, char **argv)
   data->main_loop = g_main_loop_new (NULL, TRUE);
   data->probed_drivers = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
   data->actions = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
-  data->drivers = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
   data->active_profile = PPD_PROFILE_BALANCED;
   ppd_app = data;
 

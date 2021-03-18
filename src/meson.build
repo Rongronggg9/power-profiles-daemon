@@ -40,8 +40,7 @@ sources += [
   'ppd-action-trickle-charge.c',
   'ppd-driver-intel-pstate.c',
   'ppd-driver-platform-profile.c',
-  'ppd-driver-balanced.c',
-  'ppd-driver-power-saver.c',
+  'ppd-driver-placeholder.c',
   'ppd-driver-fake.c',
 ]
 

@@ -39,7 +39,7 @@ ppd_driver_fake_constructor (GType                  type,
                                                                        construct_params);
   g_object_set (object,
                 "driver-name", "fake",
-                "profiles", PPD_PROFILE_PERFORMANCE,
+                "profiles", PPD_PROFILE_ALL,
                 NULL);
 
   return object;
