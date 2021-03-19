@@ -240,11 +240,8 @@ set_active_profile (PpdApp      *data,
     return FALSE;
   }
 
-  if (target_profile == data->active_profile) {
-    g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
-                 "Profile '%s' already active", profile);
-    return FALSE;
-  }
+  if (target_profile == data->active_profile)
+    return TRUE;
 
   if (target_profile == PPD_PROFILE_PERFORMANCE &&
       ppd_driver_is_performance_inhibited (GET_DRIVER (PPD_PROFILE_PERFORMANCE))) {
