@@ -85,4 +85,5 @@ PpdProfile ppd_driver_get_profiles (PpdDriver *driver);
 const char *ppd_driver_get_performance_inhibited (PpdDriver *driver);
 gboolean ppd_driver_is_performance_inhibited (PpdDriver *driver);
 void ppd_driver_emit_profile_changed (PpdDriver *driver, PpdProfile profile);
+const char *ppd_profile_activation_reason_to_str (PpdProfileActivationReason reason);
 #endif

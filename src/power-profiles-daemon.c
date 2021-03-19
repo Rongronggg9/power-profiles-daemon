@@ -73,23 +73,6 @@ typedef enum {
 #define PROP_ALL (PROP_ACTIVE_PROFILE | PROP_INHIBITED | PROP_PROFILES | PROP_ACTIONS)
 
 static const char *
-ppd_profile_activation_reason_to_str (PpdProfileActivationReason reason)
-{
-  switch (reason) {
-  case PPD_PROFILE_ACTIVATION_REASON_INHIBITION:
-    return "inhibition";
-  case PPD_PROFILE_ACTIVATION_REASON_INTERNAL:
-    return "internal";
-  case PPD_PROFILE_ACTIVATION_REASON_RESET:
-    return "reset";
-  case PPD_PROFILE_ACTIVATION_REASON_USER:
-    return "user";
-  default:
-    g_assert_not_reached ();
-  }
-}
-
-static const char *
 get_active_profile (PpdApp *data)
 {
   return ppd_profile_to_str (data->active_profile);
