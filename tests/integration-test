@@ -455,6 +455,30 @@ class Tests(dbusmock.DBusTestCase):
         platform_profile.write('performance\n')
       self.assertEventually(lambda: self.get_dbus_property('ActiveProfile') == 'performance')
 
+    def test_force_balanced(self):
+      '''Force balanced profile when in perf mode but inhibited'''
+
+      self.create_dytc_device()
+      self.create_platform_profile()
+      self.start_daemon()
+
+      # Check foundations
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+      self.assertEqual(self.read_sysfs_file("sys/firmware/acpi/platform_profile"), b'performance')
+
+      # Turn on lapmode, profile is down to balanced
+      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1\n')
+      self.assertEventually(lambda: self.get_dbus_property('ActiveProfile') == 'balanced')
+
+      # Set balanced manually
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('balanced'))
+      self.assertEventually(lambda: self.read_sysfs_file("sys/firmware/acpi/platform_profile") == b'balanced')
+
+      # Verify that it sticks
+      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '0\n')
+      self.assertEventually(lambda: self.read_sysfs_file("sys/firmware/acpi/platform_profile") == b'balanced')
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
     def test_fake_driver(self):
       '''Test that the fake driver works'''
 
