@@ -29,9 +29,10 @@ struct _PpdDriverIntelPstate
 
 G_DEFINE_TYPE (PpdDriverIntelPstate, ppd_driver_intel_pstate, PPD_TYPE_DRIVER)
 
-static gboolean ppd_driver_intel_pstate_activate_profile (PpdDriver   *driver,
-                                                          PpdProfile   profile,
-                                                          GError     **error);
+static gboolean ppd_driver_intel_pstate_activate_profile (PpdDriver                   *driver,
+                                                          PpdProfile                   profile,
+                                                          PpdProfileActivationReason   reason,
+                                                          GError                     **error);
 
 static GObject*
 ppd_driver_intel_pstate_constructor (GType                  type,
@@ -65,6 +66,7 @@ on_battery_changed (GObject    *gobject,
   if (pstate->activated_profile == PPD_PROFILE_BALANCED) {
     ppd_driver_intel_pstate_activate_profile (PPD_DRIVER (pstate),
                                               pstate->activated_profile,
+                                              PPD_PROFILE_ACTIVATION_REASON_INTERNAL,
                                               NULL);
   }
 
@@ -204,9 +206,10 @@ profile_to_pref (PpdProfile profile,
 }
 
 static gboolean
-ppd_driver_intel_pstate_activate_profile (PpdDriver   *driver,
-                                          PpdProfile   profile,
-                                          GError     **error)
+ppd_driver_intel_pstate_activate_profile (PpdDriver                    *driver,
+                                          PpdProfile                   profile,
+                                          PpdProfileActivationReason   reason,
+                                          GError                     **error)
 {
   PpdDriverIntelPstate *pstate = PPD_DRIVER_INTEL_PSTATE (driver);
   gboolean ret = TRUE;

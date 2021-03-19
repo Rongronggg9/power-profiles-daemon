@@ -223,16 +223,18 @@ actions_activate_profile (GPtrArray *actions,
 }
 
 static void
-activate_target_profile (PpdApp     *data,
-                         PpdProfile  target_profile)
+activate_target_profile (PpdApp                     *data,
+                         PpdProfile                  target_profile,
+                         PpdProfileActivationReason  reason)
 {
   g_autoptr(GError) error = NULL;
 
-  g_debug ("Setting active profile '%s' (current: '%s')",
+  g_debug ("Setting active profile '%s' for reason '%s' (current: '%s')",
            ppd_profile_to_str (target_profile),
+           ppd_profile_activation_reason_to_str (reason),
            ppd_profile_to_str (data->active_profile));
 
-  if (!ppd_driver_activate_profile (data->driver, target_profile, &error)) {
+  if (!ppd_driver_activate_profile (data->driver, target_profile, reason, &error)) {
     g_warning ("Failed to activate driver '%s': %s",
                ppd_driver_get_driver_name (data->driver),
                error->message);
@@ -267,10 +269,10 @@ set_active_profile (PpdApp      *data,
     return FALSE;
   }
 
-  g_debug ("Transitioning active profile from '%s' to '%s'",
+  g_debug ("Transitioning active profile from '%s' to '%s' by user request",
            ppd_profile_to_str (data->active_profile), profile);
 
-  activate_target_profile (data, target_profile);
+  activate_target_profile (data, target_profile, PPD_PROFILE_ACTIVATION_REASON_USER);
   send_dbus_event (data, PROP_ACTIVE_PROFILE);
 
   return TRUE;
@@ -301,7 +303,7 @@ driver_performance_inhibited_changed_cb (GObject    *gobject,
   if (!ppd_driver_is_performance_inhibited (driver))
     return;
 
-  activate_target_profile (data, PPD_PROFILE_BALANCED);
+  activate_target_profile (data, PPD_PROFILE_BALANCED, PPD_PROFILE_ACTIVATION_REASON_INHIBITION);
   send_dbus_event (data, PROP_ACTIVE_PROFILE);
 }
 
@@ -319,7 +321,7 @@ driver_profile_changed_cb (PpdDriver *driver,
   if (new_profile == data->active_profile)
     return;
 
-  activate_target_profile (data, new_profile);
+  activate_target_profile (data, new_profile, PPD_PROFILE_ACTIVATION_REASON_INTERNAL);
   send_dbus_event (data, PROP_ACTIVE_PROFILE);
 }
 
@@ -526,7 +528,7 @@ start_profile_drivers (PpdApp *data)
   }
 
   /* Set initial state */
-  activate_target_profile (data, data->active_profile);
+  activate_target_profile (data, data->active_profile, PPD_PROFILE_ACTIVATION_REASON_RESET);
 
   send_dbus_event (data, PROP_ALL);
 

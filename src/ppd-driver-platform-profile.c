@@ -206,9 +206,10 @@ acpi_platform_profile_changed (GFileMonitor      *monitor,
 }
 
 static gboolean
-ppd_driver_platform_profile_activate_profile (PpdDriver   *driver,
-                                              PpdProfile   profile,
-                                              GError     **error)
+ppd_driver_platform_profile_activate_profile (PpdDriver                   *driver,
+                                              PpdProfile                   profile,
+                                              PpdProfileActivationReason   reason,
+                                              GError                     **error)
 {
   PpdDriverPlatformProfile *self = PPD_DRIVER_PLATFORM_PROFILE (driver);
   g_autofree char *platform_profile_path = NULL;

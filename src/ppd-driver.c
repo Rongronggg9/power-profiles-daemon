@@ -237,9 +237,10 @@ ppd_driver_probe (PpdDriver  *driver,
 }
 
 gboolean
-ppd_driver_activate_profile (PpdDriver  *driver,
-                             PpdProfile         profile,
-                             GError           **error)
+ppd_driver_activate_profile (PpdDriver                   *driver,
+                             PpdProfile                   profile,
+                             PpdProfileActivationReason   reason,
+                             GError                     **error)
 {
   g_return_val_if_fail (PPD_IS_DRIVER (driver), FALSE);
   g_return_val_if_fail (ppd_profile_has_single_flag (profile), FALSE);
@@ -247,7 +248,7 @@ ppd_driver_activate_profile (PpdDriver  *driver,
   if (!PPD_DRIVER_GET_CLASS (driver)->activate_profile)
     return TRUE;
 
-  return PPD_DRIVER_GET_CLASS (driver)->activate_profile (driver, profile, error);
+  return PPD_DRIVER_GET_CLASS (driver)->activate_profile (driver, profile, reason, error);
 }
 
 const char *
