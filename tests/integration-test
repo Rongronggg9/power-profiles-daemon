@@ -415,11 +415,14 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(profiles[2]['Driver'], 'platform_profile')
       self.assertEqual(profiles[2]['Profile'], 'performance')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+      self.assertEqual(self.read_sysfs_file("sys/firmware/acpi/platform_profile"), b'performance')
 
       # lapmode detected, but performance wasn't selected anyway
       self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1\n')
       self.assertEventually(lambda: self.get_dbus_property('PerformanceInhibited') == 'lap-detected')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      # Internal profile didn't change
+      self.assertEqual(self.read_sysfs_file("sys/firmware/acpi/platform_profile"), b'performance')
 
       # Reset lapmode
       self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '0\n')
@@ -432,15 +435,15 @@ class Tests(dbusmock.DBusTestCase):
 
       # And turn on lapmode
       self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1\n')
-      self.assertEventually(lambda: self.read_sysfs_file("sys/firmware/acpi/platform_profile") == b'balanced')
-
-      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      self.assertEventually(lambda: self.get_dbus_property('ActiveProfile') == 'balanced')
       self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
+      # Internal profile didn't change
+      self.assertEqual(self.read_sysfs_file("sys/firmware/acpi/platform_profile"), b'performance')
 
-      # Turn off lapmode, profile stays balanced
+      # Turn off lapmode, profile is back to performance
       self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '0\n')
       self.assertEventually(lambda: self.get_dbus_property('PerformanceInhibited') == '')
-      self.assertEventually(lambda: self.read_sysfs_file("sys/firmware/acpi/platform_profile") == b'balanced')
+      self.assertEventually(lambda: self.read_sysfs_file("sys/firmware/acpi/platform_profile") == b'performance')
 
       # Switch to power-saver mode
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))

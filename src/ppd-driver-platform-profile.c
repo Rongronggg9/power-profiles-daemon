@@ -161,6 +161,11 @@ update_dytc_lapmode_state (PpdDriverPlatformProfile *self)
   g_object_set (G_OBJECT (self),
                 "performance-inhibited", self->lapmode ? "lap-detected" : NULL,
                 NULL);
+  if (!self->lapmode) {
+    /* And at the end of the inhibition, tell the core that
+     * we've changed back to performance */
+    ppd_driver_emit_profile_changed (PPD_DRIVER (self), self->acpi_platform_profile);
+  }
 }
 
 static void
@@ -215,6 +220,15 @@ ppd_driver_platform_profile_activate_profile (PpdDriver                   *drive
   g_autofree char *platform_profile_path = NULL;
 
   g_return_val_if_fail (self->acpi_platform_profile_mon, FALSE);
+
+  if (reason == PPD_PROFILE_ACTIVATION_REASON_INHIBITION) {
+    g_return_val_if_fail (profile == PPD_PROFILE_BALANCED, FALSE);
+    if (self->lapmode_mon &&
+        self->acpi_platform_profile == PPD_PROFILE_PERFORMANCE) {
+      g_debug ("Keeping performance profile set internally or dytc_lapmode would break");
+      return TRUE;
+    }
+  }
 
   if (self->acpi_platform_profile == profile) {
     g_debug ("Can't switch to %s mode, already there",
