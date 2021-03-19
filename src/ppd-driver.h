@@ -34,6 +34,28 @@ typedef enum {
 } PpdProbeResult;
 
 /**
+ * PpdProfileActivationReason:
+ * PPD_PROFILE_ACTIVATION_REASON_INHIBITION: switching profiles because
+ *   of performance profile inhibition.
+ * PPD_PROFILE_ACTIVATION_REASON_INTERNAL: the driver profile changed
+ *   internally, usually because of a key combination.
+ * PPD_PROFILE_ACTIVATION_REASON_RESET: setting profile on startup, or
+ *   because drivers are getting reprobed.
+ * PPD_PROFILE_ACTIVATION_REASON_USER: setting profile because the user
+ *   requested it.
+ *
+ * Those are possible reasons for a profile being activated. Based on those
+ * reasons, drivers can choose whether or not that changes the effective
+ * profile internally.
+ */
+typedef enum{
+  PPD_PROFILE_ACTIVATION_REASON_INHIBITION = 0,
+  PPD_PROFILE_ACTIVATION_REASON_INTERNAL,
+  PPD_PROFILE_ACTIVATION_REASON_RESET,
+  PPD_PROFILE_ACTIVATION_REASON_USER
+} PpdProfileActivationReason;
+
+/**
  * PpdDriverClass:
  * @parent_class: The parent class.
  * @probe: Called by the daemon on startup.

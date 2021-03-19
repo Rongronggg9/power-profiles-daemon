@@ -13,6 +13,7 @@ PPD_TYPE_ACTION
 PpdDriverClass
 PpdDriver
 PpdProbeResult
+PpdProfileActivationReason
 <SUBSECTION Private>
 PPD_TYPE_DRIVER
 </SECTION>
