@@ -255,7 +255,6 @@ set_active_profile (PpdApp      *data,
 
   g_debug ("Transitioning active profile from '%s' to '%s'",
            ppd_profile_to_str (data->active_profile), profile);
-  data->active_profile = target_profile;
 
   activate_target_profile (data, target_profile);
   send_dbus_event (data, PROP_ACTIVE_PROFILE);
