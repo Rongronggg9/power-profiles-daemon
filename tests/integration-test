@@ -202,10 +202,13 @@ class Tests(dbusmock.DBusTestCase):
         with open(self.log.name) as f:
             return f.read().count(text)
 
-    def read_sysfs_attr(self, device, attribute):
-        with open(os.path.join(self.testbed.get_root_dir() + device, attribute), 'rb') as f:
-            return f.read()
+    def read_sysfs_file(self, path):
+        with open(self.testbed.get_root_dir() + '/' + path, 'rb') as f:
+          return f.read().rstrip()
         return None
+
+    def read_sysfs_attr(self, device, attribute):
+        return self.read_sysfs_file(device + '/' + attribute)
 
     def read_file(self, path):
         with open(path, 'rb') as f:
