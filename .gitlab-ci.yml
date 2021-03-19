@@ -15,11 +15,6 @@ variables:
                 python3-dbusmock
                 python3-pylint
                 umockdev
-                make
-                automake
-                autoconf
-                libtool
-                pkgconfig(libudev)
 
 build_stable:
   before_script:
