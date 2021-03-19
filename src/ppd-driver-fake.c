@@ -158,6 +158,19 @@ ppd_driver_fake_probe (PpdDriver  *driver,
   return PPD_PROBE_RESULT_SUCCESS;
 }
 
+static gboolean
+ppd_driver_fake_activate_profile (PpdDriver                   *driver,
+                                  PpdProfile                   profile,
+                                  PpdProfileActivationReason   reason,
+                                  GError                     **error)
+{
+  g_print ("Receive '%s' profile activation for reason '%s'\n",
+           ppd_profile_to_str (profile),
+           ppd_profile_activation_reason_to_str (reason));
+
+  return TRUE;
+}
+
 static void
 ppd_driver_fake_finalize (GObject *object)
 {
@@ -181,6 +194,7 @@ ppd_driver_fake_class_init (PpdDriverFakeClass *klass)
 
   driver_class = PPD_DRIVER_CLASS(klass);
   driver_class->probe = ppd_driver_fake_probe;
+  driver_class->activate_profile = ppd_driver_fake_activate_profile;
 }
 
 static void
