@@ -31,3 +31,4 @@ build_stable:
     when: always
     paths:
     - _build/meson-logs/*.txt
+    - _build/meson-dist/*
