@@ -1,3 +1,12 @@
+0.8
+---
+
+This release adds support for the new generic `platform_profile` kernel
+API to replace the Lenovo specific `dytc_perfmode`, meaning it should also
+support profile selection on a number of HP and Microsoft Surface devices.
+
+This release also add the `powerprofilesctl` command-line application.
+
 0.1
 ---
 
