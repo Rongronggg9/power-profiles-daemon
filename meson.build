@@ -1,5 +1,5 @@
 project('power-profiles-daemon', [ 'c' ],
-        version: '0.8',
+        version: '0.8.1',
         license: 'GPLv3+',
         default_options: [
           'buildtype=debugoptimized',
