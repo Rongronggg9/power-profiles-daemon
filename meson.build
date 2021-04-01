@@ -59,3 +59,8 @@ if get_option('gtk_doc')
 endif
 
 subdir('tests')
+
+meson.add_dist_script(
+  find_program('check-news.sh').path(),
+  '@0@'.format(meson.project_version())
+)
