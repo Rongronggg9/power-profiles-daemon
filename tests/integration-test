@@ -387,14 +387,6 @@ class Tests(dbusmock.DBusTestCase):
       # This matches what's written by ppd-driver-intel-pstate.c
       self.assertEqual(contents, b'balance_performance')
 
-      # Unplug from the mains
-      obj_upower.Set('org.freedesktop.UPower', 'OnBattery', True)
-      obj_upower.EmitSignal('', 'Changed', '', [], dbus_interface='org.freedesktop.DBus.Mock')
-
-      contents = None
-      # Ditto above
-      self.assertEventually(lambda: self.read_file(os.path.join(dir1, "energy_performance_preference")) == b'balance_power')
-
       self.stop_daemon()
 
       upowerd.terminate()

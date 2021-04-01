@@ -19,9 +19,7 @@ struct _PpdDriverIntelPstate
 {
   PpdDriver  parent_instance;
 
-  UpClient *client;
   PpdProfile activated_profile;
-  gboolean on_battery;
   GList *devices; /* GList of paths */
   GFileMonitor *no_turbo_mon;
   char *no_turbo_path;
@@ -50,29 +48,6 @@ ppd_driver_intel_pstate_constructor (GType                  type,
                 NULL);
 
   return object;
-}
-
-static void
-on_battery_changed (GObject    *gobject,
-                    GParamSpec *pspec,
-                    gpointer    user_data)
-{
-  PpdDriverIntelPstate *pstate = user_data;
-  gboolean old_on_battery;
-
-  old_on_battery = pstate->on_battery;
-  pstate->on_battery = up_client_get_on_battery (pstate->client);
-
-  if (pstate->activated_profile == PPD_PROFILE_BALANCED) {
-    ppd_driver_intel_pstate_activate_profile (PPD_DRIVER (pstate),
-                                              pstate->activated_profile,
-                                              PPD_PROFILE_ACTIVATION_REASON_INTERNAL,
-                                              NULL);
-  }
-
-  g_debug ("Battery status changed from %s to %s",
-           old_on_battery ? "on battery" : "on mains",
-           pstate->on_battery ? "on battery" : "on mains");
 }
 
 static void
@@ -163,13 +138,6 @@ ppd_driver_intel_pstate_probe (PpdDriver  *driver,
   if (ret != PPD_PROBE_RESULT_SUCCESS)
     goto out;
 
-  pstate->client = up_client_new ();
-  if (pstate->client) {
-    g_signal_connect (G_OBJECT (pstate->client), "notify::on-battery",
-                      G_CALLBACK (on_battery_changed), pstate);
-    pstate->on_battery = up_client_get_on_battery (pstate->client);
-  }
-
   /* Monitor the first "no_turbo" */
   pstate->no_turbo_path = ppd_utils_get_sysfs_path (NO_TURBO_PATH);
   pstate->no_turbo_mon = monitor_no_turbo_prop (pstate->no_turbo_path);
@@ -186,8 +154,7 @@ out:
 }
 
 static const char *
-profile_to_pref (PpdProfile profile,
-                 gboolean   on_battery)
+profile_to_pref (PpdProfile profile)
 {
   /* Note that we don't check "energy_performance_available_preferences"
    * as all the values are always available */
@@ -195,8 +162,6 @@ profile_to_pref (PpdProfile profile,
   case PPD_PROFILE_POWER_SAVER:
     return "power";
   case PPD_PROFILE_BALANCED:
-    if (on_battery)
-      return "balance_power";
     return "balance_performance";
   case PPD_PROFILE_PERFORMANCE:
     return "performance";
@@ -218,7 +183,7 @@ ppd_driver_intel_pstate_activate_profile (PpdDriver                    *driver,
 
   g_return_val_if_fail (pstate->devices != NULL, FALSE);
 
-  pref = profile_to_pref (profile, pstate->on_battery);
+  pref = profile_to_pref (profile);
 
   for (l = pstate->devices; l != NULL; l = l->next) {
     const char *path = l->data;
@@ -241,7 +206,6 @@ ppd_driver_intel_pstate_finalize (GObject *object)
 
   driver = PPD_DRIVER_INTEL_PSTATE (object);
   g_clear_list (&driver->devices, g_free);
-  g_clear_object (&driver->client);
   g_clear_pointer (&driver->no_turbo_path, g_free);
   g_clear_object (&driver->no_turbo_mon);
   G_OBJECT_CLASS (ppd_driver_intel_pstate_parent_class)->finalize (object);
