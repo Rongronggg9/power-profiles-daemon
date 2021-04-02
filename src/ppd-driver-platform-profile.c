@@ -160,9 +160,9 @@ update_dytc_lapmode_state (PpdDriverPlatformProfile *self)
   self->lapmode = new_lapmode;
   g_debug ("dytc_lapmode is now %s, so profile is %s",
            self->lapmode ? "on" : "off",
-           self->lapmode ? "inhibited" : "uninhibited");
+           self->lapmode ? "degraded" : "not degraded");
   g_object_set (G_OBJECT (self),
-                "performance-inhibited", self->lapmode ? "lap-detected" : NULL,
+                "performance-degraded", self->lapmode ? "lap-detected" : NULL,
                 NULL);
 }
 
@@ -223,13 +223,6 @@ ppd_driver_platform_profile_activate_profile (PpdDriver                   *drive
     g_debug ("Can't switch to %s mode, already there",
              ppd_profile_to_str (profile));
     return TRUE;
-  }
-
-  if (profile == PPD_PROFILE_PERFORMANCE &&
-      self->lapmode) {
-    g_debug ("Can't switch to performance mode, lapmode is detected");
-    g_set_error (error, G_IO_ERROR, G_IO_ERROR_FAILED, "Mode is inhibited");
-    return FALSE;
   }
 
   g_signal_handler_block (G_OBJECT (self->acpi_platform_profile_mon), self->acpi_platform_profile_changed_id);

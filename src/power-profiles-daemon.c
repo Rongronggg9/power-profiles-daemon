@@ -68,9 +68,10 @@ typedef enum {
   PROP_INHIBITED                  = 1 << 1,
   PROP_PROFILES                   = 1 << 2,
   PROP_ACTIONS                    = 1 << 3,
+  PROP_DEGRADED                   = 1 << 4,
 } PropertiesMask;
 
-#define PROP_ALL (PROP_ACTIVE_PROFILE | PROP_INHIBITED | PROP_PROFILES | PROP_ACTIONS)
+#define PROP_ALL (PROP_ACTIVE_PROFILE | PROP_INHIBITED | PROP_PROFILES | PROP_ACTIONS | PROP_DEGRADED)
 
 static const char *
 get_active_profile (PpdApp *data)
@@ -79,7 +80,7 @@ get_active_profile (PpdApp *data)
 }
 
 static const char *
-get_performance_inhibited (PpdApp *data)
+get_performance_degraded (PpdApp *data)
 {
   const char *ret;
   PpdDriver *driver;
@@ -87,7 +88,7 @@ get_performance_inhibited (PpdApp *data)
   driver = GET_DRIVER(PPD_PROFILE_PERFORMANCE);
   if (!driver)
     return "";
-  ret = ppd_driver_get_performance_inhibited (driver);
+  ret = ppd_driver_get_performance_degraded (driver);
   g_assert (ret != NULL);
   return ret;
 }
@@ -158,7 +159,11 @@ send_dbus_event (PpdApp     *data,
   }
   if (mask & PROP_INHIBITED) {
     g_variant_builder_add (&props_builder, "{sv}", "PerformanceInhibited",
-                           g_variant_new_string (get_performance_inhibited (data)));
+                           g_variant_new_string (""));
+  }
+  if (mask & PROP_DEGRADED) {
+    g_variant_builder_add (&props_builder, "{sv}", "PerformanceDegraded",
+                           g_variant_new_string (get_performance_degraded (data)));
   }
   if (mask & PROP_PROFILES) {
     g_variant_builder_add (&props_builder, "{sv}", "Profiles",
@@ -245,13 +250,6 @@ set_active_profile (PpdApp      *data,
   if (target_profile == data->active_profile)
     return TRUE;
 
-  if (target_profile == PPD_PROFILE_PERFORMANCE &&
-      ppd_driver_is_performance_inhibited (GET_DRIVER (PPD_PROFILE_PERFORMANCE))) {
-    g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
-                 "Profile '%s' is inhibited", profile);
-    return FALSE;
-  }
-
   g_debug ("Transitioning active profile from '%s' to '%s' by user request",
            ppd_profile_to_str (data->active_profile), profile);
 
@@ -262,32 +260,27 @@ set_active_profile (PpdApp      *data,
 }
 
 static void
-driver_performance_inhibited_changed_cb (GObject    *gobject,
-                                         GParamSpec *pspec,
-                                         gpointer    user_data)
+driver_performance_degraded_changed_cb (GObject    *gobject,
+                                        GParamSpec *pspec,
+                                        gpointer    user_data)
 {
   PpdApp *data = user_data;
   PpdDriver *driver = PPD_DRIVER (gobject);
   const char *prop_str = pspec->name;
 
-  if (g_strcmp0 (prop_str, "performance-inhibited") != 0) {
+  if (g_strcmp0 (prop_str, "performance-degraded") != 0) {
     g_warning ("Ignoring '%s' property change on profile driver '%s'",
                prop_str, ppd_driver_get_driver_name (driver));
     return;
   }
 
   if (!(ppd_driver_get_profiles (driver) & PPD_PROFILE_PERFORMANCE)) {
-    g_warning ("Ignored 'performance-inhibited' change on non-performance driver '%s'",
+    g_warning ("Ignored 'performance-degraded' change on non-performance driver '%s'",
                ppd_driver_get_driver_name (driver));
     return;
   }
 
-  send_dbus_event (data, PROP_INHIBITED);
-  if (!ppd_driver_is_performance_inhibited (driver))
-    return;
-
-  activate_target_profile (data, PPD_PROFILE_BALANCED, PPD_PROFILE_ACTIVATION_REASON_INHIBITION);
-  send_dbus_event (data, PROP_ACTIVE_PROFILE);
+  send_dbus_event (data, PROP_DEGRADED);
 }
 
 static void
@@ -324,11 +317,13 @@ handle_get_property (GDBusConnection *connection,
   if (g_strcmp0 (property_name, "ActiveProfile") == 0)
     return g_variant_new_string (get_active_profile (data));
   if (g_strcmp0 (property_name, "PerformanceInhibited") == 0)
-    return g_variant_new_string (get_performance_inhibited (data));
+    return g_variant_new_string ("");
   if (g_strcmp0 (property_name, "Profiles") == 0)
     return get_profiles_variant (data);
   if (g_strcmp0 (property_name, "Actions") == 0)
     return get_actions_variant (data);
+  if (g_strcmp0 (property_name, "PerformanceDegraded") == 0)
+    return g_variant_new_string (get_performance_degraded (data));
   return NULL;
 }
 
@@ -477,8 +472,8 @@ start_profile_drivers (PpdApp *data)
 
       data->driver = driver;
 
-      g_signal_connect (G_OBJECT (driver), "notify::performance-inhibited",
-                        G_CALLBACK (driver_performance_inhibited_changed_cb), data);
+      g_signal_connect (G_OBJECT (driver), "notify::performance-degraded",
+                        G_CALLBACK (driver_performance_degraded_changed_cb), data);
       g_signal_connect (G_OBJECT (driver), "profile-changed",
                         G_CALLBACK (driver_profile_changed_cb), data);
     } else if (PPD_IS_ACTION (object)) {

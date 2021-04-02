@@ -24,7 +24,7 @@ struct _PpdDriverFake
   struct termios old_tio;
   GIOChannel *channel;
   guint watch_id;
-  gboolean inhibited;
+  gboolean degraded;
 };
 
 G_DEFINE_TYPE (PpdDriverFake, ppd_driver_fake, PPD_TYPE_DRIVER)
@@ -48,19 +48,19 @@ ppd_driver_fake_constructor (GType                  type,
 }
 
 static void
-toggle_inhibition (PpdDriverFake *fake)
+toggle_degradation (PpdDriverFake *fake)
 {
-  fake->inhibited = !fake->inhibited;
+  fake->degraded = !fake->degraded;
 
   g_object_set (G_OBJECT (fake),
-                "performance-inhibited", fake->inhibited ? "lap-detected" : NULL,
+                "performance-degraded", fake->degraded ? "lap-detected" : NULL,
                 NULL);
 }
 
 static void
 keyboard_usage (void)
 {
-  g_print ("Valid keys are: i (toggle inhibition), r (restart drivers), q/x (quit)\n");
+  g_print ("Valid keys are: d (toggle degradation), r (restart drivers), q/x (quit)\n");
 }
 
 static gboolean
@@ -82,9 +82,9 @@ check_keyboard (GIOChannel    *source,
     return TRUE;
 
   switch (buf[0]) {
-  case 'i':
-    g_print ("Toggling inhibition\n");
-    toggle_inhibition (fake);
+  case 'd':
+    g_print ("Toggling degradation\n");
+    toggle_degradation (fake);
     break;
   case 'r':
     g_print ("Restarting profile drivers\n");

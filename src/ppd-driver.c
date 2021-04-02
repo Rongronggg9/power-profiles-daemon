@@ -33,9 +33,10 @@
  *   `power-saver` profiles using placeholder
  *
  * When a driver implements the `performance` profile, it might set the
- * #PpdDriver:performance-inhibited property if the profile isn't available for any
- * reason, such as thermal limits being reached, or because a part of the
- * user's body is too close for safety, for example.
+ * #PpdDriver:performance-degraded property if the profile isn't running to
+ * its fullest performance for any reason, such as thermal limits being
+ * reached, or because a part of the user's body is too close for safety,
+ * for example.
  */
 
 typedef struct
@@ -43,14 +44,14 @@ typedef struct
   char          *driver_name;
   PpdProfile     profiles;
   gboolean       selected;
-  char          *performance_inhibited;
+  char          *performance_degraded;
 } PpdDriverPrivate;
 
 enum {
   PROP_0,
   PROP_DRIVER_NAME,
   PROP_PROFILES,
-  PROP_PERFORMANCE_INHIBITED
+  PROP_PERFORMANCE_DEGRADED
 };
 
 enum {
@@ -81,9 +82,9 @@ ppd_driver_set_property (GObject        *object,
   case PROP_PROFILES:
     priv->profiles = g_value_get_flags (value);
     break;
-  case PROP_PERFORMANCE_INHIBITED:
-    g_clear_pointer (&priv->performance_inhibited, g_free);
-    priv->performance_inhibited = g_value_dup_string (value);
+  case PROP_PERFORMANCE_DEGRADED:
+    g_clear_pointer (&priv->performance_degraded, g_free);
+    priv->performance_degraded = g_value_dup_string (value);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -106,8 +107,8 @@ ppd_driver_get_property (GObject        *object,
   case PROP_PROFILES:
     g_value_set_flags (value, priv->profiles);
     break;
-  case PROP_PERFORMANCE_INHIBITED:
-    g_value_set_string (value, priv->performance_inhibited);
+  case PROP_PERFORMANCE_DEGRADED:
+    g_value_set_string (value, priv->performance_degraded);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -121,7 +122,7 @@ ppd_driver_finalize (GObject *object)
 
   priv = PPD_DRIVER_GET_PRIVATE (PPD_DRIVER (object));
   g_clear_pointer (&priv->driver_name, g_free);
-  g_clear_pointer (&priv->performance_inhibited, g_free);
+  g_clear_pointer (&priv->performance_degraded, g_free);
 
   G_OBJECT_CLASS (ppd_driver_parent_class)->finalize (object);
 }
@@ -197,15 +198,15 @@ ppd_driver_class_init (PpdDriverClass *klass)
                                                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
   /**
-   * PpdDriver:performance-inhibited:
+   * PpdDriver:performance-degraded:
    *
    * If set to a non-%NULL value, the reason why the performance profile is unavailable.
    * The value must be one of the options listed in the D-Bus API reference.
    */
-  g_object_class_install_property (object_class, PROP_PERFORMANCE_INHIBITED,
-                                   g_param_spec_string("performance-inhibited",
-                                                       "Performance Inhibited",
-                                                       "Why the performance profile is inhibited, if set",
+  g_object_class_install_property (object_class, PROP_PERFORMANCE_DEGRADED,
+                                   g_param_spec_string("performance-degraded",
+                                                       "Performance Degraded",
+                                                       "Why the performance profile is degraded, if set",
                                                        NULL,
                                                        G_PARAM_READWRITE));
 }
@@ -285,18 +286,18 @@ ppd_driver_get_selected (PpdDriver *driver)
 }
 
 const char *
-ppd_driver_get_performance_inhibited (PpdDriver *driver)
+ppd_driver_get_performance_degraded (PpdDriver *driver)
 {
   PpdDriverPrivate *priv;
 
   g_return_val_if_fail (PPD_IS_DRIVER (driver), NULL);
 
   priv = PPD_DRIVER_GET_PRIVATE (driver);
-  return priv->performance_inhibited ? priv->performance_inhibited : "";
+  return priv->performance_degraded ? priv->performance_degraded : "";
 }
 
 gboolean
-ppd_driver_is_performance_inhibited (PpdDriver *driver)
+ppd_driver_is_performance_degraded (PpdDriver *driver)
 {
   PpdDriverPrivate *priv;
 
@@ -304,7 +305,7 @@ ppd_driver_is_performance_inhibited (PpdDriver *driver)
 
   priv = PPD_DRIVER_GET_PRIVATE (driver);
 
-  return (priv->performance_inhibited != NULL);
+  return (priv->performance_degraded != NULL);
 }
 
 void

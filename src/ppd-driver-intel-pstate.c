@@ -62,7 +62,7 @@ update_no_turbo (PpdDriverIntelPstate *pstate)
       turbo_disabled = TRUE;
   }
 
-  g_object_set (G_OBJECT (pstate), "performance-inhibited",
+  g_object_set (G_OBJECT (pstate), "performance-degraded",
                 turbo_disabled ? "high-operating-temperature" : NULL,
                 NULL);
 }

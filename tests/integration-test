@@ -262,7 +262,7 @@ class Tests(dbusmock.DBusTestCase):
 
       self.start_daemon()
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
-      self.assertEqual(self.get_dbus_property('PerformanceInhibited'), '')
+      self.assertEqual(self.get_dbus_property('PerformanceDegraded'), '')
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 2)
@@ -279,8 +279,19 @@ class Tests(dbusmock.DBusTestCase):
 
       self.stop_daemon()
 
-    def test_inhibited_transition(self):
-      '''Test that transitions work as expected when inhibited'''
+    def test_inhibited_property(self):
+      '''Test that the inhibited property exists'''
+
+      self.create_dytc_device()
+      self.create_platform_profile()
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(self.get_dbus_property('PerformanceInhibited'), '')
+
+    def test_degraded_transition(self):
+      '''Test that transitions work as expected when degraded'''
 
       self.create_dytc_device()
       self.create_platform_profile()
@@ -294,11 +305,11 @@ class Tests(dbusmock.DBusTestCase):
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
 
-      # Inhibit
+      # Degraded
       self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1\n')
       self.assertEventually(lambda: self.have_text_in_log('dytc_lapmode is now on'))
-      self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
-      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      self.assertEqual(self.get_dbus_property('PerformanceDegraded'), 'lap-detected')
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
 
       # Switch to non-performance
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
@@ -349,8 +360,8 @@ class Tests(dbusmock.DBusTestCase):
         no_turbo.write("1\n")
 
       self.assertEventually(lambda: self.have_text_in_log('File monitor change happened for '))
-      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
-      self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'high-operating-temperature')
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+      self.assertEqual(self.get_dbus_property('PerformanceDegraded'), 'high-operating-temperature')
 
       self.stop_daemon()
 
@@ -408,31 +419,17 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(profiles[2]['Profile'], 'performance')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
 
-      # lapmode detected, but performance wasn't selected anyway
+      # lapmode detected
       self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1\n')
-      self.assertEventually(lambda: self.get_dbus_property('PerformanceInhibited') == 'lap-detected')
-      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      self.assertEventually(lambda: self.get_dbus_property('PerformanceDegraded') == 'lap-detected')
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
 
       # Reset lapmode
       self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '0\n')
-      self.assertEventually(lambda: self.get_dbus_property('PerformanceInhibited') == '')
+      self.assertEventually(lambda: self.get_dbus_property('PerformanceDegraded') == '')
 
-      # Set performance mode
-      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
+      # Performance mode didn't change
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
-      self.assertEventually(lambda: self.read_sysfs_file("sys/firmware/acpi/platform_profile") == b'performance')
-
-      # And turn on lapmode
-      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1\n')
-      self.assertEventually(lambda: self.read_sysfs_file("sys/firmware/acpi/platform_profile") == b'balanced')
-
-      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
-      self.assertEqual(self.get_dbus_property('PerformanceInhibited'), 'lap-detected')
-
-      # Turn off lapmode, profile stays balanced
-      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '0\n')
-      self.assertEventually(lambda: self.get_dbus_property('PerformanceInhibited') == '')
-      self.assertEventually(lambda: self.read_sysfs_file("sys/firmware/acpi/platform_profile") == b'balanced')
 
       # Switch to power-saver mode
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
@@ -511,7 +508,7 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(len(profiles), 3)
       # Was set in platform_profile before we loaded the drivers
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
-      self.assertEqual(self.get_dbus_property('PerformanceInhibited'), '')
+      self.assertEqual(self.get_dbus_property('PerformanceDegraded'), '')
 
       self.stop_daemon()
 

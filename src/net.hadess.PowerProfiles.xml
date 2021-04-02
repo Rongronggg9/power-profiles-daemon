@@ -13,7 +13,7 @@
 
       OS components would typically use the "Profiles" property to construct
       their UI (2 or 3 profiles available), and monitor the "ActiveProfile"
-      and the "PerformanceInhibited" properties to update that UI. The UI
+      and the "PerformanceDegraded" properties to update that UI. The UI
       would try to set the "ActiveProfile" property if the user selected
       a different one.
 
@@ -27,24 +27,29 @@
     <!--
         ActiveProfile:
 
-        The type of the currently active profile. It might change automatically
-        if the "performance" profile was selected but it got inhibited, in which
-        case the "PerformanceInhibited" property will reflect the reason.
+        The type of the currently active profile.
     -->
     <property name="ActiveProfile" type="s" access="readwrite"/>
 
     <!--
         PerformanceInhibited:
 
-        This will be set if the performance power profile is unavailable, with
-        the value being used to identify the reason for unavailability. As new
-        reasons can be added, it is recommended that front-ends show a generic
+        This property is deprecated, and unused since version 0.9.
+    -->
+    <property name="PerformanceInhibited" type="s" access="read"/>
+
+    <!--
+        PerformanceDegraded:
+
+        This will be set if the performance power profile is running in degraded
+        mode, with the value being used to identify the reason for that degradation.
+        As new reasons can be added, it is recommended that front-ends show a generic
         reason if they do not recognise the value. Possible values are:
         - "lap-detected" (the computer is sitting on the user's lap)
         - "high-operating-temperature" (the computer is close to overheating)
-        - "" (the empty string, if not inhibited)
+        - "" (the empty string, if not performance is not degraded)
     -->
-    <property name="PerformanceInhibited" type="s" access="read"/>
+    <property name="PerformanceDegraded" type="s" access="read"/>
 
     <!--
         Profiles:

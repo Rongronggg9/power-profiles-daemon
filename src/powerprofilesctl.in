@@ -100,8 +100,8 @@ def get_profiles_property(prop):
 def _list():
     try:
         profiles = get_profiles_property('Profiles')
-        reason = get_proxy().Get('(ss)', 'net.hadess.PowerProfiles', 'PerformanceInhibited')
-        inhibited = (reason != '')
+        reason = get_proxy().Get('(ss)', 'net.hadess.PowerProfiles', 'PerformanceDegraded')
+        degraded = (reason != '')
         active = get_proxy().Get('(ss)', 'net.hadess.PowerProfiles', 'ActiveProfile')
     except:
         print("Couldn\'t get Profiles: ", sys.exc_info()[0])
@@ -114,7 +114,7 @@ def _list():
             print(('%s %s:') % ('*' if profile['Profile'] == active else ' ', profile['Profile']))
             print('    Driver:    ', profile['Driver'])
             if profile['Profile'] == 'performance':
-                print('    Inhibited: ', f'yes ({reason})' if inhibited else 'no')
+                print('    Degraded:  ', f'yes ({reason})' if degraded else 'no')
             index += 1
 
 def main(): # pylint: disable=too-many-branches
