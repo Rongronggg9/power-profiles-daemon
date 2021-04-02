@@ -22,6 +22,8 @@ struct _PpdDriverFake
 
   gboolean tio_set;
   struct termios old_tio;
+  GIOChannel *channel;
+  guint watch_id;
   gboolean inhibited;
 };
 
@@ -103,7 +105,6 @@ check_keyboard (GIOChannel    *source,
 static gboolean
 setup_keyboard (PpdDriverFake *fake)
 {
-  GIOChannel *channel;
   struct termios new_tio;
 
   tcgetattr(STDIN_FILENO, &fake->old_tio);
@@ -111,18 +112,18 @@ setup_keyboard (PpdDriverFake *fake)
   new_tio.c_lflag &=(~ICANON & ~ECHO);
   tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
 
-  channel = g_io_channel_unix_new (STDIN_FILENO);
-  if (!channel) {
+  fake->channel = g_io_channel_unix_new (STDIN_FILENO);
+  if (!fake->channel) {
     g_warning ("Failed to open stdin");
     return FALSE;
   }
 
-  if (g_io_channel_set_encoding (channel, NULL, NULL) != G_IO_STATUS_NORMAL) {
+  if (g_io_channel_set_encoding (fake->channel, NULL, NULL) != G_IO_STATUS_NORMAL) {
     g_warning ("Failed to set stdin encoding to NULL");
     return FALSE;
   }
 
-  g_io_add_watch (channel, G_IO_IN, (GIOFunc) check_keyboard, fake);
+  fake->watch_id = g_io_add_watch (fake->channel, G_IO_IN, (GIOFunc) check_keyboard, fake);
   fake->tio_set = TRUE;
   return TRUE;
 }
@@ -177,6 +178,8 @@ ppd_driver_fake_finalize (GObject *object)
   PpdDriverFake *fake;
 
   fake = PPD_DRIVER_FAKE (object);
+  g_clear_pointer (&fake->channel, g_io_channel_unref);
+  g_clear_handle_id (&fake->watch_id, g_source_remove);
   if (fake->tio_set)
     tcsetattr(STDIN_FILENO, TCSANOW, &fake->old_tio);
   G_OBJECT_CLASS (ppd_driver_fake_parent_class)->finalize (object);
