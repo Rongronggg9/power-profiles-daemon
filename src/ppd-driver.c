@@ -324,8 +324,6 @@ const char *
 ppd_profile_activation_reason_to_str (PpdProfileActivationReason reason)
 {
   switch (reason) {
-  case PPD_PROFILE_ACTIVATION_REASON_INHIBITION:
-    return "inhibition";
   case PPD_PROFILE_ACTIVATION_REASON_INTERNAL:
     return "internal";
   case PPD_PROFILE_ACTIVATION_REASON_RESET:

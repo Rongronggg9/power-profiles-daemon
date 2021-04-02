@@ -35,8 +35,6 @@ typedef enum {
 
 /**
  * PpdProfileActivationReason:
- * @PPD_PROFILE_ACTIVATION_REASON_INHIBITION: switching profiles because
- *   of performance profile inhibition.
  * @PPD_PROFILE_ACTIVATION_REASON_INTERNAL: the driver profile changed
  *   internally, usually because of a key combination.
  * @PPD_PROFILE_ACTIVATION_REASON_RESET: setting profile on startup, or
@@ -49,8 +47,7 @@ typedef enum {
  * profile internally.
  */
 typedef enum{
-  PPD_PROFILE_ACTIVATION_REASON_INHIBITION = 0,
-  PPD_PROFILE_ACTIVATION_REASON_INTERNAL,
+  PPD_PROFILE_ACTIVATION_REASON_INTERNAL = 0,
   PPD_PROFILE_ACTIVATION_REASON_RESET,
   PPD_PROFILE_ACTIVATION_REASON_USER
 } PpdProfileActivationReason;
