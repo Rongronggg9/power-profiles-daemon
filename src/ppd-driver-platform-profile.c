@@ -101,7 +101,7 @@ read_platform_profile (void)
 
   platform_profile_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_PATH);
   if (!g_file_get_contents (platform_profile_path,
-                            &new_profile_str, NULL, NULL)) {
+                            &new_profile_str, NULL, &error)) {
     g_debug ("Failed to get contents for '%s': %s",
              platform_profile_path,
              error->message);
