@@ -124,7 +124,10 @@ save_platform_profile_choices (PpdDriverPlatformProfile *self)
 
   platform_profile_choices_path = ppd_utils_get_sysfs_path (ACPI_PLATFORM_PROFILE_CHOICES_PATH);
   if (!g_file_get_contents (platform_profile_choices_path,
-                            &choices_str, NULL, NULL)) {
+                            &choices_str, NULL, &error)) {
+    g_debug ("Failed to get contents for '%s': %s",
+             platform_profile_choices_path,
+             error->message);
     return FALSE;
   }
 
