@@ -116,6 +116,10 @@ class Tests(dbusmock.DBusTestCase):
         del self.testbed
         self.stop_daemon()
         del self.tp_acpi
+        try:
+          os.remove('ppd_test_conf.ini')
+        except Exception:
+          pass
 
         # on failures, print daemon log
         errors = [x[1] for x in self._outcome.errors if x[1]]
@@ -247,6 +251,12 @@ class Tests(dbusmock.DBusTestCase):
         profile.write("performance\n")
       with open(os.path.join(acpi_dir, "platform_profile_choices")  ,'w') as choices:
         choices.write("low-power balanced performance\n")
+
+    def remove_platform_profile(self):
+      acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
+      os.remove(os.path.join(acpi_dir, "platform_profile_choices"))
+      os.remove(os.path.join(acpi_dir, "platform_profile"))
+      os.removedirs(acpi_dir)
 
     def assertEventually(self, condition, message=None, timeout=50):
         '''Assert that condition function eventually returns True.
@@ -663,6 +673,57 @@ class Tests(dbusmock.DBusTestCase):
       self.call_dbus_method('ReleaseProfile', GLib.Variant("(u)", powerSaverCookie))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
 
+      self.stop_daemon()
+
+    def test_save_profile(self):
+      '''save profile across runs'''
+
+      self.create_platform_profile()
+
+      self.start_daemon()
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
+      self.stop_daemon()
+
+      # sys.stderr.write('\n-------------- config file: ----------------\n')
+      # with open('ppd_test_conf.ini') as f:
+      #   sys.stderr.write(f.read())
+      # sys.stderr.write('------------------------------\n')
+
+      self.start_daemon()
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+      # Programmatically set profile aren't saved
+      performanceCookie = self.call_dbus_method('HoldProfile', GLib.Variant("(sss)", ('performance', '', '')))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+      self.stop_daemon()
+
+      self.start_daemon()
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+      self.stop_daemon()
+
+    def test_save_deferred_load(self):
+      '''save profile across runs, but kernel driver loaded after start'''
+
+      self.create_platform_profile()
+      self.start_daemon()
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
+      self.stop_daemon()
+      self.remove_platform_profile()
+
+      # We could verify the contents of the configuration file here
+
+      self.create_empty_platform_profile()
+      self.start_daemon()
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
+      with open(os.path.join(acpi_dir, "platform_profile_choices")  ,'w') as choices:
+        choices.write("low-power\nbalanced\nperformance\n")
+      with open(os.path.join(acpi_dir, "platform_profile")  ,'w') as profile:
+        profile.write("performance\n")
+
+      self.assertEventually(lambda: self.get_dbus_property('ActiveProfile') == 'power-saver')
       self.stop_daemon()
 
     #

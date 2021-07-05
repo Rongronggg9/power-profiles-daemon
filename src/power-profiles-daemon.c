@@ -28,6 +28,9 @@ typedef struct {
   gboolean was_started;
   int ret;
 
+  GKeyFile *config;
+  const char *config_path;
+
   PpdProfile active_profile;
   PpdProfile selected_profile;
   GPtrArray *probed_drivers;
@@ -240,6 +243,56 @@ send_dbus_event (PpdApp     *data,
 }
 
 static void
+save_configuration (PpdApp *data)
+{
+  g_autoptr(GError) error = NULL;
+
+  g_key_file_set_string (data->config, "State", "Driver", ppd_driver_get_driver_name (data->driver));
+  g_key_file_set_string (data->config, "State", "Profile", ppd_profile_to_str (data->active_profile));
+  if (!g_key_file_save_to_file (data->config, data->config_path, &error))
+    g_warning ("Could not save configuration file '%s': %s", data->config_path, error->message);
+}
+
+static gboolean
+apply_configuration (PpdApp *data)
+{
+  g_autofree char *driver = NULL;
+  g_autofree char *profile_str = NULL;
+  PpdProfile profile;
+
+  driver = g_key_file_get_string (data->config, "State", "Driver", NULL);
+  if (g_strcmp0 (ppd_driver_get_driver_name (data->driver), driver) != 0)
+    return FALSE;
+  profile_str = g_key_file_get_string (data->config, "State", "Profile", NULL);
+  if (profile_str == NULL)
+    return FALSE;
+  profile = ppd_profile_from_str (profile_str);
+  if (profile == PPD_PROFILE_UNSET) {
+    g_debug ("Resetting invalid configuration profile '%s'", profile_str);
+    g_key_file_remove_key (data->config, "State", "Profile", NULL);
+    return FALSE;
+  }
+
+  g_debug ("Applying profile '%s' from configuration file", profile_str);
+  data->active_profile = profile;
+  return TRUE;
+}
+
+static void
+load_configuration (PpdApp *data)
+{
+  g_autoptr(GError) error = NULL;
+
+  if (g_getenv ("UMOCKDEV_DIR") != NULL)
+    data->config_path = "ppd_test_conf.ini";
+  else
+    data->config_path = "/var/lib/power-profiles-daemon/state.ini";
+  data->config = g_key_file_new ();
+  if (!g_key_file_load_from_file (data->config, data->config_path, G_KEY_FILE_KEEP_COMMENTS, &error))
+    g_debug ("Could not load configuration file '%s': %s", data->config_path, error->message);
+}
+
+static void
 actions_activate_profile (GPtrArray *actions,
                           PpdProfile profile)
 {
@@ -284,6 +337,10 @@ activate_target_profile (PpdApp                     *data,
   actions_activate_profile (data->actions, target_profile);
 
   data->active_profile = target_profile;
+
+  if (reason == PPD_PROFILE_ACTIVATION_REASON_USER ||
+      reason == PPD_PROFILE_ACTIVATION_REASON_INTERNAL)
+    save_configuration (data);
 }
 
 static void
@@ -763,7 +820,8 @@ start_profile_drivers (PpdApp *data)
     goto bail;
   }
 
-  /* Set initial state */
+  /* Set initial state either from configuration, or using the currently selected profile */
+  apply_configuration (data);
   activate_target_profile (data, data->active_profile, PPD_PROFILE_ACTIVATION_REASON_RESET);
 
   send_dbus_event (data, PROP_ALL);
@@ -836,6 +894,7 @@ free_app_data (PpdApp *data)
     data->name_id = 0;
   }
 
+  g_clear_pointer (&data->config, g_key_file_unref);
   g_ptr_array_free (data->probed_drivers, TRUE);
   g_ptr_array_free (data->actions, TRUE);
   g_clear_object (&data->driver);
@@ -888,6 +947,7 @@ int main (int argc, char **argv)
   data->profile_holds = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, (GDestroyNotify) profile_hold_free);
   data->active_profile = PPD_PROFILE_BALANCED;
   data->selected_profile = PPD_PROFILE_BALANCED;
+  load_configuration (data);
   ppd_app = data;
 
   /* Set up D-Bus */

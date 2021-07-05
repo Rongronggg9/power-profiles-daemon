@@ -8,6 +8,8 @@ Type=dbus
 BusName=net.hadess.PowerProfiles
 ExecStart=@libexecdir@/power-profiles-daemon
 Restart=on-failure
+# This always corresponds to /var/lib/power-profiles-daemon
+StateDirectory=power-profiles-daemon
 #Uncomment this to enable debug
 #Environment="G_MESSAGES_DEBUG=all"
 

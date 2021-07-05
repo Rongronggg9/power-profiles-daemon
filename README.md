@@ -30,9 +30,6 @@ they are also expected to adjust the behaviour of the desktop depending on the m
 such as turning the screen off after inaction more aggressively when in power-saver
 mode.
 
-Note that power-profiles-daemon does not save the currently active profile across
-system restarts and will always start with the "balanced" profile selected.
-
 Debugging
 ---------
 
@@ -46,6 +43,9 @@ chosen profile):
 ```
 gdbus call --system --dest net.hadess.PowerProfiles --object-path /net/hadess/PowerProfiles --method org.freedesktop.DBus.Properties.Set 'net.hadess.PowerProfiles' 'ActiveProfile' "<'power-saver'>"
 ```
+
+You can check the current configuration which will be restored on
+reboot in `/var/lib/power-profiles-daemon/state.ini`.
 
 If that doesn't work, please file an issue, make sure any running power-profiles-daemon
 has been stopped:
