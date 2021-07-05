@@ -253,8 +253,7 @@ find_dytc (GUdevDevice *dev,
 }
 
 static PpdProbeResult
-ppd_driver_platform_profile_probe (PpdDriver  *driver,
-                                   PpdProfile *prev_profile)
+ppd_driver_platform_profile_probe (PpdDriver  *driver)
 {
   PpdDriverPlatformProfile *self = PPD_DRIVER_PLATFORM_PROFILE (driver);
   g_autoptr(GFile) acpi_platform_profile = NULL;
@@ -288,8 +287,6 @@ ppd_driver_platform_profile_probe (PpdDriver  *driver,
     g_debug ("Monitoring platform_profile sysfs file");
     return self->probe_result;
   }
-
-  *prev_profile = read_platform_profile ();
 
   /* Lenovo-specific proximity sensor */
   self->device = ppd_utils_find_device ("platform",

@@ -68,8 +68,7 @@ struct _PpdDriverClass
 {
   GObjectClass   parent_class;
 
-  PpdProbeResult (* probe)            (PpdDriver                   *driver,
-                                       PpdProfile                  *previous_profile);
+  PpdProbeResult (* probe)            (PpdDriver                   *driver);
   gboolean       (* activate_profile) (PpdDriver                   *driver,
                                        PpdProfile                   profile,
                                        PpdProfileActivationReason   reason,
@@ -77,7 +76,7 @@ struct _PpdDriverClass
 };
 
 #ifndef __GTK_DOC_IGNORE__
-PpdProbeResult ppd_driver_probe (PpdDriver *driver, PpdProfile *previous_profile);
+PpdProbeResult ppd_driver_probe (PpdDriver *driver);
 gboolean ppd_driver_activate_profile (PpdDriver *driver,
   PpdProfile profile, PpdProfileActivationReason reason, GError **error);
 const char *ppd_driver_get_driver_name (PpdDriver *driver);
