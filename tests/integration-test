@@ -232,6 +232,14 @@ class Tests(dbusmock.DBusTestCase):
           [ 'DEVPATH', '/devices/platform/thinkpad_acpi' ]
       )
 
+    def create_empty_platform_profile(self):
+      acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
+      os.makedirs(acpi_dir)
+      with open(os.path.join(acpi_dir, "platform_profile")  ,'w') as profile:
+        profile.write('\n')
+      with open(os.path.join(acpi_dir, "platform_profile_choices")  ,'w') as choices:
+        choices.write('\n')
+
     def create_platform_profile(self):
       acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
       os.makedirs(acpi_dir)
@@ -496,18 +504,13 @@ class Tests(dbusmock.DBusTestCase):
 
     def test_platform_driver_late_load(self):
       '''Test that we can handle the platform_profile driver getting loaded late'''
-      acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
-      os.makedirs(acpi_dir)
-      with open(os.path.join(acpi_dir, "platform_profile")  ,'w') as profile:
-        profile.write('\n')
-      with open(os.path.join(acpi_dir, "platform_profile_choices")  ,'w') as choices:
-        choices.write('\n')
-
+      self.create_empty_platform_profile()
       self.start_daemon()
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 2)
 
+      acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
       with open(os.path.join(acpi_dir, "platform_profile_choices")  ,'w') as choices:
         choices.write("low-power\nbalanced\nperformance\n")
       with open(os.path.join(acpi_dir, "platform_profile")  ,'w') as profile:
