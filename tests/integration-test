@@ -264,7 +264,7 @@ class Tests(dbusmock.DBusTestCase):
       '''D-Bus startup error'''
 
       self.start_daemon()
-      out = subprocess.run([self.daemon_path], capture_output=True)
+      out = subprocess.run([self.daemon_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
       self.assertEqual(out.returncode, 1, "power-profile-daemon started but should have failed")
       self.stop_daemon()
 
