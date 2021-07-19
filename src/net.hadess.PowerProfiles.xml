@@ -111,6 +111,9 @@
 
         Only one of each type of profile will be listed, with the daemon choosing the
         more appropriate "driver" for each profile type.
+
+        This list is guaranteed to be sorted in the same order that the profiles
+        are listed above.
     -->
     <property name="Profiles" type="aa{sv}" access="read"/>
 
