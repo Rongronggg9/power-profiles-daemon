@@ -1,3 +1,17 @@
+0.9.0
+-----
+
+This release adds support for "holding" a power profile while running a task
+or application, making it possible to switch to a performance profile during
+a compilation, or to a power-saver profile when low on battery, reverting to
+the original profile when done.
+
+This release also removes the "inhibited" property for the performance profile,
+which made it impossible to switch to that profile, and replaces it with the
+"degraded" property which lists why performance is degraded.
+
+Finally, the last used profile is now remembered across reboots.
+
 0.8.1
 -----
 
