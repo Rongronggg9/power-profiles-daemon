@@ -59,7 +59,9 @@ profile_to_acpi_platform_profile_value (PpdDriverPlatformProfile *self,
   case PPD_PROFILE_POWER_SAVER:
     if (g_strv_contains ((const char * const*) self->profile_choices, "low-power"))
       return "low-power";
-    return "cool";
+    if (g_strv_contains ((const char * const*) self->profile_choices, "cool"))
+      return "cool";
+    return "quiet";
   case PPD_PROFILE_BALANCED:
     return "balanced";
   case PPD_PROFILE_PERFORMANCE:
@@ -141,7 +143,8 @@ verify_acpi_platform_profile_choices (PpdDriverPlatformProfile *self)
   const char * const *choices = (const char * const*) self->profile_choices;
 
   if ((g_strv_contains (choices, "low-power") ||
-       g_strv_contains (choices, "cool")) &&
+       g_strv_contains (choices, "cool") ||
+       g_strv_contains (choices, "quiet")) &&
       g_strv_contains (choices, "balanced") &&
       g_strv_contains (choices, "performance"))
     return PPD_PROBE_RESULT_SUCCESS;
