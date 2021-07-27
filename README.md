@@ -47,12 +47,10 @@ gdbus call --system --dest net.hadess.PowerProfiles --object-path /net/hadess/Po
 You can check the current configuration which will be restored on
 reboot in `/var/lib/power-profiles-daemon/state.ini`.
 
-If that doesn't work, please file an issue, make sure any running power-profiles-daemon
-has been stopped:
-`systemctl stop power-profiles-daemon.service`
-and attach the output of:
-`G_MESSAGES_DEBUG=all /usr/libexec/power-profiles-daemon`
-running as ```root```.
+If that doesn't work, please file an issue, attach the output of:
+```sh
+`sudo G_MESSAGES_DEBUG=all /usr/libexec/power-profiles-daemon -r -v`
+```
 
 Testing
 -------
@@ -61,7 +59,7 @@ If you don't have hardware that can support the performance mode, you can
 manually run the `power-profiles-daemon` binary as `root` with the environment
 variable `POWER_PROFILE_DAEMON_FAKE_DRIVER` set to 1. For example:
 ```sh
-$ sudo POWER_PROFILE_DAEMON_FAKE_DRIVER=1 /usr/libexec/power-profiles-daemon
+sudo POWER_PROFILE_DAEMON_FAKE_DRIVER=1 /usr/libexec/power-profiles-daemon -r -v
 ```
 
 References
