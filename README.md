@@ -49,7 +49,7 @@ reboot in `/var/lib/power-profiles-daemon/state.ini`.
 
 If that doesn't work, please file an issue, attach the output of:
 ```sh
-`sudo G_MESSAGES_DEBUG=all /usr/libexec/power-profiles-daemon -r -v`
+sudo G_MESSAGES_DEBUG=all /usr/libexec/power-profiles-daemon -r -v
 ```
 
 Testing
