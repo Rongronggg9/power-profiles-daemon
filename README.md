@@ -34,20 +34,30 @@ Debugging
 ---------
 
 You can now check which mode is in use, and which ones are available by running:
-```
-gdbus introspect --system --dest net.hadess.PowerProfiles --object-path /net/hadess/PowerProfiles
+
+```sh
+powerprofilesctl
 ```
 
 You can change the selected profile by running (change `power-saver` for the
 chosen profile):
-```
-gdbus call --system --dest net.hadess.PowerProfiles --object-path /net/hadess/PowerProfiles --method org.freedesktop.DBus.Properties.Set 'net.hadess.PowerProfiles' 'ActiveProfile' "<'power-saver'>"
+
+```sh
+powerprofilesctl set power-saver
 ```
 
 You can check the current configuration which will be restored on
 reboot in `/var/lib/power-profiles-daemon/state.ini`.
 
+Those commands are also available through the D-Bus interface:
+
+```
+gdbus introspect --system --dest net.hadess.PowerProfiles --object-path /net/hadess/PowerProfiles
+gdbus call --system --dest net.hadess.PowerProfiles --object-path /net/hadess/PowerProfiles --method org.freedesktop.DBus.Properties.Set 'net.hadess.PowerProfiles' 'ActiveProfile' "<'power-saver'>"
+```
+
 If that doesn't work, please file an issue, attach the output of:
+
 ```sh
 sudo G_MESSAGES_DEBUG=all /usr/libexec/power-profiles-daemon -r -v
 ```
