@@ -182,8 +182,8 @@ def _launch(args, profile, appid, reason):
     signal.signal(signal.SIGTERM, receive_signal)
 
     # print (f'Got {cookie} for {profile} hold')
-    launched_app = subprocess.Popen(args)
-    launched_app.wait()
+    with subprocess.Popen(args) as launched_app:
+        launched_app.wait()
     proxy.ReleaseProfile('(u)', cookie)
 
 def main(): # pylint: disable=too-many-branches, disable=too-many-statements
