@@ -161,3 +161,17 @@ addition to the "3 profiles" selection:
 
 A lot of those power-saving tricks could be analysed and used, but we
 obviously can't rely on "source available" software for our free desktops.
+
+### [system76-power](https://github.com/pop-os/system76-power)
+
+Very similar project to power-profiles-daemon but goes much more into the weeds
+in terms of power-saving/performance implementation.
+
+It has a D-Bus API for choosing different power profiles, and applies a number
+of settings based on the profile selected. Most of the interesting settings are
+already upstreamed ([SATA power tweaks](https://hansdegoede.livejournal.com/18412.html)),
+should be upstreamed to the vanilla kernel if possible (PCI power-savings), or
+are things we already implement (Intel P-State).
+
+It could without a doubt have been used as a base for power-profiles-daemon if it
+was more of an upstream project instead of a PopOS!/System76 project.

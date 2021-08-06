@@ -1,6 +1,6 @@
 [Unit]
 Description=Power Profiles daemon
-Conflicts=tuned.service tlp.service auto-cpufreq.service
+Conflicts=tuned.service tlp.service auto-cpufreq.service system76-power.service
 Before=multi-user.target display-manager.target
 
 [Service]
