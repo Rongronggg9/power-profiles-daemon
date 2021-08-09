@@ -16,21 +16,16 @@
  * @Title: Profile Drivers
  *
  * Profile drivers are the implementation of the different profiles for
- * the whole system. A driver will implement support for one or more
- * profiles, usually one or both of the `performance` and `power-saver`
- * profiles, for a particular system. Only one driver will be selected and
- * running per profile.
+ * the whole system. A driver will need to implement support `power-saver`
+ * and `balanced` at a minimum.
  *
- * If no system-specific driver is available, some placeholder `balanced`
- * and `power-saver` drivers will be put in place, and the `performance`
- * profile will be unavailable.
+ * If no system-specific driver is available, a placeholder driver
+ * will be put in place, and the `performance` profile will be unavailable.
  *
- * Common implementation of drivers might be:
- * - a driver handling all three profiles, relying on a firmware feature
- *   exposed in the kernel,
- * - a driver that only implements the `performance` profile on a particular
- *   system it has intimate knowledge of, leaving the `balanced` and
- *   `power-saver` profiles using placeholder
+ * There should not be a need to implement system-specific drivers, as the
+ * [`platform_profile`](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/ABI/testing/sysfs-platform_profile)
+ * kernel API offers a way to implement system-specific profiles which
+ * `power-profiles-daemon` can consume.
  *
  * When a driver implements the `performance` profile, it might set the
  * #PpdDriver:performance-degraded property if the profile isn't running to
