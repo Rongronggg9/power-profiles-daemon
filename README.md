@@ -175,3 +175,11 @@ are things we already implement (Intel P-State).
 
 It could without a doubt have been used as a base for power-profiles-daemon if it
 was more of an upstream project instead of a PopOS!/System76 project.
+
+### [asusctl](https://gitlab.com/asus-linux/asusctl/)
+
+It provides an interface to a number of ASUS-specific features which isn't directly
+relevant to power-profiles-daemon like handling keyboard LED settings, or setting
+battery charge limits. The functionality that was relevant got moved to the asus-wmi
+kernel driver during the 5.14 kernel development cycle, where power-profiles-daemon
+can consume it. The 2 daemons are now complementary.
