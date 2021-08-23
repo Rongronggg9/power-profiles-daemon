@@ -29,6 +29,9 @@ struct _PpdDriverPlatformProfile
   GFileMonitor *lapmode_mon;
   GFileMonitor *acpi_platform_profile_mon;
   guint acpi_platform_profile_changed_id;
+
+  gboolean can_taint;
+  gboolean tainted;
 };
 
 G_DEFINE_TYPE (PpdDriverPlatformProfile, ppd_driver_platform_profile, PPD_TYPE_DRIVER)
@@ -174,6 +177,9 @@ update_acpi_platform_profile_state (PpdDriverPlatformProfile *self)
 {
   PpdProfile new_profile;
 
+  if (self->can_taint && !self->tainted)
+    self->tainted = ppd_utils_try_taint ();
+
   new_profile = read_platform_profile ();
   if (new_profile == PPD_PROFILE_UNSET ||
       new_profile == self->acpi_platform_profile)
@@ -290,6 +296,9 @@ ppd_driver_platform_profile_probe (PpdDriver  *driver)
     g_debug ("Monitoring platform_profile sysfs file");
     return self->probe_result;
   }
+
+  /* Check for customisation that would invalidate our work */
+  self->can_taint = ppd_utils_can_taint ();
 
   /* Lenovo-specific proximity sensor */
   self->device = ppd_utils_find_device ("platform",
