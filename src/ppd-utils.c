@@ -115,3 +115,38 @@ ppd_utils_find_device (const char   *subsystem,
 
   return ret;
 }
+
+/* Custom fan curves used in asus-wmi module */
+#define ENABLED_FAN_CURVE_PROFILES "/sys/devices/platform/asus-nb-wmi/enabled_fan_curve_profiles"
+
+gboolean
+ppd_utils_can_taint (void)
+{
+  g_autofree char *fan_curves_file = NULL;
+  gboolean ret;
+
+  fan_curves_file = ppd_utils_get_sysfs_path (ENABLED_FAN_CURVE_PROFILES);
+  ret = g_file_test (fan_curves_file, G_FILE_TEST_IS_REGULAR);
+  g_debug ("%s %s: %s taint", ret ? "Detected" : "Didn't detect",
+           ENABLED_FAN_CURVE_PROFILES, ret ? "can" : "cannot");
+  return ret;
+}
+
+gboolean
+ppd_utils_try_taint (void)
+{
+  g_autofree char *fan_curves_file = NULL;
+  g_autofree char *contents = NULL;
+  g_autoptr(GError) error = NULL;
+
+  fan_curves_file = ppd_utils_get_sysfs_path (ENABLED_FAN_CURVE_PROFILES);
+  if (g_file_get_contents (fan_curves_file, &contents, NULL, &error)) {
+    if (g_strcmp0 (g_strchomp (contents), "") != 0) {
+      g_warning ("Custom fan curves are in use, please revert to defaults before reporting any problems");
+      return TRUE;
+    }
+  } else {
+    g_debug ("Failed to open %s: %s", ENABLED_FAN_CURVE_PROFILES, error->message);
+  }
+  return FALSE;
+}
