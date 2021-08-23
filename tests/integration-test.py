@@ -778,6 +778,43 @@ class Tests(dbusmock.DBusTestCase):
 
       self.stop_daemon()
 
+    def test_tainting(self):
+      '''check that custom fan curves throw a tainting warning'''
+
+      self.create_platform_profile()
+      fan_curves_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/platform/asus-nb-wmi/")
+      os.makedirs(fan_curves_dir)
+      fan_curves_path = os.path.join(fan_curves_dir, "enabled_fan_curve_profiles")
+      with open(fan_curves_path, 'w') as curves:
+        curves.write("profile here\n")
+
+      self.start_daemon()
+      self.assertEventually(lambda: self.have_text_in_log('Custom fan curves are in use'))
+      self.stop_daemon()
+
+      os.remove(fan_curves_path)
+      os.removedirs(fan_curves_dir)
+      self.remove_platform_profile()
+
+    def test_not_tainting(self):
+      '''check that fan curves don't throw a tainting warning if unset'''
+
+      self.create_platform_profile()
+      fan_curves_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/platform/asus-nb-wmi/")
+      os.makedirs(fan_curves_dir)
+      fan_curves_path = os.path.join(fan_curves_dir, "enabled_fan_curve_profiles")
+      with open(fan_curves_path, 'w') as curves:
+        curves.write("\n")
+
+      self.start_daemon()
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      self.assertEqual(self.count_text_in_log('Custom fan curves are in use'), 0)
+      self.stop_daemon()
+
+      os.remove(fan_curves_path)
+      os.removedirs(fan_curves_dir)
+      self.remove_platform_profile()
+
     #
     # Helper methods
     #
