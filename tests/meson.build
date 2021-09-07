@@ -1,10 +1,18 @@
-integration_test = find_program('integration-test.py')
-
 envs = environment()
 envs.set ('top_builddir', meson.build_root())
 envs.set ('top_srcdir', meson.source_root())
 
-test('power-profiles-daemon-integration-test',
-  integration_test,
-  env: envs
-  )
+python3 = find_program('python3')
+unittest_inspector = find_program('unittest_inspector.py')
+r = run_command(unittest_inspector, files('integration-test.py'))
+unit_tests = r.stdout().strip().split('\n')
+
+foreach ut: unit_tests
+    ut_args = files('integration-test.py')
+    ut_args += ut
+    test(ut,
+         python3,
+         args: ut_args,
+         env: envs,
+        )
+endforeach
