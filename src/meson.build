@@ -1,5 +1,12 @@
 deps = [ gio_dep, gudev_dep, upower_dep ]
 
+config_h = configuration_data()
+config_h.set_quoted('VERSION', meson.project_version())
+config_h_files = configure_file(
+  output: 'config.h',
+  configuration: config_h
+)
+
 resources = gnome.compile_resources(
     'power-profiles-daemon-resources', 'power-profiles-daemon.gresource.xml',
     c_name: 'power_profiles_daemon',

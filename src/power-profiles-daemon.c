@@ -8,6 +8,8 @@
  *
  */
 
+#include "config.h"
+
 #include <locale.h>
 
 #include "power-profiles-daemon-resources.h"
@@ -940,6 +942,8 @@ int main (int argc, char **argv)
 
   if (verbose)
     g_setenv ("G_MESSAGES_DEBUG", "all", TRUE);
+
+  g_debug ("Starting power-profiles-daemon version "VERSION);
 
   data = g_new0 (PpdApp, 1);
   data->main_loop = g_main_loop_new (NULL, TRUE);
