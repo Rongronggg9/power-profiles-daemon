@@ -29,7 +29,7 @@ typedef struct {
   int ret;
 
   GKeyFile *config;
-  const char *config_path;
+  char *config_path;
 
   PpdProfile active_profile;
   PpdProfile selected_profile;
@@ -284,9 +284,9 @@ load_configuration (PpdApp *data)
   g_autoptr(GError) error = NULL;
 
   if (g_getenv ("UMOCKDEV_DIR") != NULL)
-    data->config_path = "ppd_test_conf.ini";
+    data->config_path = g_build_filename (g_getenv ("UMOCKDEV_DIR"), "ppd_test_conf.ini", NULL);
   else
-    data->config_path = "/var/lib/power-profiles-daemon/state.ini";
+    data->config_path = g_strdup ("/var/lib/power-profiles-daemon/state.ini");
   data->config = g_key_file_new ();
   if (!g_key_file_load_from_file (data->config, data->config_path, G_KEY_FILE_KEEP_COMMENTS, &error))
     g_debug ("Could not load configuration file '%s': %s", data->config_path, error->message);
@@ -894,6 +894,7 @@ free_app_data (PpdApp *data)
     data->name_id = 0;
   }
 
+  g_clear_pointer (&data->config_path, g_free);
   g_clear_pointer (&data->config, g_key_file_unref);
   g_ptr_array_free (data->probed_drivers, TRUE);
   g_ptr_array_free (data->actions, TRUE);

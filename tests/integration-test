@@ -117,7 +117,7 @@ class Tests(dbusmock.DBusTestCase):
         self.stop_daemon()
         del self.tp_acpi
         try:
-          os.remove('ppd_test_conf.ini')
+          os.remove(self.testbed.get_root_dir() + '/' + 'ppd_test_conf.ini')
         except Exception:
           pass
 
@@ -708,7 +708,7 @@ class Tests(dbusmock.DBusTestCase):
       self.stop_daemon()
 
       # sys.stderr.write('\n-------------- config file: ----------------\n')
-      # with open('ppd_test_conf.ini') as f:
+      # with open(self.testbed.get_root_dir() + '/' + 'ppd_test_conf.ini') as f:
       #   sys.stderr.write(f.read())
       # sys.stderr.write('------------------------------\n')
 
