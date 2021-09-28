@@ -104,6 +104,10 @@ class Tests(dbusmock.DBusTestCase):
         The testbed is initially empty.
         '''
         self.testbed = UMockdev.Testbed.new()
+        self.polkitd, obj_polkit = self.spawn_server_template(
+            'polkitd', {}, stdout=subprocess.PIPE)
+        obj_polkit.SetAllowed(['net.hadess.PowerProfiles.switch-profile',
+                               'net.hadess.PowerProfiles.hold-profile'])
 
         self.proxy = None
         self.log = None
@@ -115,6 +119,15 @@ class Tests(dbusmock.DBusTestCase):
     def tearDown(self):
         del self.testbed
         self.stop_daemon()
+
+        if self.polkitd:
+            try:
+                self.polkitd.kill()
+            except OSError:
+                pass
+            self.polkitd.wait()
+        self.polkitd = None
+
         del self.tp_acpi
         try:
           os.remove(self.testbed.get_root_dir() + '/' + 'ppd_test_conf.ini')
