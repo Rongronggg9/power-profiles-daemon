@@ -104,10 +104,10 @@ class Tests(dbusmock.DBusTestCase):
         The testbed is initially empty.
         '''
         self.testbed = UMockdev.Testbed.new()
-        self.polkitd, obj_polkit = self.spawn_server_template(
+        self.polkitd, self.obj_polkit = self.spawn_server_template(
             'polkitd', {}, stdout=subprocess.PIPE)
-        obj_polkit.SetAllowed(['net.hadess.PowerProfiles.switch-profile',
-                               'net.hadess.PowerProfiles.hold-profile'])
+        self.obj_polkit.SetAllowed(['net.hadess.PowerProfiles.switch-profile',
+                                    'net.hadess.PowerProfiles.hold-profile'])
 
         self.proxy = None
         self.log = None
@@ -127,6 +127,7 @@ class Tests(dbusmock.DBusTestCase):
                 pass
             self.polkitd.wait()
         self.polkitd = None
+        self.obj_polkit = None
 
         del self.tp_acpi
         try:
@@ -759,6 +760,22 @@ class Tests(dbusmock.DBusTestCase):
         profile.write("performance\n")
 
       self.assertEventually(lambda: self.get_dbus_property('ActiveProfile') == 'power-saver')
+      self.stop_daemon()
+
+    def test_not_allowed(self):
+      '''Check that we get errors when trying to do things that aren't allowed'''
+
+      self.obj_polkit.SetAllowed(dbus.Array([], signature='s'))
+      self.start_daemon()
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      proxy = Gio.DBusProxy.new_sync(
+          self.dbus, Gio.DBusProxyFlags.DO_NOT_AUTO_START, None, PP,
+          PP_PATH, 'org.freedesktop.DBus.Properties', None)
+      with self.assertRaises(gi.repository.GLib.GError) as cm:
+          proxy.Set('(ssv)', PP, 'ActiveProfile', GLib.Variant.new_string('power-saver'))
+      self.assertIn('AccessDenied', str(cm.exception))
+
       self.stop_daemon()
 
     #
