@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+ "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1.0/policyconfig.dtd">
+
+<policyconfig>
+
+  <vendor>power-profiles-daemon</vendor>
+  <vendor_url>https://gitlab.freedesktop.org/hadess/power-profiles-daemon</vendor_url>
+
+  <action id="net.hadess.PowerProfiles.switch-profile">
+    <description>Switch Power Profile</description>
+    <message>Privileges are required to switch power profiles.</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+  <action id="net.hadess.PowerProfiles.hold-profile">
+    <description>Hold Power Profile</description>
+    <message>Privileges are required to hold power profiles.</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+  </action>
+
+</policyconfig>
