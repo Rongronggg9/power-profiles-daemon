@@ -11,6 +11,7 @@
 #include "config.h"
 
 #include <locale.h>
+#include <polkit/polkit.h>
 
 #include "power-profiles-daemon-resources.h"
 #include "power-profiles-daemon.h"
@@ -32,6 +33,8 @@ typedef struct {
 
   GKeyFile *config;
   char *config_path;
+
+  PolkitAuthority *auth;
 
   PpdProfile active_profile;
   PpdProfile selected_profile;
@@ -593,6 +596,36 @@ release_profile (PpdApp                *data,
   g_dbus_method_invocation_return_value (invocation, NULL);
 }
 
+static gboolean
+check_action_permission (PpdApp                *data,
+                         const char            *sender,
+                         const char            *action,
+                         GError               **error)
+{
+  g_autoptr(GError) local_error = NULL;
+  g_autoptr(PolkitAuthorizationResult) result = NULL;
+  g_autoptr(PolkitSubject) subject = NULL;
+
+  subject = polkit_system_bus_name_new (sender);
+  result = polkit_authority_check_authorization_sync (data->auth,
+                                                      subject,
+                                                      action,
+                                                      NULL,
+                                                      POLKIT_CHECK_AUTHORIZATION_FLAGS_NONE,
+                                                      NULL, &local_error);
+  if (result == NULL ||
+      !polkit_authorization_result_get_is_authorized (result))
+    {
+      g_set_error (error, G_DBUS_ERROR,
+                   G_DBUS_ERROR_ACCESS_DENIED,
+                   "Not Authorized: %s", local_error ? local_error->message : action);
+      return FALSE;
+    }
+
+  return TRUE;
+
+}
+
 static GVariant *
 handle_get_property (GDBusConnection *connection,
                      const gchar     *sender,
@@ -641,6 +674,8 @@ handle_set_property (GDBusConnection  *connection,
                  "No such property: %s", property_name);
     return FALSE;
   }
+  if (!check_action_permission (data, sender, "net.hadess.PowerProfiles.switch-profile", error))
+    return FALSE;
 
   g_variant_get (value, "&s", &profile);
   return set_active_profile (data, profile, error);
@@ -666,6 +701,13 @@ handle_method_call (GDBusConnection       *connection,
   }
 
   if (g_strcmp0 (method_name, "HoldProfile") == 0) {
+    g_autoptr(GError) local_error = NULL;
+    if (!check_action_permission (data,
+                                  g_dbus_method_invocation_get_sender (invocation),
+                                  "net.hadess.PowerProfiles.hold-profile",
+                                  &local_error)) {
+      g_dbus_method_invocation_return_gerror (invocation, local_error);
+    }
     hold_profile (data, parameters, invocation);
   } else if (g_strcmp0 (method_name, "ReleaseProfile") == 0) {
     release_profile (data, parameters, invocation);
@@ -903,6 +945,8 @@ free_app_data (PpdApp *data)
   g_clear_object (&data->driver);
   g_hash_table_destroy (data->profile_holds);
 
+  g_clear_object (&data->auth);
+
   g_clear_pointer (&data->main_loop, g_main_loop_unref);
   g_clear_pointer (&data->introspection_data, g_dbus_node_info_unref);
   g_clear_object (&data->connection);
@@ -947,6 +991,7 @@ int main (int argc, char **argv)
 
   data = g_new0 (PpdApp, 1);
   data->main_loop = g_main_loop_new (NULL, TRUE);
+  data->auth = polkit_authority_get_sync (NULL, NULL);
   data->probed_drivers = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
   data->actions = g_ptr_array_new_with_free_func ((GDestroyNotify) g_object_unref);
   data->profile_holds = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, (GDestroyNotify) profile_hold_free);

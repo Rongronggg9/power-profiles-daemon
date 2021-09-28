@@ -9,7 +9,7 @@ Installation
 $ meson _build -Dprefix=/usr
 $ ninja -v -C _build install
 ```
-It requires libgudev and systemd.
+It requires libgudev, systemd and polkit-gobject.
 
 Introduction
 ------------
