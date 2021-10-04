@@ -1,3 +1,13 @@
+0.10.0
+------
+
+This release adds authorisation checks for the profile holds and profile switching
+features of the backend daemon, through polkit. It is recommended that all
+distributions upgrade to this version as soon as possible.
+
+This release also adds support for the "quiet" kernel platform profile used
+in some systems.
+
 0.9.0
 -----
 
