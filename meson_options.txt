@@ -6,3 +6,7 @@ option('gtk_doc',
        type: 'boolean',
        value: false,
        description: 'Build docs')
+option('pylint',
+       type: 'boolean',
+       value: false,
+       description: 'Run pylint checks, for developers only')

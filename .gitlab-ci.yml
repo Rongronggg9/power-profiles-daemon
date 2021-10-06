@@ -22,7 +22,7 @@ build_stable:
     - dnf upgrade -y --nogpgcheck fedora-release fedora-repos*
     - dnf update -y && dnf install -y $DEPENDENCIES
   script:
-    - meson -Dgtk_doc=true _build
+    - meson -Dgtk_doc=true -Dpylint=true _build
     - ninja -v -C _build
     - ninja -v -C _build install
     - ninja -v -C _build uninstall

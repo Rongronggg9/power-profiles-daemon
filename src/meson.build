@@ -72,7 +72,7 @@ script = configure_file(
   install_dir: get_option('bindir')
 )
 
-if pylint.found()
+if get_option('pylint')
   test('pylint-powerprofilesctl',
        pylint,
        args: pylint_flags + [ script ],

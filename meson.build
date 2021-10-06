@@ -42,8 +42,10 @@ gnome = import('gnome')
 add_global_arguments('-D_GNU_SOURCE=1', language: 'c')
 add_global_arguments(common_cflags, language: 'c')
 
-pylint = find_program('pylint-3', 'pylint3', 'pylint', required: false)
-pylint_flags = ['-d', 'C0116', '-d', 'C0114', '-d', 'W0707']
+if get_option('pylint')
+    pylint = find_program('pylint-3', 'pylint3', 'pylint', required: true)
+    pylint_flags = ['-d', 'C0116', '-d', 'C0114', '-d', 'W0707']
+endif
 xmllint = find_program('xmllint', required: false)
 
 subdir('src')
