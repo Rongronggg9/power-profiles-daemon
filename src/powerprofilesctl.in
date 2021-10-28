@@ -141,7 +141,8 @@ def _list():
         for profile in reversed(profiles):
             if index > 0:
                 print('')
-            print(('%s %s:') % ('*' if profile['Profile'] == active else ' ', profile['Profile']))
+            marker = '*' if profile['Profile'] == active else ' '
+            print(f'{marker} {profile["Profile"]}:')
             print('    Driver:    ', profile['Driver'])
             if profile['Profile'] == 'performance':
                 print('    Degraded:  ', f'yes ({reason})' if degraded else 'no')
