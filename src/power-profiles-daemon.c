@@ -707,6 +707,7 @@ handle_method_call (GDBusConnection       *connection,
                                   "net.hadess.PowerProfiles.hold-profile",
                                   &local_error)) {
       g_dbus_method_invocation_return_gerror (invocation, local_error);
+      return;
     }
     hold_profile (data, parameters, invocation);
   } else if (g_strcmp0 (method_name, "ReleaseProfile") == 0) {
