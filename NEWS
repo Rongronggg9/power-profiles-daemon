@@ -1,3 +1,12 @@
+0.10.1
+------
+
+This release fixes a bug in the authorisation codepath added in 0.10.0, where holding
+a profile could still succeed despite having sent a denial to the calling process.
+
+This release also makes the pylint test optional. It should not be used unless the goal
+is to contribute patches to assuage it.
+
 0.10.0
 ------
 
