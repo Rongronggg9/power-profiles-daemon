@@ -778,6 +778,22 @@ class Tests(dbusmock.DBusTestCase):
 
       self.stop_daemon()
 
+    def test_not_allowed_hold(self):
+      '''Check that we get an error when trying to hold a profile and not allowed'''
+
+      self.obj_polkit.SetAllowed(dbus.Array([], signature='s'))
+      self.start_daemon()
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      with self.assertRaises(gi.repository.GLib.GError) as cm:
+        self.call_dbus_method('HoldProfile', GLib.Variant("(sss)", ('performance', '', '')))
+      self.assertIn('AccessDenied', str(cm.exception))
+
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      self.assertEqual(len(self.get_dbus_property('ActiveProfileHolds')), 0)
+
+      self.stop_daemon()
+
     #
     # Helper methods
     #
