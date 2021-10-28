@@ -762,8 +762,8 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEventually(lambda: self.get_dbus_property('ActiveProfile') == 'power-saver')
       self.stop_daemon()
 
-    def test_not_allowed(self):
-      '''Check that we get errors when trying to do things that aren't allowed'''
+    def test_not_allowed_profile(self):
+      '''Check that we get errors when trying to change a profile and not allowed'''
 
       self.obj_polkit.SetAllowed(dbus.Array([], signature='s'))
       self.start_daemon()
