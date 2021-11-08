@@ -98,7 +98,7 @@ def get_proxy():
                                        '/net/hadess/PowerProfiles',
                                        'org.freedesktop.DBus.Properties', None)
     except:
-        raise SystemError
+        raise
     return proxy
 
 def _get():
@@ -117,13 +117,13 @@ def get_profiles_property(prop):
     try:
         proxy = get_proxy()
     except:
-        raise SystemError
+        raise
 
     profiles = None
     try:
         profiles = proxy.Get('(ss)', 'net.hadess.PowerProfiles', prop)
     except:
-        raise ReferenceError
+        raise
     else:
         return profiles
 
@@ -134,8 +134,7 @@ def _list():
         degraded = (reason != '')
         active = get_proxy().Get('(ss)', 'net.hadess.PowerProfiles', 'ActiveProfile')
     except:
-        print("Couldn\'t get Profiles: ", sys.exc_info()[0])
-        raise SystemError
+        raise
     else:
         index = 0
         for profile in reversed(profiles):
@@ -152,8 +151,7 @@ def _list_holds():
     try:
         holds = get_profiles_property('ActiveProfileHolds')
     except:
-        # print("Couldn\'t get ActiveProfileHolds: ", sys.exc_info()[0])
-        raise SystemError
+        raise
     else:
         index = 0
         for hold in holds:
@@ -173,7 +171,7 @@ def _launch(args, profile, appid, reason):
                                        '/net/hadess/PowerProfiles',
                                        'net.hadess.PowerProfiles', None)
     except:
-        raise SystemError
+        raise
 
     cookie = proxy.HoldProfile('(sss)', profile, reason, appid)
 
@@ -208,16 +206,32 @@ def main(): # pylint: disable=too-many-branches, disable=too-many-statements
     elif command == 'version':
         version()
     elif command == 'get':
-        _get()
+        try:
+            _get()
+        except GLib.Error as error:
+            sys.stderr.write(f'Failed to communicate with power-profiles-daemon: {format(error)}\n')
+            sys.exit(1)
     elif command == 'set':
         if len(args) != 1:
             usage_set()
             sys.exit(1)
-        _set(args[0])
+        try:
+            _set(args[0])
+        except GLib.Error as error:
+            sys.stderr.write(f'Failed to communicate with power-profiles-daemon: {format(error)}\n')
+            sys.exit(1)
     elif command == 'list':
-        _list()
+        try:
+            _list()
+        except GLib.Error as error:
+            sys.stderr.write(f'Failed to communicate with power-profiles-daemon: {format(error)}\n')
+            sys.exit(1)
     elif command == 'list-holds':
-        _list_holds()
+        try:
+            _list_holds()
+        except GLib.Error as error:
+            sys.stderr.write(f'Failed to communicate with power-profiles-daemon: {format(error)}\n')
+            sys.exit(1)
     elif command == 'launch':
         if len(args) == 0:
             sys.exit(0)
@@ -256,7 +270,11 @@ def main(): # pylint: disable=too-many-branches, disable=too-many-statements
             reason = 'Running ' + appid
         if not profile:
             profile = 'performance'
-        _launch(args, profile, appid, reason)
+        try:
+            _launch(args, profile, appid, reason)
+        except GLib.Error as error:
+            sys.stderr.write(f'Failed to communicate with power-profiles-daemon: {format(error)}\n')
+            sys.exit(1)
 
 if __name__ == '__main__':
     main()

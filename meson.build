@@ -44,7 +44,7 @@ add_global_arguments(common_cflags, language: 'c')
 
 if get_option('pylint')
     pylint = find_program('pylint-3', 'pylint3', 'pylint', required: true)
-    pylint_flags = ['-d', 'C0116', '-d', 'C0114', '-d', 'W0707']
+    pylint_flags = ['-d', 'C0116', '-d', 'C0114', '-d', 'W0707', '-d', 'W0706' ]
 endif
 xmllint = find_program('xmllint', required: false)
 
