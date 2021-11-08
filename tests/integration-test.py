@@ -794,6 +794,50 @@ class Tests(dbusmock.DBusTestCase):
 
       self.stop_daemon()
 
+    def test_powerprofilesctl_error(self):
+      '''Check that powerprofilesctl returns 1 rather than an exception on error'''
+
+      builddir = os.getenv('top_builddir', '.')
+      tool_path = os.path.join(builddir, 'src', 'powerprofilesctl')
+
+      with self.assertRaises(subprocess.CalledProcessError) as cm:
+          subprocess.check_output([tool_path, 'list'],
+                                  stderr=subprocess.PIPE,
+                                  universal_newlines=True)
+      self.assertNotIn('Traceback', cm.exception.stderr)
+
+      with self.assertRaises(subprocess.CalledProcessError) as cm:
+          subprocess.check_output([tool_path, 'get'],
+                                  stderr=subprocess.PIPE,
+                                  universal_newlines=True)
+      self.assertNotIn('Traceback', cm.exception.stderr)
+
+      with self.assertRaises(subprocess.CalledProcessError) as cm:
+          subprocess.check_output([tool_path, 'set', 'not-a-profile'],
+                                  stderr=subprocess.PIPE,
+                                  universal_newlines=True)
+      self.assertNotIn('Traceback', cm.exception.stderr)
+
+      with self.assertRaises(subprocess.CalledProcessError) as cm:
+          subprocess.check_output([tool_path, 'list-holds'],
+                                  stderr=subprocess.PIPE,
+                                  universal_newlines=True)
+      self.assertNotIn('Traceback', cm.exception.stderr)
+
+      with self.assertRaises(subprocess.CalledProcessError) as cm:
+          subprocess.check_output([tool_path, 'launch', '-p', 'power-saver', 'sleep', '1'],
+                                  stderr=subprocess.PIPE,
+                                  universal_newlines=True)
+      self.assertNotIn('Traceback', cm.exception.stderr)
+
+      self.start_daemon()
+      with self.assertRaises(subprocess.CalledProcessError) as cm:
+          subprocess.check_output([tool_path, 'set', 'not-a-profile'],
+                                  stderr=subprocess.PIPE,
+                                  universal_newlines=True)
+      self.assertNotIn('Traceback', cm.exception.stderr)
+      self.stop_daemon()
+
     #
     # Helper methods
     #
