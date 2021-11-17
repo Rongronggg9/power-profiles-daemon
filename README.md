@@ -30,6 +30,28 @@ they are also expected to adjust the behaviour of the desktop depending on the m
 such as turning the screen off after inaction more aggressively when in power-saver
 mode.
 
+How to use
+----------
+
+There are interfaces to switch profiles in the latest versions of KDE and GNOME. Those
+desktops also include more thorough integration with its low-power mode. Please check
+the user guides for each of them for details.
+
+power-profiles-daemon also ships with a command-line utility called `powerprofilesctl`
+which can be used for scripting, as it allows getting and setting the active profile,
+listing the available profiles, and launching commands while holding the performance
+or the power-saver profile.
+
+For example, this will be useful to avoid manual switching profiles while compiling
+large projects:
+```
+powerprofilesctl launch make
+```
+
+If you're a developer, you might also want to use GLib's [`GPowerProfileMonitor`](https://docs.gtk.org/gio/iface.PowerProfileMonitor.html)
+through C, or one of its bindings, so your application can react to the user requesting
+a low-power mode.
+
 Debugging
 ---------
 
