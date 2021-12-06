@@ -44,13 +44,24 @@ or the power-saver profile.
 
 For example, this will be useful to avoid manual switching profiles while compiling
 large projects:
-```
+```sh
 powerprofilesctl launch make
 ```
 
 If you're a developer, you might also want to use GLib's [`GPowerProfileMonitor`](https://docs.gtk.org/gio/iface.PowerProfileMonitor.html)
 through C, or one of its bindings, so your application can react to the user requesting
 a low-power mode.
+
+Conflicts
+---------
+
+If `power-profiles-daemon` refuses to start, it's likely that you have [a conflicting
+service installed and running](data/power-profiles-daemon.service.in#L3).
+
+```sh
+systemctl unmask power-profiles-daemon.service
+systemctl start power-profiles-daemon.service
+```
 
 Debugging
 ---------
