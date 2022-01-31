@@ -794,6 +794,31 @@ class Tests(dbusmock.DBusTestCase):
 
       self.stop_daemon()
 
+    def test_intel_pstate_noturbo(self):
+      '''Intel P-State driver (balance)'''
+
+      # Create CPU with preference
+      dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
+      os.makedirs(dir1)
+      with open(os.path.join(dir1, "energy_performance_preference"),'w') as prefs:
+        prefs.write("performance\n")
+
+      # Create no_turbo pref with turbo_pct
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate")
+      os.makedirs(pstate_dir)
+      with open(os.path.join(pstate_dir, "no_turbo"),'w') as no_turbo:
+        no_turbo.write("1\n")
+      with open(os.path.join(pstate_dir, "turbo_pct"),'w') as no_turbo:
+        no_turbo.write("0\n")
+
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(self.get_dbus_property('PerformanceDegraded'), 'high-operating-temperature')
+
+      self.stop_daemon()
+
     def test_powerprofilesctl_error(self):
       '''Check that powerprofilesctl returns 1 rather than an exception on error'''
 
