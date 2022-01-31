@@ -56,7 +56,9 @@ Conflicts
 ---------
 
 If `power-profiles-daemon` refuses to start, it's likely that you have [a conflicting
-service installed and running](data/power-profiles-daemon.service.in#L3).
+service installed and running](data/power-profiles-daemon.service.in#L3), or your
+distribution ships [a version of tlp that actively breaks power-profiles-daemon](https://bugzilla.redhat.com/show_bug.cgi?id=2028701#c11),
+or you use the [upstream package](https://github.com/linrunner/TLP/commit/6a9388e1af95051a90a33b4014af1158dfa241f6).
 
 ```sh
 systemctl unmask power-profiles-daemon.service
