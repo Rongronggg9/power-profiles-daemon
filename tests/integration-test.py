@@ -815,7 +815,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
-      self.assertEqual(self.get_dbus_property('PerformanceDegraded'), 'high-operating-temperature')
+      self.assertEqual(self.get_dbus_property('PerformanceDegraded'), '')
 
       self.stop_daemon()
 

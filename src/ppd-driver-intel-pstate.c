@@ -14,6 +14,7 @@
 
 #define CPUFREQ_POLICY_DIR "/sys/devices/system/cpu/cpufreq/"
 #define NO_TURBO_PATH "/sys/devices/system/cpu/intel_pstate/no_turbo"
+#define TURBO_PCT_PATH "/sys/devices/system/cpu/intel_pstate/turbo_pct"
 
 struct _PpdDriverIntelPstate
 {
@@ -107,6 +108,23 @@ open_policy_dir (void)
 }
 
 static gboolean
+has_turbo (void)
+{
+  g_autofree char *turbo_pct_path = NULL;
+  g_autofree char *contents = NULL;
+  gboolean has_turbo = TRUE;
+
+  turbo_pct_path = ppd_utils_get_sysfs_path (TURBO_PCT_PATH);
+  if (g_file_get_contents (turbo_pct_path, &contents, NULL, NULL)) {
+    contents = g_strchomp (contents);
+    if (g_strcmp0 (contents, "0") == 0)
+      has_turbo = FALSE;
+  }
+
+  return has_turbo;
+}
+
+static gboolean
 ppd_driver_intel_pstate_probe (PpdDriver  *driver)
 {
   PpdDriverIntelPstate *pstate = PPD_DRIVER_INTEL_PSTATE (driver);
@@ -137,14 +155,16 @@ ppd_driver_intel_pstate_probe (PpdDriver  *driver)
   if (ret != PPD_PROBE_RESULT_SUCCESS)
     goto out;
 
-  /* Monitor the first "no_turbo" */
-  pstate->no_turbo_path = ppd_utils_get_sysfs_path (NO_TURBO_PATH);
-  pstate->no_turbo_mon = monitor_no_turbo_prop (pstate->no_turbo_path);
-  if (pstate->no_turbo_mon) {
-    g_signal_connect (G_OBJECT (pstate->no_turbo_mon), "changed",
-                      G_CALLBACK (no_turbo_changed), pstate);
+  if (has_turbo ()) {
+    /* Monitor the first "no_turbo" */
+    pstate->no_turbo_path = ppd_utils_get_sysfs_path (NO_TURBO_PATH);
+    pstate->no_turbo_mon = monitor_no_turbo_prop (pstate->no_turbo_path);
+    if (pstate->no_turbo_mon) {
+      g_signal_connect (G_OBJECT (pstate->no_turbo_mon), "changed",
+                        G_CALLBACK (no_turbo_changed), pstate);
+    }
+    update_no_turbo (pstate);
   }
-  update_no_turbo (pstate);
 
 out:
   g_debug ("%s p-state settings",
