@@ -56,6 +56,9 @@ set_charge_type (PpdActionTrickleCharge *action,
     GUdevDevice *dev = l->data;
     const char *value;
 
+    if (g_strcmp0 (g_udev_device_get_sysfs_attr (dev, "scope"), "Device") != 0)
+      continue;
+
     value = g_udev_device_get_sysfs_attr_uncached (dev, CHARGE_TYPE_SYSFS_NAME);
     if (!value)
       continue;
