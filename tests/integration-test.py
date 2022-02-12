@@ -239,6 +239,9 @@ class Tests(dbusmock.DBusTestCase):
     def read_sysfs_attr(self, device, attribute):
         return self.read_sysfs_file(device + '/' + attribute)
 
+    def get_mtime(self, device, attribute):
+        return os.path.getmtime(self.testbed.get_root_dir() + '/' + device + '/' + attribute)
+
     def read_file(self, path):
         with open(path, 'rb') as f:
             return f.read()
@@ -497,6 +500,41 @@ class Tests(dbusmock.DBusTestCase):
       self.start_daemon()
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 2)
+
+    def test_trickle_charge_system(self):
+      '''Trickle power_supply charge type'''
+
+      fastcharge = self.testbed.add_device('power_supply', 'bq24190-charger', None,
+          [ 'charge_type', 'Trickle', 'scope', 'System' ],
+          []
+      )
+
+      self.start_daemon()
+
+      self.assertIn('trickle_charge', self.get_dbus_property('Actions'))
+
+      # Verify that charge-type stays untouched
+      self.assertEqual(self.read_sysfs_attr(fastcharge, 'charge_type'), b'Trickle')
+
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
+      self.assertEqual(self.read_sysfs_attr(fastcharge, 'charge_type'), b'Trickle')
+
+    def test_trickle_charge_mode_no_change(self):
+      '''Trickle power_supply charge type'''
+
+      fastcharge = self.testbed.add_device('power_supply', 'MFi Fastcharge', None,
+          [ 'charge_type', 'Fast', 'scope', 'Device' ],
+          []
+      )
+
+      mtime = self.get_mtime(fastcharge, 'charge_type')
+      self.start_daemon()
+
+      self.assertIn('trickle_charge', self.get_dbus_property('Actions'))
+
+      # Verify that charge-type didn't get touched
+      self.assertEqual(self.read_sysfs_attr(fastcharge, 'charge_type'), b'Fast')
+      self.assertEqual(self.get_mtime(fastcharge, 'charge_type'), mtime)
 
     def test_trickle_charge_mode(self):
       '''Trickle power_supply charge type'''
