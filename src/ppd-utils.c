@@ -41,6 +41,7 @@ gboolean ppd_utils_write (const char  *filename,
     g_debug ("Could not open for writing '%s'", filename);
     return FALSE;
   }
+  setbuf(sysfsfp, NULL);
   ret = fprintf (sysfsfp, "%s", value);
   if (ret < 0) {
     g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno),
