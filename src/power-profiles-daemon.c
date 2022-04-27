@@ -399,7 +399,8 @@ set_active_profile (PpdApp      *data,
     mask |= PROP_ACTIVE_PROFILE_HOLDS;
   }
 
-  activate_target_profile (data, target_profile, PPD_PROFILE_ACTIVATION_REASON_USER, NULL);
+  if (!activate_target_profile (data, target_profile, PPD_PROFILE_ACTIVATION_REASON_USER, error))
+    return FALSE;
   data->selected_profile = target_profile;
   send_dbus_event (data, mask);
 
