@@ -107,11 +107,14 @@ def _get():
     print(profile)
 
 def _set(profile):
-    proxy = get_proxy()
-    proxy.Set('(ssv)',
-        'net.hadess.PowerProfiles',
-        'ActiveProfile',
-        GLib.Variant.new_string(profile))
+    try:
+        proxy = get_proxy()
+        proxy.Set('(ssv)',
+            'net.hadess.PowerProfiles',
+            'ActiveProfile',
+            GLib.Variant.new_string(profile))
+    except:
+        raise
 
 def get_profiles_property(prop):
     try:
