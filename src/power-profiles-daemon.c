@@ -321,22 +321,25 @@ actions_activate_profile (GPtrArray *actions,
   }
 }
 
-static void
-activate_target_profile (PpdApp                     *data,
-                         PpdProfile                  target_profile,
-                         PpdProfileActivationReason  reason)
+static gboolean
+activate_target_profile (PpdApp                      *data,
+                         PpdProfile                   target_profile,
+                         PpdProfileActivationReason   reason,
+                         GError                     **error)
 {
-  g_autoptr(GError) error = NULL;
+  GError *internal_error = NULL;
 
   g_debug ("Setting active profile '%s' for reason '%s' (current: '%s')",
            ppd_profile_to_str (target_profile),
            ppd_profile_activation_reason_to_str (reason),
            ppd_profile_to_str (data->active_profile));
 
-  if (!ppd_driver_activate_profile (data->driver, target_profile, reason, &error)) {
+  if (!ppd_driver_activate_profile (data->driver, target_profile, reason, &internal_error)) {
     g_warning ("Failed to activate driver '%s': %s",
                ppd_driver_get_driver_name (data->driver),
-               error->message);
+               internal_error->message);
+    g_propagate_error (error, internal_error);
+    return FALSE;
   }
 
   actions_activate_profile (data->actions, target_profile);
@@ -346,6 +349,8 @@ activate_target_profile (PpdApp                     *data,
   if (reason == PPD_PROFILE_ACTIVATION_REASON_USER ||
       reason == PPD_PROFILE_ACTIVATION_REASON_INTERNAL)
     save_configuration (data);
+
+  return TRUE;
 }
 
 static void
@@ -394,7 +399,7 @@ set_active_profile (PpdApp      *data,
     mask |= PROP_ACTIVE_PROFILE_HOLDS;
   }
 
-  activate_target_profile (data, target_profile, PPD_PROFILE_ACTIVATION_REASON_USER);
+  activate_target_profile (data, target_profile, PPD_PROFILE_ACTIVATION_REASON_USER, NULL);
   data->selected_profile = target_profile;
   send_dbus_event (data, mask);
 
@@ -459,7 +464,7 @@ driver_profile_changed_cb (PpdDriver *driver,
   if (new_profile == data->active_profile)
     return;
 
-  activate_target_profile (data, new_profile, PPD_PROFILE_ACTIVATION_REASON_INTERNAL);
+  activate_target_profile (data, new_profile, PPD_PROFILE_ACTIVATION_REASON_INTERNAL, NULL);
   send_dbus_event (data, PROP_ACTIVE_PROFILE);
 }
 
@@ -484,14 +489,14 @@ release_profile_hold (PpdApp *data,
   if (g_hash_table_size (data->profile_holds) == 0 &&
       hold_profile != data->selected_profile) {
     g_debug ("No profile holds anymore going back to last manually activated profile");
-    activate_target_profile (data, data->selected_profile, PPD_PROFILE_ACTIVATION_REASON_PROGRAM_HOLD);
+    activate_target_profile (data, data->selected_profile, PPD_PROFILE_ACTIVATION_REASON_PROGRAM_HOLD, NULL);
     mask |= PROP_ACTIVE_PROFILE;
   } else if (hold_profile == data->active_profile) {
     next_profile = effective_hold_profile (data);
     if (next_profile != PPD_PROFILE_UNSET &&
         next_profile != data->active_profile) {
       g_debug ("Next profile is %s", ppd_profile_to_str (next_profile));
-      activate_target_profile (data, next_profile, PPD_PROFILE_ACTIVATION_REASON_PROGRAM_HOLD);
+      activate_target_profile (data, next_profile, PPD_PROFILE_ACTIVATION_REASON_PROGRAM_HOLD, NULL);
       mask |= PROP_ACTIVE_PROFILE;
     }
   }
@@ -572,7 +577,7 @@ hold_profile (PpdApp                *data,
     PpdProfile target_profile = effective_hold_profile (data);
     if (target_profile != PPD_PROFILE_UNSET &&
         target_profile != data->active_profile) {
-      activate_target_profile (data, target_profile, PPD_PROFILE_ACTIVATION_REASON_PROGRAM_HOLD);
+      activate_target_profile (data, target_profile, PPD_PROFILE_ACTIVATION_REASON_PROGRAM_HOLD, NULL);
       mask |= PROP_ACTIVE_PROFILE;
     }
   }
@@ -867,7 +872,7 @@ start_profile_drivers (PpdApp *data)
 
   /* Set initial state either from configuration, or using the currently selected profile */
   apply_configuration (data);
-  activate_target_profile (data, data->active_profile, PPD_PROFILE_ACTIVATION_REASON_RESET);
+  activate_target_profile (data, data->active_profile, PPD_PROFILE_ACTIVATION_REASON_RESET, NULL);
 
   send_dbus_event (data, PROP_ALL);
 
