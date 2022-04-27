@@ -34,6 +34,8 @@ gboolean ppd_utils_write (const char  *filename,
   g_return_val_if_fail (filename, FALSE);
   g_return_val_if_fail (value, FALSE);
 
+  g_debug ("Writing '%s' to '%s'", value, filename);
+
   sysfsfp = fopen (filename, "w");
   if (sysfsfp == NULL) {
     g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno),
@@ -43,13 +45,18 @@ gboolean ppd_utils_write (const char  *filename,
   }
   setbuf(sysfsfp, NULL);
   ret = fprintf (sysfsfp, "%s", value);
-  if (ret < 0) {
+  if (ret <= 0) {
     g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno),
-                 "Error writing '%s'", filename);
-    g_debug ("Error writing '%s'", filename);
+                 "Error writing '%s': %s", filename, g_strerror (errno));
+    g_debug ("Error writing '%s': %s", filename, g_strerror (errno));
     return FALSE;
   }
-  fclose (sysfsfp);
+  if (fclose (sysfsfp) != 0) {
+    g_set_error (error, G_IO_ERROR, g_io_error_from_errno (errno),
+                 "Error closing '%s': %s", filename, g_strerror (errno));
+    g_debug ("Error closing '%s': %s", filename, g_strerror (errno));
+    return FALSE;
+  }
   return TRUE;
 }
 
