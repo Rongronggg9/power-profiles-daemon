@@ -449,6 +449,41 @@ class Tests(dbusmock.DBusTestCase):
       upowerd.wait()
       upowerd.stdout.close()
 
+    def test_intel_pstate_error(self):
+      '''Intel P-State driver in error state'''
+
+      dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
+      os.makedirs(dir1)
+      pref_path = os.path.join(dir1, "energy_performance_preference")
+      old_umask = os.umask(0o333)
+      with open(pref_path,'w') as prefs:
+        prefs.write("balance_performance\n")
+      os.umask(old_umask)
+      # Make file non-writable to root
+      if os.geteuid() == 0:
+        if not GLib.find_program_in_path('chattr'):
+          os._exit(77)
+        subprocess.check_output(['chattr', '+i', pref_path])
+
+      self.start_daemon()
+
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      # Error when setting performance mode
+      with self.assertRaises(gi.repository.GLib.GError):
+        self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      contents = None
+      with open(os.path.join(dir1, "energy_performance_preference"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'balance_performance\n')
+
+      self.stop_daemon()
+
+      if os.geteuid() == 0:
+        subprocess.check_output(['chattr', '-i', pref_path])
+
     def test_dytc_performance_driver(self):
       '''Lenovo DYTC performance driver'''
 
