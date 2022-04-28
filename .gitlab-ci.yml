@@ -28,6 +28,7 @@ build_stable:
     - ninja -v -C _build uninstall
     - ninja -v -C _build dist
     - meson test -C _build
+    - .ci/fail_skipped_tests.py _build/meson-logs/testlog.junit.xml
   artifacts:
     when: always
     paths:
