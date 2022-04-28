@@ -33,20 +33,20 @@ try:
     from gi.repository import Gio
 except ImportError as e:
     sys.stderr.write('Skipping tests, PyGobject not available for Python 3, or missing GI typelibs: %s\n' % str(e))
-    sys.exit(0)
+    sys.exit(77)
 
 try:
     gi.require_version('UMockdev', '1.0')
     from gi.repository import UMockdev
 except ImportError:
     sys.stderr.write('Skipping tests, umockdev not available (https://github.com/martinpitt/umockdev)\n')
-    sys.exit(0)
+    sys.exit(77)
 
 try:
     import dbusmock
 except ImportError:
     sys.stderr.write('Skipping tests, python-dbusmock not available (http://pypi.python.org/pypi/python-dbusmock).\n')
-    sys.exit(0)
+    sys.exit(77)
 
 
 PP = 'net.hadess.PowerProfiles'
