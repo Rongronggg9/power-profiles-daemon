@@ -22,14 +22,15 @@ build_stable:
   before_script:
     - dnf upgrade -y --nogpgcheck fedora-release fedora-repos*
     - dnf update -y && dnf install -y $DEPENDENCIES
+    - mkdir tmpdir/
   script:
     - meson -Dgtk_doc=true -Dpylint=true _build
     - ninja -v -C _build
     - ninja -v -C _build install
     - ninja -v -C _build uninstall
-    - meson test -C _build
+    - TMPDIR=$(pwd)/tmpdir meson test -C _build
     - .ci/fail_skipped_tests.py _build/meson-logs/testlog.junit.xml
-    - ninja -v -C _build dist
+    - TMPDIR=$(pwd)/tmpdir ninja -v -C _build dist
   artifacts:
     when: always
     paths:
