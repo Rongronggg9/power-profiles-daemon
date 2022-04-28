@@ -13,6 +13,7 @@
 #include "ppd-driver-intel-pstate.h"
 
 #define CPUFREQ_POLICY_DIR "/sys/devices/system/cpu/cpufreq/"
+#define DEFAULT_CPU_FREQ_SCALING_GOV "powersave"
 #define NO_TURBO_PATH "/sys/devices/system/cpu/intel_pstate/no_turbo"
 #define TURBO_PCT_PATH "/sys/devices/system/cpu/intel_pstate/turbo_pct"
 
@@ -140,6 +141,8 @@ ppd_driver_intel_pstate_probe (PpdDriver  *driver)
   policy_dir = ppd_utils_get_sysfs_path (CPUFREQ_POLICY_DIR);
   while ((dirname = g_dir_read_name (dir)) != NULL) {
     g_autofree char *path = NULL;
+    g_autofree char *gov_path = NULL;
+    g_autoptr(GError) error = NULL;
 
     path = g_build_filename (policy_dir,
                              dirname,
@@ -147,6 +150,16 @@ ppd_driver_intel_pstate_probe (PpdDriver  *driver)
                              NULL);
     if (!g_file_test (path, G_FILE_TEST_EXISTS))
       continue;
+
+    /* Force a scaling_governor where the preference can be written */
+    gov_path = g_build_filename (policy_dir,
+                                 dirname,
+                                 "scaling_governor",
+                                 NULL);
+    if (!ppd_utils_write (gov_path, DEFAULT_CPU_FREQ_SCALING_GOV, &error)) {
+      g_warning ("Could not change scaling governor %s to '%s'", dirname, DEFAULT_CPU_FREQ_SCALING_GOV);
+      continue;
+    }
 
     pstate->devices = g_list_prepend (pstate->devices, g_steal_pointer (&path));
     ret = PPD_PROBE_RESULT_SUCCESS;
