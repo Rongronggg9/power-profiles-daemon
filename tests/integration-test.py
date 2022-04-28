@@ -366,10 +366,14 @@ class Tests(dbusmock.DBusTestCase):
       # Create 2 CPUs with preferences
       dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
       os.makedirs(dir1)
+      with open(os.path.join(dir1, 'scaling_governor'), 'w') as gov:
+        gov.write('powersave\n')
       with open(os.path.join(dir1, "energy_performance_preference"),'w') as prefs:
         prefs.write("performance\n")
       dir2 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy1/")
       os.makedirs(dir2)
+      with open(os.path.join(dir2, 'scaling_governor'), 'w') as gov:
+        gov.write('powersave\n')
       with open(os.path.join(dir2, "energy_performance_preference"),'w') as prefs:
         prefs.write("performance\n")
 
@@ -424,6 +428,9 @@ class Tests(dbusmock.DBusTestCase):
       # Create CPU with preference
       dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
       os.makedirs(dir1)
+      gov_path = os.path.join(dir1, 'scaling_governor')
+      with open(gov_path, 'w') as gov:
+        gov.write('performance\n')
       with open(os.path.join(dir1, "energy_performance_preference"),'w') as prefs:
         prefs.write("performance\n")
 
@@ -431,6 +438,10 @@ class Tests(dbusmock.DBusTestCase):
             'upower', {'DaemonVersion': '0.99', 'OnBattery': False}, stdout=subprocess.PIPE)
 
       self.start_daemon()
+
+      with open(gov_path, 'rb') as f:
+        contents = f.read()
+        self.assertEqual(contents, b'powersave')
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
@@ -454,6 +465,8 @@ class Tests(dbusmock.DBusTestCase):
 
       dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
       os.makedirs(dir1)
+      with open(os.path.join(dir1, 'scaling_governor'), 'w') as gov:
+        gov.write('powersave\n')
       pref_path = os.path.join(dir1, "energy_performance_preference")
       old_umask = os.umask(0o333)
       with open(pref_path,'w') as prefs:
@@ -873,6 +886,8 @@ class Tests(dbusmock.DBusTestCase):
       # Create CPU with preference
       dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
       os.makedirs(dir1)
+      with open(os.path.join(dir1, 'scaling_governor'), 'w') as gov:
+        gov.write('powersave\n')
       with open(os.path.join(dir1, "energy_performance_preference"),'w') as prefs:
         prefs.write("performance\n")
 
