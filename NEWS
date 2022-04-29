@@ -1,3 +1,13 @@
+0.11
+----
+
+This release fixes problems on Intel machines when the CPUs didn't support turbo at
+all, or the performance scaling governor was built as default in the kernel.
+
+It also adds better end-user documentation, fixes in the command-line tool to not
+cause bug report tools to popup on not-uncommon errors, and a bug fix for running
+on some systems with controllable charge speeds.
+
 0.10.1
 ------
 
