@@ -1,3 +1,12 @@
+0.11.1
+------
+
+This release stops power-profiles-daemon from modifying the cpufreq driver when
+driver when the user/administrator has chosen to disable the Intel P-State scaling
+governor (eg. forcing a passive operation mode).
+
+More information is available in the README.
+
 0.11
 ----
 
