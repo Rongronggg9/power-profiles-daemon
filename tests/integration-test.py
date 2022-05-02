@@ -508,6 +508,47 @@ class Tests(dbusmock.DBusTestCase):
       if os.geteuid() == 0:
         subprocess.check_output(['chattr', '-i', pref_path])
 
+    def test_intel_pstate_passive(self):
+      '''Intel P-State in passive mode -> pladeholder'''
+
+      dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
+      os.makedirs(dir1)
+      with open(os.path.join(dir1, 'scaling_governor'), 'w') as gov:
+        gov.write('powersave\n')
+      with open(os.path.join(dir1, "energy_performance_preference"),'w') as prefs:
+        prefs.write("performance\n")
+
+      # Create Intel P-State configuration
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate")
+      os.makedirs(pstate_dir)
+      with open(os.path.join(pstate_dir, "no_turbo"),'w') as no_turbo:
+        no_turbo.write("0\n")
+      with open(os.path.join(pstate_dir, "status"),'w') as status:
+        status.write("passive\n")
+
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 2)
+      self.assertEqual(profiles[0]['Driver'], 'placeholder')
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      contents = None
+      with open(os.path.join(dir1, "energy_performance_preference"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'performance\n')
+
+      # Set performance mode
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+
+      contents = None
+      with open(os.path.join(dir1, "energy_performance_preference"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'performance\n')
+
+      self.stop_daemon()
+
     def test_dytc_performance_driver(self):
       '''Lenovo DYTC performance driver'''
 
