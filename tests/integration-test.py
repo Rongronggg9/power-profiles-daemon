@@ -377,11 +377,13 @@ class Tests(dbusmock.DBusTestCase):
       with open(os.path.join(dir2, "energy_performance_preference"),'w') as prefs:
         prefs.write("performance\n")
 
-      # Create no_turbo pref
+      # Create Intel P-State configuration
       pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate")
       os.makedirs(pstate_dir)
       with open(os.path.join(pstate_dir, "no_turbo"),'w') as no_turbo:
         no_turbo.write("0\n")
+      with open(os.path.join(pstate_dir, "status"),'w') as status:
+        status.write("active\n")
 
       self.start_daemon()
 
@@ -433,6 +435,10 @@ class Tests(dbusmock.DBusTestCase):
         gov.write('performance\n')
       with open(os.path.join(dir1, "energy_performance_preference"),'w') as prefs:
         prefs.write("performance\n")
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate")
+      os.makedirs(pstate_dir)
+      with open(os.path.join(pstate_dir, "status"),'w') as status:
+        status.write("active\n")
 
       upowerd, obj_upower = self.spawn_server_template(
             'upower', {'DaemonVersion': '0.99', 'OnBattery': False}, stdout=subprocess.PIPE)
@@ -462,6 +468,11 @@ class Tests(dbusmock.DBusTestCase):
 
     def test_intel_pstate_error(self):
       '''Intel P-State driver in error state'''
+
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate")
+      os.makedirs(pstate_dir)
+      with open(os.path.join(pstate_dir, "status"),'w') as status:
+        status.write("active\n")
 
       dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
       os.makedirs(dir1)
@@ -891,13 +902,15 @@ class Tests(dbusmock.DBusTestCase):
       with open(os.path.join(dir1, "energy_performance_preference"),'w') as prefs:
         prefs.write("performance\n")
 
-      # Create no_turbo pref with turbo_pct
+      # Create Intel P-State configuration
       pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate")
       os.makedirs(pstate_dir)
       with open(os.path.join(pstate_dir, "no_turbo"),'w') as no_turbo:
         no_turbo.write("1\n")
       with open(os.path.join(pstate_dir, "turbo_pct"),'w') as no_turbo:
         no_turbo.write("0\n")
+      with open(os.path.join(pstate_dir, "status"),'w') as status:
+        status.write("active\n")
 
       self.start_daemon()
 

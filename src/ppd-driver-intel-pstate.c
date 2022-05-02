@@ -14,6 +14,7 @@
 
 #define CPUFREQ_POLICY_DIR "/sys/devices/system/cpu/cpufreq/"
 #define DEFAULT_CPU_FREQ_SCALING_GOV "powersave"
+#define PSTATE_STATUS_PATH "/sys/devices/system/cpu/intel_pstate/status"
 #define NO_TURBO_PATH "/sys/devices/system/cpu/intel_pstate/no_turbo"
 #define TURBO_PCT_PATH "/sys/devices/system/cpu/intel_pstate/turbo_pct"
 
@@ -131,8 +132,20 @@ ppd_driver_intel_pstate_probe (PpdDriver  *driver)
   PpdDriverIntelPstate *pstate = PPD_DRIVER_INTEL_PSTATE (driver);
   g_autoptr(GDir) dir = NULL;
   g_autofree char *policy_dir = NULL;
+  g_autofree char *pstate_status_path = NULL;
+  g_autofree char *status = NULL;
   const char *dirname;
   PpdProbeResult ret = PPD_PROBE_RESULT_FAIL;
+
+  /* Verify that Intel P-State is running in active mode */
+  pstate_status_path = ppd_utils_get_sysfs_path (PSTATE_STATUS_PATH);
+  if (!g_file_get_contents (pstate_status_path, &status, NULL, NULL))
+    goto out;
+  status = g_strchomp (status);
+  if (g_strcmp0 (status, "active") != 0) {
+    g_debug ("Intel P-State is running in passive mode");
+    goto out;
+  }
 
   dir = open_policy_dir ();
   if (!dir)
