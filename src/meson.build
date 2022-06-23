@@ -76,5 +76,6 @@ if get_option('pylint')
   test('pylint-powerprofilesctl',
        pylint,
        args: pylint_flags + [ script ],
+       env: nomalloc,
        )
 endif
