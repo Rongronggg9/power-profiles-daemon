@@ -131,9 +131,9 @@ class Tests(dbusmock.DBusTestCase):
 
         del self.tp_acpi
         try:
-          os.remove(self.testbed.get_root_dir() + '/' + 'ppd_test_conf.ini')
+            os.remove(self.testbed.get_root_dir() + '/' + 'ppd_test_conf.ini')
         except Exception:
-          pass
+            pass
 
         # on failures, print daemon log
         errors = [x[1] for x in self._outcome.errors if x[1]]
