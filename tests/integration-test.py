@@ -116,6 +116,14 @@ class Tests(dbusmock.DBusTestCase):
         # Used for dytc devices
         self.tp_acpi = None
 
+    def run(self, result=None):
+        super(Tests, self).run(result)
+        if result and len(result.errors) + len(result.failures) > 0 and self.log:
+            with open(self.log.name) as f:
+                sys.stderr.write('\n-------------- daemon log: ----------------\n')
+                sys.stderr.write(f.read())
+                sys.stderr.write('------------------------------\n')
+
     def tearDown(self):
         del self.testbed
         self.stop_daemon()
@@ -134,14 +142,6 @@ class Tests(dbusmock.DBusTestCase):
             os.remove(self.testbed.get_root_dir() + '/' + 'ppd_test_conf.ini')
         except Exception:
             pass
-
-        # on failures, print daemon log
-        errors = [x[1] for x in self._outcome.errors if x[1]]
-        if errors and self.log:
-            with open(self.log.name) as f:
-                sys.stderr.write('\n-------------- daemon log: ----------------\n')
-                sys.stderr.write(f.read())
-                sys.stderr.write('------------------------------\n')
 
     #
     # Daemon control and D-BUS I/O
