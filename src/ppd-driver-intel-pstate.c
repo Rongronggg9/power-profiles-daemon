@@ -19,6 +19,10 @@
 #define NO_TURBO_PATH "/sys/devices/system/cpu/intel_pstate/no_turbo"
 #define TURBO_PCT_PATH "/sys/devices/system/cpu/intel_pstate/turbo_pct"
 
+#define SYSTEMD_DBUS_NAME                       "org.freedesktop.login1"
+#define SYSTEMD_DBUS_PATH                       "/org/freedesktop/login1"
+#define SYSTEMD_DBUS_INTERFACE                  "org.freedesktop.login1.Manager"
+
 struct _PpdDriverIntelPstate
 {
   PpdDriver  parent_instance;
@@ -26,6 +30,7 @@ struct _PpdDriverIntelPstate
   PpdProfile activated_profile;
   GList *epp_devices; /* GList of paths */
   GList *epb_devices; /* GList of paths */
+  GDBusProxy *logind_proxy;
   GFileMonitor *no_turbo_mon;
   char *no_turbo_path;
 };
@@ -119,12 +124,42 @@ has_turbo (void)
   return has_turbo;
 }
 
+static void
+logind_proxy_signal_cb (GDBusProxy  *proxy,
+                        const char  *sender_name,
+                        const char  *signal_name,
+                        GVariant    *parameters,
+                        gpointer     user_data)
+{
+  PpdDriverIntelPstate *pstate = user_data;
+  g_autoptr(GError) error = NULL;
+  gboolean start;
+  PpdProbeResult ret;
+
+  if (g_strcmp0 (signal_name, "PrepareForSleep") != 0)
+    return;
+  g_variant_get (parameters, "(b)", &start);
+  if (start)
+    return;
+
+  g_debug ("System woke up from suspend, re-applying energy_perf_bias");
+  ret = ppd_driver_intel_pstate_activate_profile (PPD_DRIVER (pstate),
+                                                  pstate->activated_profile,
+                                                  PPD_PROFILE_ACTIVATION_REASON_RESUME,
+                                                  &error);
+  if (ret != PPD_PROBE_RESULT_SUCCESS) {
+    g_warning ("Could not reapply energy_perf_bias preference on resume: %s",
+               error->message);
+  }
+}
+
 static PpdProbeResult
 probe_epb (PpdDriverIntelPstate *pstate)
 {
   g_autoptr(GDir) dir = NULL;
   g_autofree char *policy_dir = NULL;
   const char *dirname;
+  g_autoptr(GError) error = NULL;
   PpdProbeResult ret = PPD_PROBE_RESULT_FAIL;
 
   policy_dir = ppd_utils_get_sysfs_path (CPU_DIR);
@@ -148,6 +183,23 @@ probe_epb (PpdDriverIntelPstate *pstate)
 
     pstate->epb_devices = g_list_prepend (pstate->epb_devices, g_steal_pointer (&path));
     ret = PPD_PROBE_RESULT_SUCCESS;
+  }
+
+  pstate->logind_proxy = g_dbus_proxy_new_for_bus_sync (G_BUS_TYPE_SYSTEM,
+                                                        0,
+                                                        NULL,
+                                                        SYSTEMD_DBUS_NAME,
+                                                        SYSTEMD_DBUS_PATH,
+                                                        SYSTEMD_DBUS_INTERFACE,
+                                                        NULL,
+                                                        &error);
+  if (!pstate->logind_proxy) {
+    g_debug ("Could not create proxy for logind: %s",
+             error->message);
+  } else {
+    g_signal_connect (pstate->logind_proxy, "g-signal",
+                      G_CALLBACK (logind_proxy_signal_cb),
+                      pstate);
   }
 
   return ret;
@@ -334,6 +386,7 @@ ppd_driver_intel_pstate_finalize (GObject *object)
   g_clear_list (&driver->epb_devices, g_free);
   g_clear_pointer (&driver->no_turbo_path, g_free);
   g_clear_object (&driver->no_turbo_mon);
+  g_clear_object (&driver->logind_proxy);
   G_OBJECT_CLASS (ppd_driver_intel_pstate_parent_class)->finalize (object);
 }
 
