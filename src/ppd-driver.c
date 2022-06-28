@@ -315,6 +315,8 @@ ppd_profile_activation_reason_to_str (PpdProfileActivationReason reason)
     return "reset";
   case PPD_PROFILE_ACTIVATION_REASON_USER:
     return "user";
+  case PPD_PROFILE_ACTIVATION_REASON_RESUME:
+    return "resume";
   case PPD_PROFILE_ACTIVATION_REASON_PROGRAM_HOLD:
     return "program-hold";
   default:
