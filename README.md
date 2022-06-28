@@ -101,13 +101,14 @@ Operations on Intel-based machines
 ----------------------------------
 
 The "driver" for making the hardware act on the user-selected power profile on Intel
-CPU-based machines is based on the [Intel P-State scaling driver](https://www.kernel.org/doc/html/v5.17/admin-guide/pm/intel_pstate.html).
+CPU-based machines is based on the [Intel P-State scaling driver](https://www.kernel.org/doc/html/v5.17/admin-guide/pm/intel_pstate.html)
+or the Energy Performance Bias (EPB) feature if available.
 
 It is only used if a `platform_profile` driver isn't available for the system, and the
-CPU supports hardware-managed P-states (HWP). If HWP isn't supported, or the P-State
-scaling driver is set to `passive` mode.
+CPU supports either hardware-managed P-states (HWP) or Energy Performance Bias (EPB).
 
-System without `platform_profile support` but with `active` P-State operation mode:
+Example of a system without `platform_profile support` but with `active` P-State
+operation mode:
 ```
 $ cat /sys/firmware/acpi/platform_profile_choices
 cat: /sys/firmware/acpi/platform_profile_choices: No such file or directory
@@ -115,16 +116,23 @@ $ cat /sys/devices/system/cpu/intel_pstate/status
 active
 ```
 
+Example of a system with `EPB` support:
+```
+$ cat /sys/devices/system/cpu/cpu0/power/energy_perf_bias
+0
+```
+
 If the Intel P-State scaling driver is in `passive` mode, either because the system doesn't
-support HWP, or the administator has disabled it, then the placeholder driver will be
-used, and there won't be a performance mode.
+support HWP, or the administator has disabled it, and `EPB` isn't available, then the
+placeholder driver will be used, and there won't be a performance mode.
 
 Finally, if the Intel P-State scaling driver is used in `active` mode, the P-State
 scaling governor will be changed to `powersave` as it is the only P-State scaling
 governor that allows for the "Energy vs Performance Hints" to be taken into consideration,
-ie. the only P-State scaling governor that allows power-profiles-daemon to work.
+ie. the only P-State scaling governor that allows HWP to work.
 
-For more information, please refer to the [Intel P-State scaling driver documentation](https://www.kernel.org/doc/html/v5.17/admin-guide/pm/intel_pstate.html).
+For more information, please refer to the [Intel P-State scaling driver documentation](https://www.kernel.org/doc/html/v5.17/admin-guide/pm/intel_pstate.html)
+and the [Intel Performance and Energy Bias Hint](https://www.kernel.org/doc/html/v5.17/admin-guide/pm/intel_epb.html).
 
 Testing
 -------
