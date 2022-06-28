@@ -549,6 +549,55 @@ class Tests(dbusmock.DBusTestCase):
 
       self.stop_daemon()
 
+    def test_intel_pstate_passive_with_epb(self):
+      '''Intel P-State in passive mode (no HWP) with energy_perf_bias'''
+
+      dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
+      os.makedirs(dir1)
+      with open(os.path.join(dir1, 'scaling_governor'), 'w') as gov:
+        gov.write('powersave\n')
+      with open(os.path.join(dir1, "energy_performance_preference"),'w') as prefs:
+        prefs.write("performance\n")
+      dir2 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpu0/power/")
+      os.makedirs(dir2)
+      with open(os.path.join(dir2, 'energy_perf_bias'), 'w') as epb:
+        epb.write("6")
+
+      # Create Intel P-State configuration
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate")
+      os.makedirs(pstate_dir)
+      with open(os.path.join(pstate_dir, "no_turbo"),'w') as no_turbo:
+        no_turbo.write("0\n")
+      with open(os.path.join(pstate_dir, "status"),'w') as status:
+        status.write("passive\n")
+
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'intel_pstate')
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      # Set power-saver mode
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+
+      contents = None
+      with open(os.path.join(dir2, "energy_perf_bias"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'15')
+
+      # Set performance mode
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+
+      contents = None
+      with open(os.path.join(dir2, "energy_perf_bias"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'0')
+
+      self.stop_daemon()
+
     def test_dytc_performance_driver(self):
       '''Lenovo DYTC performance driver'''
 
