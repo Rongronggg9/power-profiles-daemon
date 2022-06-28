@@ -117,7 +117,7 @@ has_turbo (void)
   return has_turbo;
 }
 
-static gboolean
+static PpdProbeResult
 ppd_driver_intel_pstate_probe (PpdDriver  *driver)
 {
   PpdDriverIntelPstate *pstate = PPD_DRIVER_INTEL_PSTATE (driver);
