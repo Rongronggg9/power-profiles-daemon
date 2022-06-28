@@ -119,9 +119,8 @@ has_turbo (void)
 }
 
 static PpdProbeResult
-ppd_driver_intel_pstate_probe (PpdDriver  *driver)
+probe_epp (PpdDriverIntelPstate *pstate)
 {
-  PpdDriverIntelPstate *pstate = PPD_DRIVER_INTEL_PSTATE (driver);
   g_autoptr(GDir) dir = NULL;
   g_autofree char *policy_dir = NULL;
   g_autofree char *pstate_status_path = NULL;
@@ -132,18 +131,18 @@ ppd_driver_intel_pstate_probe (PpdDriver  *driver)
   /* Verify that Intel P-State is running in active mode */
   pstate_status_path = ppd_utils_get_sysfs_path (PSTATE_STATUS_PATH);
   if (!g_file_get_contents (pstate_status_path, &status, NULL, NULL))
-    goto out;
+    return ret;
   status = g_strchomp (status);
   if (g_strcmp0 (status, "active") != 0) {
     g_debug ("Intel P-State is running in passive mode");
-    goto out;
+    return ret;
   }
 
   policy_dir = ppd_utils_get_sysfs_path (CPUFREQ_POLICY_DIR);
   dir = g_dir_open (policy_dir, 0, NULL);
   if (!dir) {
     g_debug ("Could not open %s", policy_dir);
-    goto out;
+    return ret;
   }
 
   while ((dirname = g_dir_read_name (dir)) != NULL) {
@@ -172,6 +171,16 @@ ppd_driver_intel_pstate_probe (PpdDriver  *driver)
     ret = PPD_PROBE_RESULT_SUCCESS;
   }
 
+  return ret;
+}
+
+static PpdProbeResult
+ppd_driver_intel_pstate_probe (PpdDriver  *driver)
+{
+  PpdDriverIntelPstate *pstate = PPD_DRIVER_INTEL_PSTATE (driver);
+  PpdProbeResult ret = PPD_PROBE_RESULT_FAIL;
+
+  ret = probe_epp (pstate);
   if (ret != PPD_PROBE_RESULT_SUCCESS)
     goto out;
 
