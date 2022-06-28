@@ -218,6 +218,23 @@ profile_to_epp_pref (PpdProfile profile)
   g_assert_not_reached ();
 }
 
+static const char *
+profile_to_epb_pref (PpdProfile profile)
+{
+  /* From arch/x86/include/asm/msr-index.h
+   * See ENERGY_PERF_BIAS_* */
+  switch (profile) {
+  case PPD_PROFILE_POWER_SAVER:
+    return "15";
+  case PPD_PROFILE_BALANCED:
+    return "6";
+  case PPD_PROFILE_PERFORMANCE:
+    return "0";
+  }
+
+  g_assert_not_reached ();
+}
+
 static gboolean
 apply_pref_to_devices (GList       *devices,
                        const char  *pref,
@@ -244,12 +261,22 @@ ppd_driver_intel_pstate_activate_profile (PpdDriver                    *driver,
                                           GError                     **error)
 {
   PpdDriverIntelPstate *pstate = PPD_DRIVER_INTEL_PSTATE (driver);
-  gboolean ret = TRUE;
+  gboolean ret = FALSE;
   const char *pref;
 
-  g_return_val_if_fail (pstate->epp_devices != NULL, FALSE);
+  g_return_val_if_fail (pstate->epp_devices != NULL ||
+                        pstate->epb_devices, FALSE);
 
-  ret = apply_pref_to_devices (pstate->epp_devices, pref, error);
+  if (pstate->epp_devices) {
+    pref = profile_to_epp_pref (profile);
+    ret = apply_pref_to_devices (pstate->epp_devices, pref, error);
+    if (!ret)
+      return ret;
+  }
+  if (pstate->epb_devices) {
+    pref = profile_to_epb_pref (profile);
+    ret = apply_pref_to_devices (pstate->epb_devices, pref, error);
+  }
 
   if (ret)
     pstate->activated_profile = profile;
