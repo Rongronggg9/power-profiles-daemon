@@ -202,7 +202,7 @@ out:
 }
 
 static const char *
-profile_to_pref (PpdProfile profile)
+profile_to_epp_pref (PpdProfile profile)
 {
   /* Note that we don't check "energy_performance_available_preferences"
    * as all the values are always available */
@@ -231,7 +231,7 @@ ppd_driver_intel_pstate_activate_profile (PpdDriver                    *driver,
 
   g_return_val_if_fail (pstate->epp_devices != NULL, FALSE);
 
-  pref = profile_to_pref (profile);
+  pref = profile_to_epp_pref (profile);
 
   for (l = pstate->epp_devices; l != NULL; l = l->next) {
     const char *path = l->data;
