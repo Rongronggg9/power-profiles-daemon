@@ -23,7 +23,8 @@ struct _PpdDriverIntelPstate
   PpdDriver  parent_instance;
 
   PpdProfile activated_profile;
-  GList *devices; /* GList of paths */
+  GList *epp_devices; /* GList of paths */
+  GList *epb_devices; /* GList of paths */
   GFileMonitor *no_turbo_mon;
   char *no_turbo_path;
 };
@@ -167,7 +168,7 @@ ppd_driver_intel_pstate_probe (PpdDriver  *driver)
       continue;
     }
 
-    pstate->devices = g_list_prepend (pstate->devices, g_steal_pointer (&path));
+    pstate->epp_devices = g_list_prepend (pstate->epp_devices, g_steal_pointer (&path));
     ret = PPD_PROBE_RESULT_SUCCESS;
   }
 
@@ -219,11 +220,11 @@ ppd_driver_intel_pstate_activate_profile (PpdDriver                    *driver,
   const char *pref;
   GList *l;
 
-  g_return_val_if_fail (pstate->devices != NULL, FALSE);
+  g_return_val_if_fail (pstate->epp_devices != NULL, FALSE);
 
   pref = profile_to_pref (profile);
 
-  for (l = pstate->devices; l != NULL; l = l->next) {
+  for (l = pstate->epp_devices; l != NULL; l = l->next) {
     const char *path = l->data;
 
     ret = ppd_utils_write (path, pref, error);
@@ -243,7 +244,8 @@ ppd_driver_intel_pstate_finalize (GObject *object)
   PpdDriverIntelPstate *driver;
 
   driver = PPD_DRIVER_INTEL_PSTATE (object);
-  g_clear_list (&driver->devices, g_free);
+  g_clear_list (&driver->epp_devices, g_free);
+  g_clear_list (&driver->epb_devices, g_free);
   g_clear_pointer (&driver->no_turbo_path, g_free);
   g_clear_object (&driver->no_turbo_mon);
   G_OBJECT_CLASS (ppd_driver_intel_pstate_parent_class)->finalize (object);
