@@ -509,7 +509,7 @@ class Tests(dbusmock.DBusTestCase):
         subprocess.check_output(['chattr', '-i', pref_path])
 
     def test_intel_pstate_passive(self):
-      '''Intel P-State in passive mode -> pladeholder'''
+      '''Intel P-State in passive mode -> placeholder'''
 
       dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
       os.makedirs(dir1)
