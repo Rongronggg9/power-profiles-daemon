@@ -100,15 +100,6 @@ monitor_no_turbo_prop (const char *path)
   return g_file_monitor (no_turbo, G_FILE_MONITOR_NONE, NULL, NULL);
 }
 
-static GDir *
-open_policy_dir (void)
-{
-  g_autofree char *dir = NULL;
-  dir = ppd_utils_get_sysfs_path (CPUFREQ_POLICY_DIR);
-  g_debug ("Opening policy dir '%s'", dir);
-  return g_dir_open (dir, 0, NULL);
-}
-
 static gboolean
 has_turbo (void)
 {
@@ -147,11 +138,13 @@ ppd_driver_intel_pstate_probe (PpdDriver  *driver)
     goto out;
   }
 
-  dir = open_policy_dir ();
-  if (!dir)
-    goto out;
-
   policy_dir = ppd_utils_get_sysfs_path (CPUFREQ_POLICY_DIR);
+  dir = g_dir_open (policy_dir, 0, NULL);
+  if (!dir) {
+    g_debug ("Could not open %s", policy_dir);
+    goto out;
+  }
+
   while ((dirname = g_dir_read_name (dir)) != NULL) {
     g_autofree char *path = NULL;
     g_autofree char *gov_path = NULL;
