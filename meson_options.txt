@@ -10,3 +10,7 @@ option('pylint',
        type: 'boolean',
        value: false,
        description: 'Run pylint checks, for developers only')
+option('tests',
+       description: 'Whether to run tests',
+       type: 'boolean',
+       value: false)
