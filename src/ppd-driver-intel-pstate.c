@@ -219,6 +219,25 @@ profile_to_epp_pref (PpdProfile profile)
 }
 
 static gboolean
+apply_pref_to_devices (GList       *devices,
+                       const char  *pref,
+                       GError     **error)
+{
+  gboolean ret = TRUE;
+  GList *l;
+
+  for (l = devices; l != NULL; l = l->next) {
+    const char *path = l->data;
+
+    ret = ppd_utils_write (path, pref, error);
+    if (!ret)
+      break;
+  }
+
+  return ret;
+}
+
+static gboolean
 ppd_driver_intel_pstate_activate_profile (PpdDriver                    *driver,
                                           PpdProfile                   profile,
                                           PpdProfileActivationReason   reason,
@@ -227,19 +246,10 @@ ppd_driver_intel_pstate_activate_profile (PpdDriver                    *driver,
   PpdDriverIntelPstate *pstate = PPD_DRIVER_INTEL_PSTATE (driver);
   gboolean ret = TRUE;
   const char *pref;
-  GList *l;
 
   g_return_val_if_fail (pstate->epp_devices != NULL, FALSE);
 
-  pref = profile_to_epp_pref (profile);
-
-  for (l = pstate->epp_devices; l != NULL; l = l->next) {
-    const char *path = l->data;
-
-    ret = ppd_utils_write (path, pref, error);
-    if (!ret)
-      break;
-  }
+  ret = apply_pref_to_devices (pstate->epp_devices, pref, error);
 
   if (ret)
     pstate->activated_profile = profile;
