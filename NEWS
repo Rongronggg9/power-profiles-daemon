@@ -1,3 +1,13 @@
+0.12
+----
+
+This release adds support for the Intel "Energy Performance Bias" feature, which
+can be used on hardware that doesn't have a platform_profile or doesn't support
+HWP. It will also be used to eke out a bit more performance, or power, on systems
+which already supported HWP.
+
+More information is available in the README.
+
 0.11.1
 ------
 
