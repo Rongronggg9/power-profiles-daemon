@@ -12,6 +12,7 @@
 #include "ppd-utils.h"
 #include "ppd-driver-intel-pstate.h"
 
+#define CPU_DIR "/sys/devices/system/cpu/"
 #define CPUFREQ_POLICY_DIR "/sys/devices/system/cpu/cpufreq/"
 #define DEFAULT_CPU_FREQ_SCALING_GOV "powersave"
 #define PSTATE_STATUS_PATH "/sys/devices/system/cpu/intel_pstate/status"
@@ -119,6 +120,40 @@ has_turbo (void)
 }
 
 static PpdProbeResult
+probe_epb (PpdDriverIntelPstate *pstate)
+{
+  g_autoptr(GDir) dir = NULL;
+  g_autofree char *policy_dir = NULL;
+  const char *dirname;
+  PpdProbeResult ret = PPD_PROBE_RESULT_FAIL;
+
+  policy_dir = ppd_utils_get_sysfs_path (CPU_DIR);
+  dir = g_dir_open (policy_dir, 0, NULL);
+  if (!dir) {
+    g_debug ("Could not open %s", CPU_DIR);
+    return ret;
+  }
+
+  while ((dirname = g_dir_read_name (dir)) != NULL) {
+    g_autofree char *path = NULL;
+    g_autofree char *gov_path = NULL;
+
+    path = g_build_filename (policy_dir,
+                             dirname,
+                             "power",
+                             "energy_perf_bias",
+                             NULL);
+    if (!g_file_test (path, G_FILE_TEST_EXISTS))
+      continue;
+
+    pstate->epb_devices = g_list_prepend (pstate->epb_devices, g_steal_pointer (&path));
+    ret = PPD_PROBE_RESULT_SUCCESS;
+  }
+
+  return ret;
+}
+
+static PpdProbeResult
 probe_epp (PpdDriverIntelPstate *pstate)
 {
   g_autoptr(GDir) dir = NULL;
@@ -181,6 +216,11 @@ ppd_driver_intel_pstate_probe (PpdDriver  *driver)
   PpdProbeResult ret = PPD_PROBE_RESULT_FAIL;
 
   ret = probe_epp (pstate);
+  if (ret == PPD_PROBE_RESULT_SUCCESS)
+    probe_epb (pstate);
+  else
+    ret = probe_epb (pstate);
+
   if (ret != PPD_PROBE_RESULT_SUCCESS)
     goto out;
 
