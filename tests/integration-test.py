@@ -320,6 +320,13 @@ class Tests(dbusmock.DBusTestCase):
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
 
+      with self.assertRaises(gi.repository.GLib.GError):
+        self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+
+      with self.assertRaises(gi.repository.GLib.GError):
+        cookie = self.call_dbus_method('HoldProfile', GLib.Variant("(sss)", ('performance', 'testReason', 'testApplication')))
+
       # process = subprocess.Popen(['gdbus', 'introspect', '--system', '--dest', 'net.hadess.PowerProfiles', '--object-path', '/net/hadess/PowerProfiles'])
       # print (self.get_dbus_property('GPUs'))
 
