@@ -103,6 +103,16 @@ typedef enum {
 
 #define PROP_ALL (PROP_ACTIVE_PROFILE | PROP_INHIBITED | PROP_PROFILES | PROP_ACTIONS | PROP_DEGRADED | PROP_ACTIVE_PROFILE_HOLDS)
 
+static gboolean
+get_profile_available (PpdApp     *data,
+                       PpdProfile  profile)
+{
+    PpdDriver *driver;
+
+    driver = GET_DRIVER(profile);
+    return driver != NULL;
+}
+
 static const char *
 get_active_profile (PpdApp *data)
 {
@@ -386,6 +396,11 @@ set_active_profile (PpdApp      *data,
                  "Invalid profile name '%s'", profile);
     return FALSE;
   }
+  if (!get_profile_available (data, target_profile)) {
+    g_set_error (error, G_DBUS_ERROR, G_DBUS_ERROR_FAILED,
+                 "Cannot switch to unavailable profile '%s'", profile);
+    return FALSE;
+  }
 
   if (target_profile == data->active_profile)
     return TRUE;
@@ -554,8 +569,14 @@ hold_profile (PpdApp                *data,
   profile = ppd_profile_from_str (profile_name);
   if (profile != PPD_PROFILE_PERFORMANCE &&
       profile != PPD_PROFILE_POWER_SAVER) {
+    g_dbus_method_invocation_return_error_literal (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
+                                                   "Only profiles 'performance' and 'power-saver' can be a hold profile");
+    return;
+  }
+  if (!get_profile_available (data, profile)) {
     g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR, G_DBUS_ERROR_INVALID_ARGS,
-                                           "Only profiles 'performance' and 'power-saver' can be a hold profile");
+                                           "Cannot hold profile '%s' as it is not available",
+                                           profile_name);
     return;
   }
 
