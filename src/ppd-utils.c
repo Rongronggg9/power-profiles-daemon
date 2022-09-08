@@ -85,6 +85,7 @@ ppd_utils_monitor_sysfs_attr (GUdevDevice  *device,
 
   path = g_build_filename (g_udev_device_get_sysfs_path (device), attribute, NULL);
   file = g_file_new_for_path (path);
+  g_debug ("Monitoring file %s for changes", path);
   return g_file_monitor_file (file,
                               G_FILE_MONITOR_NONE,
                               NULL,
