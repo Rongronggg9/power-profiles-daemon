@@ -760,19 +760,23 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(profiles[0]['Driver'], 'platform_profile')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
-      self.assertEqual(self.read_sysfs_file("sys/firmware/acpi/platform_profile"), b'balanced')
+      self.assertEqual(self.read_sysfs_file("sys/firmware/acpi/platform_profile"), b'cool')
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
       self.assertEqual(self.read_sysfs_file("sys/firmware/acpi/platform_profile"), b'cool')
 
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('balanced'))
+      self.assertEqual(self.read_sysfs_file("sys/firmware/acpi/platform_profile"), b'balanced')
+
       self.stop_daemon()
 
     def test_quiet(self):
-      # Uses cool instead of low-power
+      # Uses quiet instead of low-power
       acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
       os.makedirs(acpi_dir)
       with open(os.path.join(acpi_dir, "platform_profile"),'w') as profile:
-        profile.write("cool\n")
+        profile.write("quiet\n")
       with open(os.path.join(acpi_dir, "platform_profile_choices"),'w') as choices:
         choices.write("quiet balanced balanced-performance performance\n")
 

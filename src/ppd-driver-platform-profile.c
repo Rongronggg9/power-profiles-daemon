@@ -26,6 +26,7 @@ struct _PpdDriverPlatformProfile
   int lapmode;
   PpdProfile acpi_platform_profile;
   char **profile_choices;
+  gboolean has_low_power;
   GFileMonitor *lapmode_mon;
   GFileMonitor *acpi_platform_profile_mon;
   guint acpi_platform_profile_changed_id;
@@ -57,10 +58,10 @@ profile_to_acpi_platform_profile_value (PpdDriverPlatformProfile *self,
 {
   switch (profile) {
   case PPD_PROFILE_POWER_SAVER:
+    if (!self->has_low_power)
+      return "balanced";
     if (g_strv_contains ((const char * const*) self->profile_choices, "low-power"))
       return "low-power";
-    if (g_strv_contains ((const char * const*) self->profile_choices, "cool"))
-      return "cool";
     return "quiet";
   case PPD_PROFILE_BALANCED:
     return "balanced";
@@ -79,9 +80,9 @@ acpi_platform_profile_value_to_profile (const char *str)
 
   switch (str[0]) {
   case 'l': /* low-power */
-  case 'c': /* cool */
   case 'q': /* quiet */
     return PPD_PROFILE_POWER_SAVER;
+  case 'c': /* cool */
   case 'b':
     return PPD_PROFILE_BALANCED;
   case 'p':
@@ -142,12 +143,15 @@ verify_acpi_platform_profile_choices (PpdDriverPlatformProfile *self)
 {
   const char * const *choices = (const char * const*) self->profile_choices;
 
-  if ((g_strv_contains (choices, "low-power") ||
-       g_strv_contains (choices, "cool") ||
-       g_strv_contains (choices, "quiet")) &&
-      g_strv_contains (choices, "balanced") &&
-      g_strv_contains (choices, "performance"))
+  if (g_strv_contains (choices, "balanced") &&
+      g_strv_contains (choices, "performance")) {
+    if (g_strv_contains (choices, "low-power") ||
+        g_strv_contains (choices, "quiet"))
+      self->has_low_power = TRUE;
+    else
+      g_debug ("No \"low-power\" profile for device, will be emulated");
     return PPD_PROBE_RESULT_SUCCESS;
+  }
   return PPD_PROBE_RESULT_DEFER;
 }
 
@@ -203,7 +207,7 @@ acpi_platform_profile_changed (GFileMonitor      *monitor,
                                gpointer           user_data)
 {
   PpdDriverPlatformProfile *self = user_data;
-  g_debug (ACPI_PLATFORM_PROFILE_PATH " changed");
+  g_debug (ACPI_PLATFORM_PROFILE_PATH " changed (%d)", event_type);
   if (self->probe_result == PPD_PROBE_RESULT_DEFER) {
     g_signal_emit_by_name (G_OBJECT (self), "probe-request", 0);
     return;
@@ -219,11 +223,20 @@ ppd_driver_platform_profile_activate_profile (PpdDriver                   *drive
 {
   PpdDriverPlatformProfile *self = PPD_DRIVER_PLATFORM_PROFILE (driver);
   g_autofree char *platform_profile_path = NULL;
+  const char *platform_profile_value;
 
   g_return_val_if_fail (self->acpi_platform_profile_mon, FALSE);
 
   if (self->acpi_platform_profile == profile) {
     g_debug ("Can't switch to %s mode, already there",
+             ppd_profile_to_str (profile));
+    return TRUE;
+  }
+
+  platform_profile_value = profile_to_acpi_platform_profile_value (self, profile);
+  if (self->acpi_platform_profile == acpi_platform_profile_value_to_profile (platform_profile_value)) {
+    g_debug ("Not switching to platform_profile %s, emulating for %s, already there",
+             platform_profile_value,
              ppd_profile_to_str (profile));
     return TRUE;
   }
