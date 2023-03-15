@@ -18,6 +18,11 @@ variables:
                 umockdev
                 e2fsprogs
 
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_PIPELINE_SOURCE == 'push'
+
 build_stable:
   before_script:
     - dnf upgrade -y --nogpgcheck fedora-release fedora-repos*
