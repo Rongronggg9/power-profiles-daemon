@@ -127,44 +127,43 @@ def get_profiles_property(prop):
         profiles = proxy.Get('(ss)', 'net.hadess.PowerProfiles', prop)
     except:
         raise
-    else:
-        return profiles
+    return profiles
 
 def _list():
     try:
         profiles = get_profiles_property('Profiles')
         reason = get_proxy().Get('(ss)', 'net.hadess.PowerProfiles', 'PerformanceDegraded')
-        degraded = (reason != '')
+        degraded = reason != ''
         active = get_proxy().Get('(ss)', 'net.hadess.PowerProfiles', 'ActiveProfile')
     except:
         raise
-    else:
-        index = 0
-        for profile in reversed(profiles):
-            if index > 0:
-                print('')
-            marker = '*' if profile['Profile'] == active else ' '
-            print(f'{marker} {profile["Profile"]}:')
-            print('    Driver:    ', profile['Driver'])
-            if profile['Profile'] == 'performance':
-                print('    Degraded:  ', f'yes ({reason})' if degraded else 'no')
-            index += 1
+
+    index = 0
+    for profile in reversed(profiles):
+        if index > 0:
+            print('')
+        marker = '*' if profile['Profile'] == active else ' '
+        print(f'{marker} {profile["Profile"]}:')
+        print('    Driver:    ', profile['Driver'])
+        if profile['Profile'] == 'performance':
+            print('    Degraded:  ', f'yes ({reason})' if degraded else 'no')
+        index += 1
 
 def _list_holds():
     try:
         holds = get_profiles_property('ActiveProfileHolds')
     except:
         raise
-    else:
-        index = 0
-        for hold in holds:
-            if index > 0:
-                print('')
-            print('Hold:')
-            print('  Profile:        ', hold['Profile'])
-            print('  Application ID: ', hold['ApplicationId'])
-            print('  Reason:         ', hold['Reason'])
-            index += 1
+
+    index = 0
+    for hold in holds:
+        if index > 0:
+            print('')
+        print('Hold:')
+        print('  Profile:        ', hold['Profile'])
+        print('  Application ID: ', hold['ApplicationId'])
+        print('  Reason:         ', hold['Reason'])
+        index += 1
 
 def _launch(args, profile, appid, reason):
     try:
