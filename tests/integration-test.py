@@ -605,6 +605,183 @@ class Tests(dbusmock.DBusTestCase):
 
       self.stop_daemon()
 
+    def test_amd_pstate(self):
+      '''AMD P-State driver (no UPower)'''
+
+      # Create 2 CPUs with preferences
+      dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
+      os.makedirs(dir1)
+      with open(os.path.join(dir1, 'scaling_governor'), 'w') as gov:
+        gov.write('powersave\n')
+      with open(os.path.join(dir1, "energy_performance_preference"),'w') as prefs:
+        prefs.write("performance\n")
+      dir2 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy1/")
+      os.makedirs(dir2)
+      with open(os.path.join(dir2, 'scaling_governor'), 'w') as gov:
+        gov.write('powersave\n')
+      with open(os.path.join(dir2, "energy_performance_preference"),'w') as prefs:
+        prefs.write("performance\n")
+
+      # Create AMD P-State configuration
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/amd_pstate")
+      os.makedirs(pstate_dir)
+      with open(os.path.join(pstate_dir, "status"),'w') as status:
+        status.write("active\n")
+
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'amd_pstate')
+      self.assertEqual(profiles[0]['Profile'], 'power-saver')
+
+      contents = None
+      with open(os.path.join(dir2, "energy_performance_preference"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'balance_performance')
+
+      # Set performance mode
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+
+      contents = None
+      with open(os.path.join(dir2, "energy_performance_preference"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'performance')
+
+      self.stop_daemon()
+
+      # Verify that the Lenovo DYTC driver still gets preferred
+      self.create_platform_profile()
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'platform_profile')
+
+    def test_amd_pstate_balance(self):
+      '''AMD P-State driver (balance)'''
+
+      # Create CPU with preference
+      dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
+      os.makedirs(dir1)
+      gov_path = os.path.join(dir1, 'scaling_governor')
+      with open(gov_path, 'w') as gov:
+        gov.write('performance\n')
+      with open(os.path.join(dir1, "energy_performance_preference"),'w') as prefs:
+        prefs.write("performance\n")
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/amd_pstate")
+      os.makedirs(pstate_dir)
+      with open(os.path.join(pstate_dir, "status"),'w') as status:
+        status.write("active\n")
+
+      upowerd, obj_upower = self.spawn_server_template(
+            'upower', {'DaemonVersion': '0.99', 'OnBattery': False}, stdout=subprocess.PIPE)
+
+      self.start_daemon()
+
+      with open(gov_path, 'rb') as f:
+        contents = f.read()
+        self.assertEqual(contents, b'powersave')
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'amd_pstate')
+      self.assertEqual(profiles[0]['Profile'], 'power-saver')
+
+      contents = None
+      with open(os.path.join(dir1, "energy_performance_preference"), 'rb') as f:
+        contents = f.read()
+      # This matches what's written by ppd-driver-amd-pstate.c
+      self.assertEqual(contents, b'balance_performance')
+
+      self.stop_daemon()
+
+      upowerd.terminate()
+      upowerd.wait()
+      upowerd.stdout.close()
+
+    def test_amd_pstate_error(self):
+      '''AMD P-State driver in error state'''
+
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/amd_pstate")
+      os.makedirs(pstate_dir)
+      with open(os.path.join(pstate_dir, "status"),'w') as status:
+        status.write("active\n")
+
+      dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
+      os.makedirs(dir1)
+      with open(os.path.join(dir1, 'scaling_governor'), 'w') as gov:
+        gov.write('powersave\n')
+      pref_path = os.path.join(dir1, "energy_performance_preference")
+      old_umask = os.umask(0o333)
+      with open(pref_path,'w') as prefs:
+        prefs.write("balance_performance\n")
+      os.umask(old_umask)
+      # Make file non-writable to root
+      if os.geteuid() == 0:
+        if not GLib.find_program_in_path('chattr'):
+          os._exit(77)
+        subprocess.check_output(['chattr', '+i', pref_path])
+
+      self.start_daemon()
+
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      # Error when setting performance mode
+      with self.assertRaises(gi.repository.GLib.GError):
+        self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      contents = None
+      with open(os.path.join(dir1, "energy_performance_preference"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'balance_performance\n')
+
+      self.stop_daemon()
+
+      if os.geteuid() == 0:
+        subprocess.check_output(['chattr', '-i', pref_path])
+
+    def test_amd_pstate_passive(self):
+      '''AMD P-State in passive mode -> placeholder'''
+
+      dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
+      os.makedirs(dir1)
+      with open(os.path.join(dir1, 'scaling_governor'), 'w') as gov:
+        gov.write('powersave\n')
+      with open(os.path.join(dir1, "energy_performance_preference"),'w') as prefs:
+        prefs.write("performance\n")
+
+      # Create AMD P-State configuration
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/amd_pstate")
+      os.makedirs(pstate_dir)
+      with open(os.path.join(pstate_dir, "status"),'w') as status:
+        status.write("passive\n")
+
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 2)
+      self.assertEqual(profiles[0]['Driver'], 'placeholder')
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      contents = None
+      with open(os.path.join(dir1, "energy_performance_preference"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'performance\n')
+
+      # Set performance mode
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+
+      contents = None
+      with open(os.path.join(dir1, "energy_performance_preference"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'performance\n')
+
+      self.stop_daemon()
+
     def test_dytc_performance_driver(self):
       '''Lenovo DYTC performance driver'''
 
