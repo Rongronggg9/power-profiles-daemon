@@ -75,6 +75,7 @@ static void start_profile_drivers (PpdApp *data);
 #include "ppd-driver-placeholder.h"
 #include "ppd-driver-platform-profile.h"
 #include "ppd-driver-intel-pstate.h"
+#include "ppd-driver-amd-pstate.h"
 #include "ppd-driver-fake.h"
 
 typedef GType (*GTypeGetFunc) (void);
@@ -84,6 +85,7 @@ static GTypeGetFunc objects[] = {
   ppd_driver_fake_get_type,
   ppd_driver_platform_profile_get_type,
   ppd_driver_intel_pstate_get_type,
+  ppd_driver_amd_pstate_get_type,
 
   /* Generic profile driver */
   ppd_driver_placeholder_get_type,
