@@ -171,7 +171,6 @@ probe_epb (PpdDriverIntelPstate *pstate)
 
   while ((dirname = g_dir_read_name (dir)) != NULL) {
     g_autofree char *path = NULL;
-    g_autofree char *gov_path = NULL;
 
     path = g_build_filename (policy_dir,
                              dirname,
