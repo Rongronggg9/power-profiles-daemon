@@ -1,3 +1,10 @@
+0.13
+----
+
+This release adds support for the AMD P-State driver that's been added to the
+6.3 Linux kernel. This release also fixes mismatched profiles on some HP
+laptops and some miscellaneous bug fixes.
+
 0.12
 ----
 
