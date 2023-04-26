@@ -134,6 +134,35 @@ ie. the only P-State scaling governor that allows HWP to work.
 For more information, please refer to the [Intel P-State scaling driver documentation](https://www.kernel.org/doc/html/v5.17/admin-guide/pm/intel_pstate.html)
 and the [Intel Performance and Energy Bias Hint](https://www.kernel.org/doc/html/v5.17/admin-guide/pm/intel_epb.html).
 
+Operations on AMD-based machines
+----------------------------------
+
+The "driver" for making the hardware act on the user-selected power profile on AMD CPU-based
+machines is based on the [AMD P-State scaling driver](https://www.kernel.org/doc/html/v6.3/admin-guide/pm/amd-pstate.html)
+if available.
+
+It is only used if a `platform_profile` driver isn't available for the system, the
+CPU supports Collaborative Processor Performance Control (CPPC), and the AMD P-State
+scaling driver is in `active` mode.
+
+Example of a system without `platform_profile` support but with `active` P-State
+operation mode:
+```
+$ cat /sys/firmware/acpi/platform_profile_choices
+cat: /sys/firmware/acpi/platform_profile_choices: No such file or directory
+$ cat /sys/devices/system/cpu/amd_pstate/status
+active
+```
+
+If the AMD P-State scaling driver is not loaded or is not in `active` mode, then
+the placeholder driver will be used, and there won't be a performance mode.
+
+Finally, if the AMD P-State scaling driver is used in `active` mode, the P-State
+scaling governor will be changed to `powersave` as it is the only P-State scaling
+governor that allows for the "Energy vs Performance Hints" to be taken into consideration.
+
+For more information, please refer to the [AMD P-State scaling driver documentation](https://www.kernel.org/doc/html/v6.3/admin-guide/pm/amd-pstate.html).
+
 Testing
 -------
 
