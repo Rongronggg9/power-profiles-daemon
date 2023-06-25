@@ -73,6 +73,7 @@ static void start_profile_drivers (PpdApp *data);
 /* profile drivers and actions */
 #include "ppd-action-trickle-charge.h"
 #include "ppd-driver-placeholder.h"
+#include "ppd-driver-tlp.h"
 #include "ppd-driver-platform-profile.h"
 #include "ppd-driver-intel-pstate.h"
 #include "ppd-driver-amd-pstate.h"
@@ -83,6 +84,7 @@ typedef GType (*GTypeGetFunc) (void);
 static GTypeGetFunc objects[] = {
   /* Hardware specific profile drivers */
   ppd_driver_fake_get_type,
+  ppd_driver_tlp_get_type,
   ppd_driver_platform_profile_get_type,
   ppd_driver_intel_pstate_get_type,
   ppd_driver_amd_pstate_get_type,

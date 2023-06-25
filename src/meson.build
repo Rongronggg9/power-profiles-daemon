@@ -48,6 +48,7 @@ sources += [
   'ppd-driver-intel-pstate.c',
   'ppd-driver-amd-pstate.c',
   'ppd-driver-platform-profile.c',
+  'ppd-driver-tlp.c',
   'ppd-driver-placeholder.c',
   'ppd-driver-fake.c',
 ]
