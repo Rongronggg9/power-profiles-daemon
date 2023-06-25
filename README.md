@@ -97,6 +97,31 @@ If that doesn't work, please file an issue, attach the output of:
 sudo G_MESSAGES_DEBUG=all /usr/libexec/power-profiles-daemon -r -v
 ```
 
+Working with TLP
+----------------------------------
+
+The "driver" makes [TLP](https://github.com/linrunner/TLP) act on the user-selected
+power profile if available.
+
+It is used if TLP is installed and initialized. Since TLP conflicts with other drivers,
+the TLP driver has the highest priority. Only if it is not available for the system,
+other drivers can be used. Enable TLP in your init system to use the driver and vice
+versa.
+
+Example of a system with TLP installed and initialized:
+```
+$ ls /usr/sbin/tlp
+/usr/sbin/tlp
+$ cat /run/tlp/last_pwr
+1
+```
+
+The "balanced" profile is mapped to the auto mode of TLP, while the "power-saver" and
+"performance" profiles are mapped to the battery and AC modes of TLP respectively.
+
+The driver is experimental. It is intended to see an error indicating that TLP conflicts
+with power-profiles-daemon, just ignore it for the time being.
+
 Operations on Intel-based machines
 ----------------------------------
 
