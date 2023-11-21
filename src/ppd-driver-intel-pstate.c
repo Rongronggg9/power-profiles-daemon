@@ -108,7 +108,7 @@ monitor_no_turbo_prop (const char *path)
 }
 
 static gboolean
-has_turbo (void)
+sys_has_turbo (void)
 {
   g_autofree char *turbo_pct_path = NULL;
   g_autofree char *contents = NULL;
@@ -265,17 +265,18 @@ ppd_driver_intel_pstate_probe (PpdDriver  *driver)
 {
   PpdDriverIntelPstate *pstate = PPD_DRIVER_INTEL_PSTATE (driver);
   PpdProbeResult ret = PPD_PROBE_RESULT_FAIL;
+  PpdProbeResult epp_ret, epb_ret;
+  gboolean has_turbo;
 
-  ret = probe_epp (pstate);
-  if (ret == PPD_PROBE_RESULT_SUCCESS)
-    probe_epb (pstate);
-  else
-    ret = probe_epb (pstate);
+  epp_ret = probe_epp (pstate);
+  epb_ret = probe_epb (pstate);
+  ret = (epp_ret == PPD_PROBE_RESULT_SUCCESS) ? epp_ret : epb_ret;
 
   if (ret != PPD_PROBE_RESULT_SUCCESS)
     goto out;
 
-  if (has_turbo ()) {
+  has_turbo = sys_has_turbo ();
+  if (has_turbo) {
     /* Monitor the first "no_turbo" */
     pstate->no_turbo_path = ppd_utils_get_sysfs_path (NO_TURBO_PATH);
     pstate->no_turbo_mon = monitor_no_turbo_prop (pstate->no_turbo_path);
@@ -287,8 +288,15 @@ ppd_driver_intel_pstate_probe (PpdDriver  *driver)
   }
 
 out:
-  g_debug ("%s p-state settings",
+  g_debug ("%s Intel p-state settings",
            ret == PPD_PROBE_RESULT_SUCCESS ? "Found" : "Didn't find");
+  if (ret == PPD_PROBE_RESULT_SUCCESS) {
+    g_debug ("\tEnergy Performance Preference: %s",
+             epp_ret == PPD_PROBE_RESULT_SUCCESS ? "yes" : "no");
+    g_debug ("\tEnergy Performance Bias: %s",
+             epp_ret == PPD_PROBE_RESULT_SUCCESS ? "yes" : "no");
+    g_debug ("\tHas Turbo: %s", has_turbo ? "yes" : "no");
+  }
   return ret;
 }
 
