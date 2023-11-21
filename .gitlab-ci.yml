@@ -25,7 +25,6 @@ workflow:
 
 build_stable:
   before_script:
-    - dnf upgrade -y --nogpgcheck fedora-release fedora-repos*
     - dnf update -y && dnf install -y $DEPENDENCIES
     - mkdir tmpdir/
   script:
