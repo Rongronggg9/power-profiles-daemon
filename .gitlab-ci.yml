@@ -25,8 +25,8 @@ workflow:
 
 build_stable:
   before_script:
-    - dnf upgrade -y --nogpgcheck fedora-release fedora-repos*
-    - dnf update -y && dnf install -y $DEPENDENCIES
+    - dnf update -y
+    - if [ -x /bin/dnf ]; then dnf install -y $DEPENDENCIES; else dnf5 install -y $DEPENDENCIES; fi
     - mkdir tmpdir/
   script:
     - meson -Dgtk_doc=true -Dpylint=true -Dtests=true _build
