@@ -1,2 +1,4 @@
 power-profiles-daemon
 data/net.hadess.PowerProfiles.conf
+__pycache__
+.vscode
