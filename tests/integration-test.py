@@ -247,6 +247,18 @@ class Tests(dbusmock.DBusTestCase):
             return f.read()
         return None
 
+    def change_immutable(self, f, enable):
+      s = '-'
+      if enable:
+        os.chmod(f, 0o444)
+        s = '+'
+      if os.geteuid() == 0:
+        if not GLib.find_program_in_path('chattr'):
+          os._exit(77)
+        subprocess.check_output(['chattr', '%si' % s, f])
+      if not enable:
+        os.chmod(f, 0o666)
+
     def create_dytc_device(self):
       self.tp_acpi = self.testbed.add_device('platform', 'thinkpad_acpi', None,
           ['dytc_lapmode', '0\n'],
@@ -491,10 +503,7 @@ class Tests(dbusmock.DBusTestCase):
         prefs.write("balance_performance\n")
       os.umask(old_umask)
       # Make file non-writable to root
-      if os.geteuid() == 0:
-        if not GLib.find_program_in_path('chattr'):
-          os._exit(77)
-        subprocess.check_output(['chattr', '+i', pref_path])
+      self.change_immutable(pref_path, True)
 
       self.start_daemon()
 
@@ -512,8 +521,7 @@ class Tests(dbusmock.DBusTestCase):
 
       self.stop_daemon()
 
-      if os.geteuid() == 0:
-        subprocess.check_output(['chattr', '-i', pref_path])
+      self.change_immutable(pref_path, False)
 
     def test_intel_pstate_passive(self):
       '''Intel P-State in passive mode -> placeholder'''
@@ -719,10 +727,7 @@ class Tests(dbusmock.DBusTestCase):
         prefs.write("balance_performance\n")
       os.umask(old_umask)
       # Make file non-writable to root
-      if os.geteuid() == 0:
-        if not GLib.find_program_in_path('chattr'):
-          os._exit(77)
-        subprocess.check_output(['chattr', '+i', pref_path])
+      self.change_immutable(pref_path, True)
 
       self.start_daemon()
 
@@ -740,8 +745,7 @@ class Tests(dbusmock.DBusTestCase):
 
       self.stop_daemon()
 
-      if os.geteuid() == 0:
-        subprocess.check_output(['chattr', '-i', pref_path])
+      self.change_immutable(pref_path, False)
 
     def test_amd_pstate_passive(self):
       '''AMD P-State in passive mode -> placeholder'''
