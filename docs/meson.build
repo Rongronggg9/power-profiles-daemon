@@ -21,13 +21,11 @@ content_files += gnome.gdbus_codegen(
 private_headers = [
   'power-profiles-daemon.h',
   'ppd-action-trickle-charge.h',
-  'ppd-driver-balanced.h',
   'ppd-driver-fake.h',
   'ppd-driver-intel-pstate.h',
   'ppd-driver-amd-pstate.h',
   'ppd-driver-placeholder.h',
   'ppd-driver-platform-profile.h',
-  'ppd-driver-power-saver.h',
   'ppd-utils.h',
   'power-profiles-daemon-resources.h',
 ]
