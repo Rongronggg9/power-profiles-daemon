@@ -16,6 +16,20 @@
 #define CPUFREQ_POLICY_DIR "/sys/devices/system/cpu/cpufreq/"
 #define DEFAULT_CPU_FREQ_SCALING_GOV "powersave"
 #define PSTATE_STATUS_PATH "/sys/devices/system/cpu/amd_pstate/status"
+#define ACPI_PM_PROFILE "/sys/firmware/acpi/pm_profile"
+
+enum acpi_preferred_pm_profiles {
+  PM_UNSPECIFIED = 0,
+  PM_DESKTOP = 1,
+  PM_MOBILE = 2,
+  PM_WORKSTATION = 3,
+  PM_ENTERPRISE_SERVER = 4,
+  PM_SOHO_SERVER = 5,
+  PM_APPLIANCE_PC = 6,
+  PM_PERFORMANCE_SERVER = 7,
+  PM_TABLET = 8,
+  NR_PM_PROFILES = 9
+};
 
 struct _PpdDriverAmdPstate
 {
@@ -57,6 +71,9 @@ probe_epp (PpdDriverAmdPstate *pstate)
   g_autofree char *policy_dir = NULL;
   g_autofree char *pstate_status_path = NULL;
   g_autofree char *status = NULL;
+  g_autofree char *pm_profile_path = NULL;
+  g_autofree char *pm_profile_str = NULL;
+  guint64 pm_profile;
   const char *dirname;
   PpdProbeResult ret = PPD_PROBE_RESULT_FAIL;
 
@@ -75,6 +92,22 @@ probe_epp (PpdDriverAmdPstate *pstate)
   if (!dir) {
     g_debug ("Could not open %s", policy_dir);
     return ret;
+  }
+
+  /* only run on things that we know aren't servers */
+  pm_profile_path = ppd_utils_get_sysfs_path (ACPI_PM_PROFILE);
+  if (!g_file_get_contents (pm_profile_path, &pm_profile_str, NULL, NULL))
+    return ret;
+  pm_profile = g_ascii_strtoull (pm_profile_str, NULL, 10);
+  switch (pm_profile) {
+  case PM_UNSPECIFIED:
+  case PM_ENTERPRISE_SERVER:
+  case PM_SOHO_SERVER:
+  case PM_PERFORMANCE_SERVER:
+    g_debug ("AMD-P-State not supported on PM profile %" G_GUINT64_FORMAT, pm_profile);
+    return ret;
+  default:
+    break;
   }
 
   while ((dirname = g_dir_read_name (dir)) != NULL) {

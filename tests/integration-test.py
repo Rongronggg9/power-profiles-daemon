@@ -275,7 +275,7 @@ class Tests(dbusmock.DBusTestCase):
 
     def create_platform_profile(self):
       acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
-      os.makedirs(acpi_dir)
+      os.makedirs(acpi_dir, exist_ok=True)
       with open(os.path.join(acpi_dir, "platform_profile"), 'w') as profile:
         profile.write("performance\n")
       with open(os.path.join(acpi_dir, "platform_profile_choices"), 'w') as choices:
@@ -809,6 +809,12 @@ class Tests(dbusmock.DBusTestCase):
       with open(os.path.join(pstate_dir, "status"), 'w') as status:
         status.write("active\n")
 
+      # desktop PM profile
+      dir3 = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
+      os.makedirs(dir3)
+      with open(os.path.join(dir3, "pm_profile"), 'w') as pm_profile:
+         pm_profile.write("1\n")
+
       self.start_daemon()
 
       profiles = self.get_dbus_property('Profiles')
@@ -847,6 +853,12 @@ class Tests(dbusmock.DBusTestCase):
       os.makedirs(pstate_dir)
       with open(os.path.join(pstate_dir, "status"), 'w') as status:
         status.write("active\n")
+
+      # desktop PM profile
+      dir2 = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
+      os.makedirs(dir2)
+      with open(os.path.join(dir2, "pm_profile"), 'w') as pm_profile:
+         pm_profile.write("1\n")
 
       upowerd, obj_upower = self.spawn_server_template(
             'upower', {'DaemonVersion': '0.99', 'OnBattery': False}, stdout=subprocess.PIPE)
@@ -894,6 +906,12 @@ class Tests(dbusmock.DBusTestCase):
       # Make file non-writable to root
       self.change_immutable(pref_path, True)
 
+      # desktop PM profile
+      dir2 = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
+      os.makedirs(dir2)
+      with open(os.path.join(dir2, "pm_profile"), 'w') as pm_profile:
+         pm_profile.write("1\n")
+
       self.start_daemon()
 
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
@@ -928,6 +946,12 @@ class Tests(dbusmock.DBusTestCase):
       with open(os.path.join(pstate_dir, "status"), 'w') as status:
         status.write("passive\n")
 
+      # desktop PM profile
+      dir2 = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
+      os.makedirs(dir2)
+      with open(os.path.join(dir2, "pm_profile"), 'w') as pm_profile:
+         pm_profile.write("1\n")
+
       self.start_daemon()
 
       profiles = self.get_dbus_property('Profiles')
@@ -948,6 +972,42 @@ class Tests(dbusmock.DBusTestCase):
       with open(os.path.join(dir1, "energy_performance_preference"), 'rb') as f:
         contents = f.read()
       self.assertEqual(contents, b'performance\n')
+
+      self.stop_daemon()
+
+    def test_amd_pstate_server(self):
+      # Create 2 CPUs with preferences
+      dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
+      os.makedirs(dir1)
+      with open(os.path.join(dir1, 'scaling_governor'), 'w') as gov:
+        gov.write('powersave\n')
+      with open(os.path.join(dir1, "energy_performance_preference"),'w') as prefs:
+        prefs.write("performance\n")
+      dir2 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy1/")
+      os.makedirs(dir2)
+      with open(os.path.join(dir2, 'scaling_governor'), 'w') as gov:
+        gov.write('powersave\n')
+      with open(os.path.join(dir2, "energy_performance_preference"), 'w') as prefs:
+        prefs.write("performance\n")
+
+      # Create AMD P-State configuration
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/amd_pstate")
+      os.makedirs(pstate_dir)
+      with open(os.path.join(pstate_dir, "status"), 'w') as status:
+        status.write("active\n")
+
+      # server PM profile
+      dir3 = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
+      os.makedirs(dir3)
+      with open(os.path.join(dir3, "pm_profile"), 'w') as pm_profile:
+         pm_profile.write("4\n")
+
+      self.start_daemon()
+
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 2)
+      with self.assertRaises(KeyError):
+        print(profiles[0]['CpuDriver'])
 
       self.stop_daemon()
 
