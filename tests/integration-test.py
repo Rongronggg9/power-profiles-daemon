@@ -826,6 +826,9 @@ class Tests(dbusmock.DBusTestCase):
       with open(os.path.join(dir2, "energy_performance_preference"), 'rb') as f:
         contents = f.read()
       self.assertEqual(contents, b'balance_performance')
+      with open(os.path.join(dir2, "scaling_governor"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'powersave')
 
       # Set performance mode
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
@@ -835,6 +838,23 @@ class Tests(dbusmock.DBusTestCase):
       with open(os.path.join(dir2, "energy_performance_preference"), 'rb') as f:
         contents = f.read()
       self.assertEqual(contents, b'performance')
+      contents = None
+      with open(os.path.join(dir2, "scaling_governor"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'performance')
+
+      # Set powersave mode
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+
+      contents = None
+      with open(os.path.join(dir2, "energy_performance_preference"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'power')
+      contents = None
+      with open(os.path.join(dir2, "scaling_governor"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'powersave')
 
       self.stop_daemon()
 
@@ -865,10 +885,6 @@ class Tests(dbusmock.DBusTestCase):
 
       self.start_daemon()
 
-      with open(gov_path, 'rb') as f:
-        contents = f.read()
-        self.assertEqual(contents, b'powersave')
-
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
       self.assertEqual(profiles[0]['CpuDriver'], 'amd_pstate')
@@ -879,6 +895,10 @@ class Tests(dbusmock.DBusTestCase):
         contents = f.read()
       # This matches what's written by ppd-driver-amd-pstate.c
       self.assertEqual(contents, b'balance_performance')
+      contents = None
+      with open(os.path.join(dir1, "scaling_governor"), 'rb') as f:
+        contents = f.read()
+      self.assertEqual(contents, b'powersave')
 
       self.stop_daemon()
 

@@ -14,7 +14,6 @@
 #include "ppd-driver-amd-pstate.h"
 
 #define CPUFREQ_POLICY_DIR "/sys/devices/system/cpu/cpufreq/"
-#define DEFAULT_CPU_FREQ_SCALING_GOV "powersave"
 #define PSTATE_STATUS_PATH "/sys/devices/system/cpu/amd_pstate/status"
 #define ACPI_PM_PROFILE "/sys/firmware/acpi/pm_profile"
 
@@ -111,28 +110,21 @@ probe_epp (PpdDriverAmdPstate *pstate)
   }
 
   while ((dirname = g_dir_read_name (dir)) != NULL) {
+    g_autofree char *base = NULL;
     g_autofree char *path = NULL;
-    g_autofree char *gov_path = NULL;
     g_autoptr(GError) error = NULL;
 
-    path = g_build_filename (policy_dir,
+    base = g_build_filename (policy_dir,
                              dirname,
+                             NULL);
+
+    path = g_build_filename (base,
                              "energy_performance_preference",
                              NULL);
     if (!g_file_test (path, G_FILE_TEST_EXISTS))
       continue;
 
-    /* Force a scaling_governor where the preference can be written */
-    gov_path = g_build_filename (policy_dir,
-                                 dirname,
-                                 "scaling_governor",
-                                 NULL);
-    if (!ppd_utils_write (gov_path, DEFAULT_CPU_FREQ_SCALING_GOV, &error)) {
-      g_warning ("Could not change scaling governor %s to '%s'", dirname, DEFAULT_CPU_FREQ_SCALING_GOV);
-      continue;
-    }
-
-    pstate->epp_devices = g_list_prepend (pstate->epp_devices, g_steal_pointer (&path));
+    pstate->epp_devices = g_list_prepend (pstate->epp_devices, g_steal_pointer (&base));
     ret = PPD_PROBE_RESULT_SUCCESS;
   }
 
@@ -157,6 +149,21 @@ out:
 }
 
 static const char *
+profile_to_gov_pref (PpdProfile profile)
+{
+  switch (profile) {
+  case PPD_PROFILE_POWER_SAVER:
+    return "powersave";
+  case PPD_PROFILE_BALANCED:
+    return "powersave";
+  case PPD_PROFILE_PERFORMANCE:
+    return "performance";
+  }
+
+  g_assert_not_reached ();
+}
+
+static const char *
 profile_to_epp_pref (PpdProfile profile)
 {
   /* Note that we don't check "energy_performance_available_preferences"
@@ -175,16 +182,30 @@ profile_to_epp_pref (PpdProfile profile)
 
 static gboolean
 apply_pref_to_devices (GList       *devices,
-                       const char  *pref,
+                       PpdProfile   profile,
                        GError     **error)
 {
   gboolean ret = TRUE;
   GList *l;
 
   for (l = devices; l != NULL; l = l->next) {
-    const char *path = l->data;
+    const char *base = l->data;
+    g_autofree char *epp = NULL;
+    g_autofree char *gov = NULL;
 
-    ret = ppd_utils_write (path, pref, error);
+    gov = g_build_filename (base,
+                            "scaling_governor",
+                            NULL);
+
+    ret = ppd_utils_write (gov, profile_to_gov_pref (profile), error);
+    if (!ret)
+      break;
+
+    epp = g_build_filename (base,
+                            "energy_performance_preference",
+                            NULL);
+
+    ret = ppd_utils_write (epp, profile_to_epp_pref (profile), error);
     if (!ret)
       break;
   }
@@ -200,15 +221,20 @@ ppd_driver_amd_pstate_activate_profile (PpdDriver                    *driver,
 {
   PpdDriverAmdPstate *pstate = PPD_DRIVER_AMD_PSTATE (driver);
   gboolean ret = FALSE;
-  const char *pref;
 
   g_return_val_if_fail (pstate->epp_devices != NULL, FALSE);
 
   if (pstate->epp_devices) {
-    pref = profile_to_epp_pref (profile);
-    ret = apply_pref_to_devices (pstate->epp_devices, pref, error);
-    if (!ret)
+    ret = apply_pref_to_devices (pstate->epp_devices, profile, error);
+    if (!ret && pstate->activated_profile != PPD_PROFILE_UNSET) {
+      g_autoptr(GError) error_local = NULL;
+      /* reset back to previous */
+      if (!apply_pref_to_devices (pstate->epp_devices,
+                                  pstate->activated_profile,
+                                  &error_local))
+        g_warning ("failed to restore previous profile: %s", error_local->message);
       return ret;
+    }
   }
 
   if (ret)
