@@ -23,7 +23,7 @@ struct _PpdActionTrickleCharge
   gboolean active;
 };
 
-G_DEFINE_TYPE (PpdActionTrickleCharge, ppd_action_trickle_charge, PPD_TYPE_ACTION)
+G_DEFINE_TYPE(PpdActionTrickleCharge, ppd_action_trickle_charge, PPD_TYPE_ACTION)
 
 static GObject*
 ppd_action_trickle_charge_constructor (GType                  type,
