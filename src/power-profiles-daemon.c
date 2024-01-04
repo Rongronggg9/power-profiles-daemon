@@ -871,6 +871,23 @@ stop_profile_drivers (PpdApp *data)
   g_clear_object (&data->platform_driver);
 }
 
+static gboolean
+driver_blocked (PpdDriver *driver)
+{
+  guint i;
+  const gchar *driver_name = ppd_driver_get_driver_name (driver);
+  const gchar *env = g_getenv ("POWER_PROFILE_DAEMON_DRIVER_BLOCK");
+  g_autofree gchar **drivers = NULL;
+  if (env == NULL)
+    return FALSE;
+  drivers = g_strsplit (env, ",", -1);
+  for (i = 0; drivers[i] != NULL; i++) {
+    if (g_strcmp0 (drivers[i], driver_name) == 0)
+      return TRUE;
+  }
+  return FALSE;
+}
+
 static void
 start_profile_drivers (PpdApp *data)
 {
@@ -887,6 +904,10 @@ start_profile_drivers (PpdApp *data)
       PpdProbeResult result;
 
       g_debug ("Handling driver '%s'", ppd_driver_get_driver_name (driver));
+      if (driver_blocked (driver)) {
+        g_debug ("Driver '%s' is blocked, skipping", ppd_driver_get_driver_name (driver));
+        continue;
+      }
 
       if (PPD_IS_DRIVER_CPU (data->cpu_driver) && PPD_IS_DRIVER_CPU (driver)) {
         g_debug ("CPU driver '%s' already probed, skipping driver '%s'",

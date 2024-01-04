@@ -653,6 +653,62 @@ class Tests(dbusmock.DBusTestCase):
 
       self.stop_daemon()
 
+    def test_driver_blocklist(self):
+      '''Test driver blocklist works'''
+      # Create 2 CPUs with preferences
+      dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
+      os.makedirs(dir1)
+      with open(os.path.join(dir1, 'scaling_governor'), 'w') as f:
+        f.write('powersave\n')
+      prefs1 = os.path.join(dir1, "energy_performance_preference")
+      with open(prefs1, 'w') as f:
+        f.write("performance\n")
+
+      dir2 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy1/")
+      os.makedirs(dir2)
+      with open(os.path.join(dir2, 'scaling_governor'), 'w') as f:
+        f.write('powersave\n')
+      prefs2 = os.path.join(dir2, "energy_performance_preference")
+      with open(prefs2, 'w') as f:
+        f.write("performance\n")
+
+      # Create AMD P-State configuration
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/amd_pstate")
+      os.makedirs(pstate_dir)
+      with open(os.path.join(pstate_dir, "status"), 'w') as status:
+        status.write("active\n")
+
+      # create ACPI platform profile
+      self.create_platform_profile()
+      profile = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile")
+
+      # desktop PM profile
+      dir3 = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
+      os.makedirs(dir3, exist_ok=True)
+      with open(os.path.join(dir3, "pm_profile"), 'w') as pm_profile:
+         pm_profile.write("1\n")
+
+      # block platform profile
+      os.environ['POWER_PROFILE_DAEMON_DRIVER_BLOCK'] = 'platform_profile'
+
+      # Verify that only amd-pstate is loaded
+      self.start_daemon()
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['CpuDriver'], 'amd_pstate')
+      self.assertEqual(profiles[0]['PlatformDriver'], 'placeholder')
+
+      self.stop_daemon()
+
+      # block both drivers
+      os.environ['POWER_PROFILE_DAEMON_DRIVER_BLOCK'] = 'amd_pstate,platform_profile'
+
+      # Verify that only placeholder is loaded
+      self.start_daemon()
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 2)
+      self.assertEqual(profiles[0]['PlatformDriver'], 'placeholder')
+
     def test_multi_driver_flows(self):
       '''Test corner cases associated with multiple drivers'''
 
