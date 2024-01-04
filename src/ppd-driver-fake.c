@@ -18,7 +18,7 @@ void restart_profile_drivers (void);
 
 struct _PpdDriverFake
 {
-  PpdDriver  parent_instance;
+  PpdDriverPlatform  parent_instance;
 
   gboolean tio_set;
   struct termios old_tio;
@@ -27,7 +27,7 @@ struct _PpdDriverFake
   gboolean degraded;
 };
 
-G_DEFINE_TYPE (PpdDriverFake, ppd_driver_fake, PPD_TYPE_DRIVER)
+G_DEFINE_TYPE(PpdDriverFake, ppd_driver_fake, PPD_TYPE_DRIVER_PLATFORM)
 
 static GObject*
 ppd_driver_fake_constructor (GType                  type,

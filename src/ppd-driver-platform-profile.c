@@ -32,7 +32,7 @@ struct _PpdDriverPlatformProfile
   guint acpi_platform_profile_changed_id;
 };
 
-G_DEFINE_TYPE (PpdDriverPlatformProfile, ppd_driver_platform_profile, PPD_TYPE_DRIVER)
+G_DEFINE_TYPE(PpdDriverPlatformProfile, ppd_driver_platform_profile, PPD_TYPE_DRIVER_PLATFORM)
 
 static GObject*
 ppd_driver_platform_profile_constructor (GType                  type,

@@ -10,7 +10,7 @@
 
 #pragma once
 
-#include "ppd-driver.h"
+#include "ppd-driver-cpu.h"
 
 #define PPD_TYPE_DRIVER_AMD_PSTATE (ppd_driver_amd_pstate_get_type())
-G_DECLARE_FINAL_TYPE(PpdDriverAmdPstate, ppd_driver_amd_pstate, PPD, DRIVER_AMD_PSTATE, PpdDriver)
+G_DECLARE_FINAL_TYPE(PpdDriverAmdPstate, ppd_driver_amd_pstate, PPD, DRIVER_AMD_PSTATE, PpdDriverCpu)

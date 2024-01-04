@@ -19,6 +19,20 @@ PPD_TYPE_DRIVER
 </SECTION>
 
 <SECTION>
+<FILE>ppd-driver-cpu</FILE>
+<TITLE>CPU Profile Drivers</TITLE>
+PpdDriverCpuClass
+PpdDriverCpu
+</SECTION>
+
+<SECTION>
+<FILE>ppd-driver-platform</FILE>
+<TITLE>Platform Profile Drivers</TITLE>
+PpdDriverPlatformClass
+PpdDriverPlatform
+</SECTION>
+
+<SECTION>
 <FILE>ppd-profile</FILE>
 <TITLE>Constants</TITLE>
 PpdProfile

@@ -19,13 +19,13 @@
 
 struct _PpdDriverAmdPstate
 {
-  PpdDriver  parent_instance;
+  PpdDriverCpu  parent_instance;
 
   PpdProfile activated_profile;
   GList *epp_devices; /* GList of paths */
 };
 
-G_DEFINE_TYPE (PpdDriverAmdPstate, ppd_driver_amd_pstate, PPD_TYPE_DRIVER)
+G_DEFINE_TYPE(PpdDriverAmdPstate, ppd_driver_amd_pstate, PPD_TYPE_DRIVER_CPU)
 
 static gboolean ppd_driver_amd_pstate_activate_profile (PpdDriver                   *driver,
                                                         PpdProfile                   profile,

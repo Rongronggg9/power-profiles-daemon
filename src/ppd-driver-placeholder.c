@@ -11,10 +11,10 @@
 
 struct _PpdDriverPlaceholder
 {
-  PpdDriver  parent_instance;
+  PpdDriverPlatform  parent_instance;
 };
 
-G_DEFINE_TYPE (PpdDriverPlaceholder, ppd_driver_placeholder, PPD_TYPE_DRIVER)
+G_DEFINE_TYPE(PpdDriverPlaceholder, ppd_driver_placeholder, PPD_TYPE_DRIVER_PLATFORM)
 
 static GObject*
 ppd_driver_placeholder_constructor (GType                  type,

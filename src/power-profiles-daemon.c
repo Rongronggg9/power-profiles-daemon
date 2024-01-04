@@ -15,7 +15,8 @@
 
 #include "power-profiles-daemon-resources.h"
 #include "power-profiles-daemon.h"
-#include "ppd-driver.h"
+#include "ppd-driver-cpu.h"
+#include "ppd-driver-platform.h"
 #include "ppd-action.h"
 #include "ppd-enums.h"
 
@@ -39,7 +40,8 @@ typedef struct {
   PpdProfile active_profile;
   PpdProfile selected_profile;
   GPtrArray *probed_drivers;
-  PpdDriver *driver;
+  PpdDriverCpu *cpu_driver;
+  PpdDriverPlatform *platform_driver;
   GPtrArray *actions;
   GHashTable *profile_holds;
 } PpdApp;
@@ -66,9 +68,6 @@ static PpdApp *ppd_app = NULL;
 
 static void stop_profile_drivers (PpdApp *data);
 static void start_profile_drivers (PpdApp *data);
-
-#define GET_DRIVER(p) (ppd_driver_get_profiles (data->driver) & p ? data->driver : NULL)
-#define ACTIVE_DRIVER (data->driver)
 
 /* profile drivers and actions */
 #include "ppd-action-trickle-charge.h"
@@ -106,13 +105,20 @@ typedef enum {
 #define PROP_ALL (PROP_ACTIVE_PROFILE | PROP_INHIBITED | PROP_PROFILES | PROP_ACTIONS | PROP_DEGRADED | PROP_ACTIVE_PROFILE_HOLDS)
 
 static gboolean
+driver_profile_support (PpdDriver *driver,
+                       PpdProfile profile)
+{
+  if (!PPD_IS_DRIVER (driver))
+    return FALSE;
+  return (ppd_driver_get_profiles (driver) & profile) != 0;
+}
+
+static gboolean
 get_profile_available (PpdApp     *data,
                        PpdProfile  profile)
 {
-    PpdDriver *driver;
-
-    driver = GET_DRIVER(profile);
-    return driver != NULL;
+  return driver_profile_support (PPD_DRIVER (data->cpu_driver), profile) ||
+         driver_profile_support (PPD_DRIVER (data->platform_driver), profile);
 }
 
 static const char *
@@ -121,18 +127,22 @@ get_active_profile (PpdApp *data)
   return ppd_profile_to_str (data->active_profile);
 }
 
-static const char *
+static char *
 get_performance_degraded (PpdApp *data)
 {
-  const char *ret;
-  PpdDriver *driver;
+  const gchar *cpu_degraded = "";
+  const gchar *platform_degraded = "";
 
-  driver = GET_DRIVER(PPD_PROFILE_PERFORMANCE);
-  if (!driver)
-    return "";
-  ret = ppd_driver_get_performance_degraded (driver);
-  g_assert (ret != NULL);
-  return ret;
+  if (driver_profile_support (PPD_DRIVER (data->platform_driver), PPD_PROFILE_PERFORMANCE))
+    platform_degraded = ppd_driver_get_performance_degraded (PPD_DRIVER (data->platform_driver));
+  if (driver_profile_support (PPD_DRIVER (data->cpu_driver), PPD_PROFILE_PERFORMANCE))
+    cpu_degraded = ppd_driver_get_performance_degraded (PPD_DRIVER (data->cpu_driver));
+
+  if (g_strcmp0 (cpu_degraded, "") == 0)
+    return g_strdup(platform_degraded);
+  if (g_strcmp0 (platform_degraded, "") == 0)
+    return g_strdup(cpu_degraded);
+  return g_strdup_printf("%s,%s", cpu_degraded, platform_degraded);
 }
 
 static GVariant *
@@ -144,17 +154,24 @@ get_profiles_variant (PpdApp *data)
   g_variant_builder_init (&builder, G_VARIANT_TYPE ("aa{sv}"));
 
   for (i = 0; i < NUM_PROFILES; i++) {
-    PpdDriver *driver = GET_DRIVER(1 << i);
+    PpdDriver *platform_driver = PPD_DRIVER (data->platform_driver);
+    PpdDriver *cpu_driver = PPD_DRIVER (data->cpu_driver);
+    PpdProfile profile = 1 << i;
     GVariantBuilder asv_builder;
 
-    if (driver == NULL)
+    /* check if any of the drivers support */
+    if (!get_profile_available (data, profile))
       continue;
 
     g_variant_builder_init (&asv_builder, G_VARIANT_TYPE ("a{sv}"));
     g_variant_builder_add (&asv_builder, "{sv}", "Profile",
-                           g_variant_new_string (ppd_profile_to_str (1 << i)));
-    g_variant_builder_add (&asv_builder, "{sv}", "Driver",
-                           g_variant_new_string (ppd_driver_get_driver_name (driver)));
+                           g_variant_new_string (ppd_profile_to_str (profile)));
+    if (driver_profile_support (cpu_driver, profile))
+      g_variant_builder_add (&asv_builder, "{sv}", "CpuDriver",
+                             g_variant_new_string (ppd_driver_get_driver_name (cpu_driver)));
+    if (driver_profile_support (PPD_DRIVER (data->platform_driver), profile))
+      g_variant_builder_add (&asv_builder, "{sv}", "PlatformDriver",
+                             g_variant_new_string (ppd_driver_get_driver_name (platform_driver)));
 
     g_variant_builder_add (&builder, "a{sv}", &asv_builder);
   }
@@ -231,8 +248,9 @@ send_dbus_event (PpdApp     *data,
                            g_variant_new_string (""));
   }
   if (mask & PROP_DEGRADED) {
+    g_autofree gchar *degraded = get_performance_degraded (data);
     g_variant_builder_add (&props_builder, "{sv}", "PerformanceDegraded",
-                           g_variant_new_string (get_performance_degraded (data)));
+                           g_variant_new_string (degraded));
   }
   if (mask & PROP_PROFILES) {
     g_variant_builder_add (&props_builder, "{sv}", "Profiles",
@@ -264,7 +282,10 @@ save_configuration (PpdApp *data)
 {
   g_autoptr(GError) error = NULL;
 
-  g_key_file_set_string (data->config, "State", "Driver", ppd_driver_get_driver_name (data->driver));
+  if (PPD_IS_DRIVER_CPU (data->cpu_driver))
+    g_key_file_set_string (data->config, "State", "CpuDriver", ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)));
+  if (PPD_IS_DRIVER_PLATFORM(data->platform_driver))
+    g_key_file_set_string (data->config, "State", "PlatformDriver", ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)));
   g_key_file_set_string (data->config, "State", "Profile", ppd_profile_to_str (data->active_profile));
   if (!g_key_file_save_to_file (data->config, data->config_path, &error))
     g_warning ("Could not save configuration file '%s': %s", data->config_path, error->message);
@@ -273,12 +294,16 @@ save_configuration (PpdApp *data)
 static gboolean
 apply_configuration (PpdApp *data)
 {
-  g_autofree char *driver = NULL;
+  g_autofree char *platform_driver = NULL;
   g_autofree char *profile_str = NULL;
+  g_autofree char *cpu_driver = NULL;
   PpdProfile profile;
 
-  driver = g_key_file_get_string (data->config, "State", "Driver", NULL);
-  if (g_strcmp0 (ppd_driver_get_driver_name (data->driver), driver) != 0)
+  cpu_driver = g_key_file_get_string (data->config, "State", "CpuDriver", NULL);
+  if (PPD_IS_DRIVER_CPU (data->cpu_driver) && g_strcmp0 (ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)), cpu_driver) != 0)
+    return FALSE;
+  platform_driver = g_key_file_get_string (data->config, "State", "PlatformDriver", NULL);
+  if (PPD_IS_DRIVER_PLATFORM(data->platform_driver) && g_strcmp0 (ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)), platform_driver) != 0)
     return FALSE;
   profile_str = g_key_file_get_string (data->config, "State", "Profile", NULL);
   if (profile_str == NULL)
@@ -339,18 +364,43 @@ activate_target_profile (PpdApp                      *data,
                          PpdProfileActivationReason   reason,
                          GError                     **error)
 {
-  GError *internal_error = NULL;
+  g_autoptr(GError) recovery_error = NULL;
+  PpdProfile current_profile = data->active_profile;
+  gboolean cpu_set = TRUE;
+  gboolean platform_set = TRUE;
 
   g_debug ("Setting active profile '%s' for reason '%s' (current: '%s')",
            ppd_profile_to_str (target_profile),
            ppd_profile_activation_reason_to_str (reason),
-           ppd_profile_to_str (data->active_profile));
+           ppd_profile_to_str (current_profile));
 
-  if (!ppd_driver_activate_profile (data->driver, target_profile, reason, &internal_error)) {
-    g_warning ("Failed to activate driver '%s': %s",
-               ppd_driver_get_driver_name (data->driver),
-               internal_error->message);
-    g_propagate_error (error, internal_error);
+  /* Try CPU first */
+  if (driver_profile_support (PPD_DRIVER (data->cpu_driver), target_profile))
+    cpu_set = ppd_driver_activate_profile (PPD_DRIVER (data->cpu_driver), target_profile, reason, error);
+
+  if (!cpu_set) {
+    g_prefix_error(error, "Failed to activate CPU driver '%s': ", ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)));
+    return FALSE;
+  }
+
+  /* Then try platform */
+  if (driver_profile_support (PPD_DRIVER (data->platform_driver), target_profile))
+    platform_set = ppd_driver_activate_profile (PPD_DRIVER (data->platform_driver), target_profile, reason, error);
+
+  if (!platform_set) {
+    g_prefix_error(error, "Failed to activate platform driver '%s': ", ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)));
+    /* Try to recover */
+    if (cpu_set) {
+      g_debug ("Reverting CPU driver '%s' to profile '%s'",
+               ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)),
+               ppd_profile_to_str (current_profile));
+      if (!ppd_driver_activate_profile (PPD_DRIVER (data->cpu_driver), current_profile, PPD_PROFILE_ACTIVATION_REASON_INTERNAL, &recovery_error)) {
+        g_prefix_error(error, "Failed to revert CPU driver '%s': ", ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)));
+        g_warning ("Failed to revert CPU driver '%s': %s",
+                   ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)),
+                   recovery_error->message);
+      }
+    }
     return FALSE;
   }
 
@@ -676,8 +726,10 @@ handle_get_property (GDBusConnection *connection,
     return get_profiles_variant (data);
   if (g_strcmp0 (property_name, "Actions") == 0)
     return get_actions_variant (data);
-  if (g_strcmp0 (property_name, "PerformanceDegraded") == 0)
-    return g_variant_new_string (get_performance_degraded (data));
+  if (g_strcmp0 (property_name, "PerformanceDegraded") == 0) {
+    g_autofree gchar *degraded = get_performance_degraded (data);
+    return g_variant_new_string (degraded);
+  }
   if (g_strcmp0 (property_name, "ActiveProfileHolds") == 0)
     return get_profile_holds_variant (data);
   return NULL;
@@ -789,13 +841,11 @@ bus_acquired_handler (GDBusConnection *connection,
 static gboolean
 has_required_drivers (PpdApp *data)
 {
-  PpdDriver *driver;
-
-  driver = GET_DRIVER (PPD_PROFILE_BALANCED);
-  if (!driver || !G_IS_OBJECT (driver))
+  if (!PPD_IS_DRIVER_CPU (data->cpu_driver) &&
+      !PPD_IS_DRIVER_PLATFORM(data->platform_driver))
     return FALSE;
-  driver = GET_DRIVER (PPD_PROFILE_POWER_SAVER);
-  if (!driver || !G_IS_OBJECT (driver))
+
+  if (!get_profile_available (data, PPD_PROFILE_BALANCED | PPD_PROFILE_POWER_SAVER))
     return FALSE;
 
   return TRUE;
@@ -817,13 +867,15 @@ stop_profile_drivers (PpdApp *data)
   release_all_profile_holds (data);
   g_ptr_array_set_size (data->probed_drivers, 0);
   g_ptr_array_set_size (data->actions, 0);
-  g_clear_object (&data->driver);
+  g_clear_object (&data->cpu_driver);
+  g_clear_object (&data->platform_driver);
 }
 
 static void
 start_profile_drivers (PpdApp *data)
 {
   guint i;
+  g_autoptr(GError) initial_error = NULL;
 
   for (i = 0; i < G_N_ELEMENTS (objects); i++) {
     GObject *object;
@@ -836,9 +888,16 @@ start_profile_drivers (PpdApp *data)
 
       g_debug ("Handling driver '%s'", ppd_driver_get_driver_name (driver));
 
-      if (data->driver != NULL) {
-        g_debug ("Driver '%s' already probed, skipping driver '%s'",
-                 ppd_driver_get_driver_name (data->driver),
+      if (PPD_IS_DRIVER_CPU (data->cpu_driver) && PPD_IS_DRIVER_CPU (driver)) {
+        g_debug ("CPU driver '%s' already probed, skipping driver '%s'",
+                 ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)),
+                 ppd_driver_get_driver_name (driver));
+        continue;
+      }
+
+      if (PPD_IS_DRIVER_PLATFORM(data->platform_driver) && PPD_IS_DRIVER_PLATFORM(driver)) {
+        g_debug ("Platform driver '%s' already probed, skipping driver '%s'",
+                 ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)),
                  ppd_driver_get_driver_name (driver));
         continue;
       }
@@ -865,7 +924,12 @@ start_profile_drivers (PpdApp *data)
         continue;
       }
 
-      data->driver = driver;
+      if (PPD_IS_DRIVER_CPU (driver))
+          data->cpu_driver = PPD_DRIVER_CPU(driver);
+      else if (PPD_IS_DRIVER_PLATFORM(driver))
+          data->platform_driver = PPD_DRIVER_PLATFORM(driver);
+      else
+          g_assert_not_reached ();
 
       g_signal_connect (G_OBJECT (driver), "notify::performance-degraded",
                         G_CALLBACK (driver_performance_degraded_changed_cb), data);
@@ -896,7 +960,8 @@ start_profile_drivers (PpdApp *data)
 
   /* Set initial state either from configuration, or using the currently selected profile */
   apply_configuration (data);
-  activate_target_profile (data, data->active_profile, PPD_PROFILE_ACTIVATION_REASON_RESET, NULL);
+  if (!activate_target_profile (data, data->active_profile, PPD_PROFILE_ACTIVATION_REASON_RESET, &initial_error))
+    g_warning("Failed to activate initial profile: %s", initial_error->message);
 
   send_dbus_event (data, PROP_ALL);
 
@@ -972,7 +1037,8 @@ free_app_data (PpdApp *data)
   g_clear_pointer (&data->config, g_key_file_unref);
   g_ptr_array_free (data->probed_drivers, TRUE);
   g_ptr_array_free (data->actions, TRUE);
-  g_clear_object (&data->driver);
+  g_clear_object (&data->cpu_driver);
+  g_clear_object (&data->platform_driver);
   g_hash_table_destroy (data->profile_holds);
 
   g_clear_object (&data->auth);

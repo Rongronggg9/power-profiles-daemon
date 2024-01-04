@@ -19,6 +19,8 @@ sources = [
   'ppd-utils.c',
   'ppd-action.c',
   'ppd-driver.c',
+  'ppd-driver-cpu.c',
+  'ppd-driver-platform.c',
   resources,
 ]
 

@@ -19,13 +19,7 @@
  * the whole system. A driver will need to implement support `power-saver`
  * and `balanced` at a minimum.
  *
- * If no system-specific driver is available, a placeholder driver
- * will be put in place, and the `performance` profile will be unavailable.
- *
- * There should not be a need to implement system-specific drivers, as the
- * [`platform_profile`](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/ABI/testing/sysfs-platform_profile)
- * kernel API offers a way to implement system-specific profiles which
- * `power-profiles-daemon` can consume.
+ * All drivers should be derived from either #PpdDriverCpu or #PpdDriverPlatform
  *
  * When a driver implements the `performance` profile, it might set the
  * #PpdDriver:performance-degraded property if the profile isn't running to
@@ -117,7 +111,6 @@ ppd_driver_finalize (GObject *object)
 
   priv = PPD_DRIVER_GET_PRIVATE (PPD_DRIVER (object));
   g_clear_pointer (&priv->driver_name, g_free);
-  g_clear_pointer (&priv->performance_degraded, g_free);
 
   G_OBJECT_CLASS (ppd_driver_parent_class)->finalize (object);
 }
@@ -191,9 +184,8 @@ ppd_driver_class_init (PpdDriverClass *klass)
                                                       PPD_TYPE_PROFILE,
                                                       0,
                                                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
   /**
-   * PpdDriver:performance-degraded:
+   * PpdPlatformDriver:performance-degraded:
    *
    * If set to a non-%NULL value, the reason why the performance profile is unavailable.
    * The value must be one of the options listed in the D-Bus API reference.

@@ -144,7 +144,11 @@ def _list():
             print('')
         marker = '*' if profile['Profile'] == active else ' '
         print(f'{marker} {profile["Profile"]}:')
-        print('    Driver:    ', profile['Driver'])
+        for driver in ['CpuDriver', 'PlatformDriver']:
+            if driver not in profile:
+                continue
+            value = profile[driver]
+            print(f'    {driver}:\t{value}')
         if profile['Profile'] == 'performance':
             print('    Degraded:  ', f'yes ({reason})' if degraded else 'no')
         index += 1

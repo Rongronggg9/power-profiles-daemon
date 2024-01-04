@@ -324,8 +324,8 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 2)
-      self.assertEqual(profiles[1]['Driver'], 'placeholder')
-      self.assertEqual(profiles[0]['Driver'], 'placeholder')
+      self.assertEqual(profiles[1]['PlatformDriver'], 'placeholder')
+      self.assertEqual(profiles[0]['PlatformDriver'], 'placeholder')
       self.assertEqual(profiles[1]['Profile'], 'balanced')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
 
@@ -354,6 +354,45 @@ class Tests(dbusmock.DBusTestCase):
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
       self.assertEqual(self.get_dbus_property('PerformanceInhibited'), '')
+
+    def test_multi_degredation(self):
+      '''Test handling of degradation from multiple drivers'''
+      self.create_dytc_device()
+      self.create_platform_profile()
+
+      # Create CPU with preference
+      dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
+      os.makedirs(dir1)
+      with open(os.path.join(dir1, 'scaling_governor'), 'w') as gov:
+        gov.write('powersave\n')
+      with open(os.path.join(dir1, "energy_performance_preference"), 'w') as prefs:
+        prefs.write("performance\n")
+
+      # Create Intel P-State configuration
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate")
+      os.makedirs(pstate_dir)
+      with open(os.path.join(pstate_dir, "no_turbo"), 'w') as no_turbo:
+        no_turbo.write("0\n")
+      with open(os.path.join(pstate_dir, "status"), 'w') as status:
+        status.write("active\n")
+
+      self.start_daemon()
+
+      # Set performance mode
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+
+      # Degraded CPU
+      with open(os.path.join(pstate_dir, "no_turbo"), 'w') as no_turbo:
+        no_turbo.write("1\n")
+      self.assertEventually(lambda: self.have_text_in_log('File monitor change happened for '))
+
+      self.assertEqual(self.get_dbus_property('PerformanceDegraded'), 'high-operating-temperature')
+
+      # Degraded DYTC
+      self.testbed.set_attribute(self.tp_acpi, 'dytc_lapmode', '1\n')
+      self.assertEventually(lambda: self.have_text_in_log('dytc_lapmode is now on'))
+      self.assertEqual(self.get_dbus_property('PerformanceDegraded'), 'high-operating-temperature,lap-detected')
 
     def test_degraded_transition(self):
       '''Test that transitions work as expected when degraded'''
@@ -408,7 +447,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
-      self.assertEqual(profiles[0]['Driver'], 'intel_pstate')
+      self.assertEqual(profiles[0]['CpuDriver'], 'intel_pstate')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
 
       contents = None
@@ -435,13 +474,14 @@ class Tests(dbusmock.DBusTestCase):
 
       self.stop_daemon()
 
-      # Verify that the Lenovo DYTC driver still gets preferred
+      # Verify that Lenovo DYTC and Intel P-State drivers are loaded
       self.create_platform_profile()
       self.start_daemon()
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
-      self.assertEqual(profiles[0]['Driver'], 'platform_profile')
+      self.assertEqual(profiles[0]['CpuDriver'], 'intel_pstate')
+      self.assertEqual(profiles[0]['PlatformDriver'], 'platform_profile')
 
     def test_intel_pstate_balance(self):
       '''Intel P-State driver (balance)'''
@@ -470,7 +510,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
-      self.assertEqual(profiles[0]['Driver'], 'intel_pstate')
+      self.assertEqual(profiles[0]['CpuDriver'], 'intel_pstate')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
 
       contents = None
@@ -545,7 +585,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 2)
-      self.assertEqual(profiles[0]['Driver'], 'placeholder')
+      self.assertEqual(profiles[0]['PlatformDriver'], 'placeholder')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
 
       contents = None
@@ -590,7 +630,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
-      self.assertEqual(profiles[0]['Driver'], 'intel_pstate')
+      self.assertEqual(profiles[0]['CpuDriver'], 'intel_pstate')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
 
       # Set power-saver mode
@@ -610,6 +650,83 @@ class Tests(dbusmock.DBusTestCase):
       with open(os.path.join(dir2, "energy_perf_bias"), 'rb') as f:
         contents = f.read()
       self.assertEqual(contents, b'0')
+
+      self.stop_daemon()
+
+    def test_multi_driver_flows(self):
+      '''Test corner cases associated with multiple drivers'''
+
+      # Create 2 CPUs with preferences
+      dir1 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/")
+      os.makedirs(dir1)
+      with open(os.path.join(dir1, 'scaling_governor'), 'w') as f:
+        f.write('powersave\n')
+      prefs1 = os.path.join(dir1, "energy_performance_preference")
+      with open(prefs1,'w') as f:
+        f.write("performance\n")
+
+      dir2 = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy1/")
+      os.makedirs(dir2)
+      with open(os.path.join(dir2, 'scaling_governor'), 'w') as f:
+        f.write('powersave\n')
+      prefs2 = os.path.join(dir2, "energy_performance_preference")
+      with open(prefs2,'w') as f:
+        f.write("performance\n")
+
+      # Create AMD P-State configuration
+      pstate_dir = os.path.join(self.testbed.get_root_dir(), "sys/devices/system/cpu/amd_pstate")
+      os.makedirs(pstate_dir)
+      with open(os.path.join(pstate_dir, "status"), 'w') as status:
+        status.write("active\n")
+
+      # create ACPI platform profile
+      self.create_platform_profile()
+      profile = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile")
+
+      # desktop PM profile
+      dir3 = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
+      os.makedirs(dir3, exist_ok=True)
+      with open(os.path.join(dir3, "pm_profile"), 'w') as pm_profile:
+         pm_profile.write("1\n")
+
+      self.start_daemon()
+
+      # Verify that both drivers are loaded
+      profiles = self.get_dbus_property('Profiles')
+      self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['CpuDriver'], 'amd_pstate')
+      self.assertEqual(profiles[0]['PlatformDriver'], 'platform_profile')
+
+      # test both drivers can switch to power-saver
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
+
+      # test both drivers can switch to performance
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
+
+      # test both drivers can switch to balanced
+      self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('balanced'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      # test when CPU driver fails to write
+      self.change_immutable(prefs1, True)
+      with self.assertRaises(gi.repository.GLib.GError):
+        self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+      self.assertEqual(self.read_sysfs_file("sys/firmware/acpi/platform_profile"), b'balanced')
+      self.change_immutable(prefs1, False)
+
+      # test when platform driver fails to write
+      self.change_immutable(profile, True)
+      with self.assertRaises(gi.repository.GLib.GError):
+        self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('power-saver'))
+      self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
+
+      # make sure CPU was undone since platform failed
+      self.assertEqual(self.read_sysfs_file("sys/devices/system/cpu/cpufreq/policy0/energy_performance_preference"), b'balance_performance')
+      self.assertEqual(self.read_sysfs_file("sys/devices/system/cpu/cpufreq/policy1/energy_performance_preference"), b'balance_performance')
+      self.change_immutable(profile, False)
 
       self.stop_daemon()
 
@@ -640,7 +757,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
-      self.assertEqual(profiles[0]['Driver'], 'amd_pstate')
+      self.assertEqual(profiles[0]['CpuDriver'], 'amd_pstate')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
 
       contents = None
@@ -658,14 +775,6 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEqual(contents, b'performance')
 
       self.stop_daemon()
-
-      # Verify that the Lenovo DYTC driver still gets preferred
-      self.create_platform_profile()
-      self.start_daemon()
-
-      profiles = self.get_dbus_property('Profiles')
-      self.assertEqual(len(profiles), 3)
-      self.assertEqual(profiles[0]['Driver'], 'platform_profile')
 
     def test_amd_pstate_balance(self):
       '''AMD P-State driver (balance)'''
@@ -694,7 +803,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
-      self.assertEqual(profiles[0]['Driver'], 'amd_pstate')
+      self.assertEqual(profiles[0]['CpuDriver'], 'amd_pstate')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
 
       contents = None
@@ -767,7 +876,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 2)
-      self.assertEqual(profiles[0]['Driver'], 'placeholder')
+      self.assertEqual(profiles[0]['PlatformDriver'], 'placeholder')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
 
       contents = None
@@ -795,9 +904,9 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
-      self.assertEqual(profiles[0]['Driver'], 'platform_profile')
+      self.assertEqual(profiles[0]['PlatformDriver'], 'platform_profile')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
-      self.assertEqual(profiles[2]['Driver'], 'platform_profile')
+      self.assertEqual(profiles[2]['PlatformDriver'], 'platform_profile')
       self.assertEqual(profiles[2]['Profile'], 'performance')
       self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'performance')
@@ -938,7 +1047,7 @@ class Tests(dbusmock.DBusTestCase):
       self.start_daemon()
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
-      self.assertEqual(profiles[0]['Driver'], 'platform_profile')
+      self.assertEqual(profiles[0]['PlatformDriver'], 'platform_profile')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
       self.assertEqual(self.read_sysfs_file("sys/firmware/acpi/platform_profile"), b'cool')
@@ -964,7 +1073,7 @@ class Tests(dbusmock.DBusTestCase):
       self.start_daemon()
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
-      self.assertEqual(profiles[0]['Driver'], 'platform_profile')
+      self.assertEqual(profiles[0]['PlatformDriver'], 'platform_profile')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
       self.assertEqual(self.read_sysfs_file("sys/firmware/acpi/platform_profile"), b'balanced')

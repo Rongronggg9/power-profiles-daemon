@@ -25,7 +25,7 @@
 
 struct _PpdDriverIntelPstate
 {
-  PpdDriver  parent_instance;
+  PpdDriverCpu  parent_instance;
 
   PpdProfile activated_profile;
   GList *epp_devices; /* GList of paths */
@@ -35,7 +35,7 @@ struct _PpdDriverIntelPstate
   char *no_turbo_path;
 };
 
-G_DEFINE_TYPE (PpdDriverIntelPstate, ppd_driver_intel_pstate, PPD_TYPE_DRIVER)
+G_DEFINE_TYPE(PpdDriverIntelPstate, ppd_driver_intel_pstate, PPD_TYPE_DRIVER_CPU)
 
 static gboolean ppd_driver_intel_pstate_activate_profile (PpdDriver                   *driver,
                                                           PpdProfile                   profile,

@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "ppd-driver.h"
+#include "ppd-driver-platform.h"
 
 #define PPD_TYPE_DRIVER_PLACEHOLDER (ppd_driver_placeholder_get_type())
-G_DECLARE_FINAL_TYPE(PpdDriverPlaceholder, ppd_driver_placeholder, PPD, DRIVER_PLACEHOLDER, PpdDriver)
+G_DECLARE_FINAL_TYPE(PpdDriverPlaceholder, ppd_driver_placeholder, PPD, DRIVER_PLACEHOLDER, PpdDriverPlatform)
