@@ -1,18 +1,17 @@
-power-profiles-daemon
-=====================
+# power-profiles-daemon
 
 Makes power profiles handling available over D-Bus.
 
-Installation
-------------
+## Installation
+
 ```sh
-$ meson _build -Dprefix=/usr
-$ ninja -v -C _build install
+meson setup _build -Dprefix=/usr
+ninja -C _build install
 ```
+
 It requires libgudev, systemd and polkit-gobject.
 
-Introduction
-------------
+## Introduction
 
 power-profiles-daemon offers to modify system behaviour based upon user-selected
 power profiles. There are 3 different power profiles, a "balanced" default mode,
@@ -30,8 +29,7 @@ they are also expected to adjust the behaviour of the desktop depending on the m
 such as turning the screen off after inaction more aggressively when in power-saver
 mode.
 
-How to use
-----------
+## How to use
 
 There are interfaces to switch profiles in the latest versions of KDE and GNOME. Those
 desktops also include more thorough integration with its low-power mode. Please check
@@ -44,6 +42,7 @@ or the power-saver profile.
 
 For example, this will be useful to avoid manual switching profiles while compiling
 large projects:
+
 ```sh
 powerprofilesctl launch make
 ```
@@ -52,8 +51,7 @@ If you're a developer, you might also want to use GLib's [`GPowerProfileMonitor`
 through C, or one of its bindings, so your application can react to the user requesting
 a low-power mode.
 
-Conflicts
----------
+## Conflicts
 
 If `power-profiles-daemon` refuses to start, it's likely that you have [a conflicting
 service installed and running](data/power-profiles-daemon.service.in#L3), or your
@@ -65,8 +63,7 @@ systemctl unmask power-profiles-daemon.service
 systemctl start power-profiles-daemon.service
 ```
 
-Debugging
----------
+## Debugging
 
 You can now check which mode is in use, and which ones are available by running:
 
@@ -86,7 +83,7 @@ reboot in `/var/lib/power-profiles-daemon/state.ini`.
 
 Those commands are also available through the D-Bus interface:
 
-```
+```sh
 gdbus introspect --system --dest net.hadess.PowerProfiles --object-path /net/hadess/PowerProfiles
 gdbus call --system --dest net.hadess.PowerProfiles --object-path /net/hadess/PowerProfiles --method org.freedesktop.DBus.Properties.Set 'net.hadess.PowerProfiles' 'ActiveProfile' "<'power-saver'>"
 ```
@@ -97,8 +94,7 @@ If that doesn't work, please file an issue, attach the output of:
 sudo G_MESSAGES_DEBUG=all /usr/libexec/power-profiles-daemon -r -v
 ```
 
-Operations on Intel-based machines
-----------------------------------
+## Operations on Intel-based machines
 
 The "driver" for making the hardware act on the user-selected power profile on Intel
 CPU-based machines is based on the [Intel P-State scaling driver](https://www.kernel.org/doc/html/v5.17/admin-guide/pm/intel_pstate.html)
@@ -109,7 +105,8 @@ CPU supports either hardware-managed P-states (HWP) or Energy Performance Bias (
 
 Example of a system without `platform_profile support` but with `active` P-State
 operation mode:
-```
+
+```sh
 $ cat /sys/firmware/acpi/platform_profile_choices
 cat: /sys/firmware/acpi/platform_profile_choices: No such file or directory
 $ cat /sys/devices/system/cpu/intel_pstate/status
@@ -117,13 +114,14 @@ active
 ```
 
 Example of a system with `EPB` support:
-```
+
+```sh
 $ cat /sys/devices/system/cpu/cpu0/power/energy_perf_bias
 0
 ```
 
 If the Intel P-State scaling driver is in `passive` mode, either because the system doesn't
-support HWP, or the administator has disabled it, and `EPB` isn't available, then the
+support HWP, or the administrator has disabled it, and `EPB` isn't available, then the
 placeholder driver will be used, and there won't be a performance mode.
 
 Finally, if the Intel P-State scaling driver is used in `active` mode, the P-State
@@ -134,8 +132,7 @@ ie. the only P-State scaling governor that allows HWP to work.
 For more information, please refer to the [Intel P-State scaling driver documentation](https://www.kernel.org/doc/html/v5.17/admin-guide/pm/intel_pstate.html)
 and the [Intel Performance and Energy Bias Hint](https://www.kernel.org/doc/html/v5.17/admin-guide/pm/intel_epb.html).
 
-Operations on AMD-based machines
-----------------------------------
+## Operations on AMD-based machines
 
 The "driver" for making the hardware act on the user-selected power profile on AMD CPU-based
 machines is based on the [AMD P-State scaling driver](https://www.kernel.org/doc/html/v6.3/admin-guide/pm/amd-pstate.html)
@@ -147,7 +144,8 @@ scaling driver is in `active` mode.
 
 Example of a system without `platform_profile` support but with `active` P-State
 operation mode:
-```
+
+```sh
 $ cat /sys/firmware/acpi/platform_profile_choices
 cat: /sys/firmware/acpi/platform_profile_choices: No such file or directory
 $ cat /sys/devices/system/cpu/amd_pstate/status
@@ -163,8 +161,7 @@ governor that allows for the "Energy vs Performance Hints" to be taken into cons
 
 For more information, please refer to the [AMD P-State scaling driver documentation](https://www.kernel.org/doc/html/v6.3/admin-guide/pm/amd-pstate.html).
 
-Testing
--------
+## Testing
 
 If you don't have hardware that can support the performance mode, or the degraded mode
 you can manually run the `power-profiles-daemon` binary as `root` with the environment
@@ -174,8 +171,7 @@ variable `POWER_PROFILE_DAEMON_FAKE_DRIVER` set to 1. For example:
 sudo POWER_PROFILE_DAEMON_FAKE_DRIVER=1 /usr/libexec/power-profiles-daemon -r -v
 ```
 
-References
-----------
+## References
 
 - [Use Low Power Mode to save battery life on your iPhone (iOS)](https://support.apple.com/en-us/HT205234)
 - [lowPowerModeEnabled (iOS)](https://developer.apple.com/documentation/foundation/nsprocessinfo/1617047-lowpowermodeenabled?language=objc)
@@ -183,8 +179,7 @@ References
 - [[S]ettings that use less battery (Android)](https://support.google.com/android/answer/7664692?hl=en&visit_id=637297348326801871-2263015427&rd=1)
 - [EnergySaverStatus Enum (Windows)](https://docs.microsoft.com/en-us/uwp/api/windows.system.power.energysaverstatus?view=winrt-19041)
 
-Why power-profiles-daemon
--------------------------
+## Why power-profiles-daemon
 
 The power-profiles-daemon project was created to help provide a solution for
 two separate use cases, for desktops, laptops, and other devices running a
@@ -208,8 +203,7 @@ and make its API available over D-Bus, as has been customary for more than
 10 years. We would also design that API to be as easily usable to build
 graphical interfaces as possible.
 
-Why not...
-----------
+## Why not
 
 This section will contain explanations of why this new daemon was written
 rather than re-using, or modifying an existing one. Each project obviously
@@ -251,6 +245,7 @@ of goes against a user's wishes as a user might still want to conserve as
 much energy as possible under high-CPU usage.
 
 ### [slimbookbattery](https://launchpad.net/~slimbook)
+
 This is **not** free software (*Source code available but not modifiable
 without express authorization.*). The application does a lot of things in
 addition to the "3 profiles" selection:
