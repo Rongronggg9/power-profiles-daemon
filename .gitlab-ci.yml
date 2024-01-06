@@ -1,6 +1,8 @@
 image: fedora:rawhide
 
 variables:
+  PRECOMMIT: pre-commit
+             git
   DEPENDENCIES: gcc
                 gcovr
                 gtk-doc
@@ -24,6 +26,13 @@ workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_PIPELINE_SOURCE == 'push'
+
+pre_commit:
+  before_script:
+    - dnf update -y
+    - if [ -x /bin/dnf ]; then dnf install -y $PRECOMMIT; else dnf5 install -y $PRECOMMIT; fi
+  script:
+    - pre-commit run --all-files
 
 build_stable:
   before_script:
