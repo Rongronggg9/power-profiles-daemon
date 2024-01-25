@@ -320,6 +320,12 @@ class Tests(dbusmock.DBusTestCase):
             ["DEVPATH", "/devices/platform/thinkpad_acpi"],
         )
 
+    def create_amd_apu(self):
+        proc_dir = os.path.join(self.testbed.get_root_dir(), "proc/")
+        os.makedirs(proc_dir)
+        with open(os.path.join(proc_dir, "cpuinfo"), "w", encoding="ASCII") as cpu:
+            cpu.write("vendor_id	: AuthenticAMD\n")
+
     def create_empty_platform_profile(self):
         acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
         os.makedirs(acpi_dir)
@@ -1357,6 +1363,56 @@ class Tests(dbusmock.DBusTestCase):
         self.start_daemon()
         profiles = self.get_dbus_property("Profiles")
         self.assertEqual(len(profiles), 2)
+
+    def test_amdgpu_panel_power(self):
+        """Verify AMDGPU Panel power actions"""
+        edp = self.testbed.add_device(
+            "drm",
+            "card1-eDP",
+            None,
+            ["amdgpu/panel_power_savings", "0"],
+            ["DEVTYPE", "drm_connector"],
+        )
+
+        self.create_amd_apu()
+
+        self.start_daemon()
+
+        self.assertIn("amdgpu_panel_power", self.get_dbus_property("Actions"))
+
+        # verify it hasn't been updated yet due to missing upower
+        self.assertEqual(self.read_sysfs_attr(edp, "amdgpu/panel_power_savings"), b"0")
+
+        # start upower and try again
+        self.stop_daemon()
+        self.spawn_server_template(
+            "upower",
+            {"DaemonVersion": "0.99", "OnBattery": True},
+            stdout=subprocess.PIPE,
+        )
+        self.start_daemon()
+
+        # verify balanced updated it
+        self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("balanced"))
+        self.assertEqual(self.read_sysfs_attr(edp, "amdgpu/panel_power_savings"), b"3")
+
+        # verify power saver updated it
+        self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("power-saver"))
+        self.assertEqual(self.read_sysfs_attr(edp, "amdgpu/panel_power_savings"), b"4")
+
+        # add another device that supports the feature
+        edp2 = self.testbed.add_device(
+            "drm",
+            "card2-eDP",
+            None,
+            ["amdgpu/panel_power_savings", "0"],
+            ["DEVTYPE", "drm_connector"],
+        )
+
+        # verify power saver got updated for it
+        self.assert_eventually(
+            lambda: self.read_sysfs_attr(edp2, "amdgpu/panel_power_savings") == b"4"
+        )
 
     def test_trickle_charge_system(self):
         """Trickle power_supply charge type"""

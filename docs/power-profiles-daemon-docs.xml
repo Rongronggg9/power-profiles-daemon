@@ -73,6 +73,7 @@
     <xi:include href="xml/ppd-driver-cpu.xml"/>
     <xi:include href="xml/ppd-driver-platform.xml"/>
     <xi:include href="xml/ppd-action.xml"/>
+    <xi:include href="xml/ppd-action-amdgpu-panel-power.xml"/>
   </reference>
 
   <index>

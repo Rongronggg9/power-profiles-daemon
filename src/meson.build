@@ -83,6 +83,7 @@ libpower_profiles_daemon_dep = declare_dependency(
 sources += [
   'power-profiles-daemon.c',
   'ppd-action-trickle-charge.c',
+  'ppd-action-amdgpu-panel-power.c',
   'ppd-driver-intel-pstate.c',
   'ppd-driver-amd-pstate.c',
   'ppd-driver-platform-profile.c',

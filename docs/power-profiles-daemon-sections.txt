@@ -15,6 +15,15 @@ PPD_TYPE_ACTION
 </SECTION>
 
 <SECTION>
+<FILE>ppd-action-amdgpu-panel-power</FILE>
+<TITLE>AMDGPU Power Panel Saving Action</TITLE>
+PpdActionAmdgpuPanelPowerClass
+_PpdActionAmdgpuPanelPower
+<SUBSECTION Private>
+PPD_TYPE_ACTION
+</SECTION>
+
+<SECTION>
 <FILE>ppd-driver</FILE>
 <TITLE>Profile Drivers</TITLE>
 PpdDriverClass

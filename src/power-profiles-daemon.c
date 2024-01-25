@@ -89,6 +89,7 @@ static void start_profile_drivers (PpdApp *data);
 
 /* profile drivers and actions */
 #include "ppd-action-trickle-charge.h"
+#include "ppd-action-amdgpu-panel-power.h"
 #include "ppd-driver-placeholder.h"
 #include "ppd-driver-platform-profile.h"
 #include "ppd-driver-intel-pstate.h"
@@ -109,6 +110,7 @@ static GTypeGetFunc objects[] = {
 
   /* Actions */
   ppd_action_trickle_charge_get_type,
+  ppd_action_amdgpu_panel_power_get_type,
 };
 
 typedef enum {
