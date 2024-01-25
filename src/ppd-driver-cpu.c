@@ -43,4 +43,3 @@ static void
 ppd_driver_cpu_init (PpdDriverCpu *self)
 {
 }
-

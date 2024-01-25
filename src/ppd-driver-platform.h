@@ -25,5 +25,3 @@ struct _PpdDriverPlatformClass
 {
   PpdDriverClass   parent_class;
 };
-
-
