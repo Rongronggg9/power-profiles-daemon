@@ -189,8 +189,11 @@ def _launch(args, profile, appid, reason):
 
     # print (f'Got {cookie} for {profile} hold')
     with subprocess.Popen(args) as launched_app:
-        launched_app.wait()
-        ret = launched_app.returncode
+        try:
+            launched_app.wait()
+            ret = launched_app.returncode
+        except KeyboardInterrupt:
+            ret = launched_app.returncode
     proxy.ReleaseProfile('(u)', cookie)
 
     return ret
