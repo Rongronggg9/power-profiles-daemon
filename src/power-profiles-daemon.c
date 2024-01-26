@@ -158,6 +158,8 @@ get_profiles_variant (PpdApp *data)
     PpdDriver *cpu_driver = PPD_DRIVER (data->cpu_driver);
     PpdProfile profile = 1 << i;
     GVariantBuilder asv_builder;
+    gboolean cpu, platform;
+    const gchar *driver = NULL;
 
     /* check if any of the drivers support */
     if (!get_profile_available (data, profile))
@@ -166,12 +168,26 @@ get_profiles_variant (PpdApp *data)
     g_variant_builder_init (&asv_builder, G_VARIANT_TYPE ("a{sv}"));
     g_variant_builder_add (&asv_builder, "{sv}", "Profile",
                            g_variant_new_string (ppd_profile_to_str (profile)));
-    if (driver_profile_support (cpu_driver, profile))
+    cpu = driver_profile_support (cpu_driver, profile);
+    platform = driver_profile_support (platform_driver, profile);
+    if (cpu)
       g_variant_builder_add (&asv_builder, "{sv}", "CpuDriver",
                              g_variant_new_string (ppd_driver_get_driver_name (cpu_driver)));
-    if (driver_profile_support (PPD_DRIVER (data->platform_driver), profile))
+    if (platform)
       g_variant_builder_add (&asv_builder, "{sv}", "PlatformDriver",
                              g_variant_new_string (ppd_driver_get_driver_name (platform_driver)));
+
+    /* compatibility with older API */
+    if (cpu && platform)
+      driver = "multiple";
+    else if (cpu)
+      driver = ppd_driver_get_driver_name (cpu_driver);
+    else if (platform)
+      driver = ppd_driver_get_driver_name (platform_driver);
+
+    if (driver)
+      g_variant_builder_add (&asv_builder, "{sv}", "Driver",
+                             g_variant_new_string (driver));
 
     g_variant_builder_add (&builder, "a{sv}", &asv_builder);
   }

@@ -325,6 +325,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 2)
+      self.assertEqual(profiles[1]['Driver'], 'placeholder')
       self.assertEqual(profiles[1]['PlatformDriver'], 'placeholder')
       self.assertEqual(profiles[0]['PlatformDriver'], 'placeholder')
       self.assertEqual(profiles[1]['Profile'], 'balanced')
@@ -448,6 +449,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'multiple')
       self.assertEqual(profiles[0]['CpuDriver'], 'intel_pstate')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
 
@@ -481,6 +483,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'multiple')
       self.assertEqual(profiles[0]['CpuDriver'], 'intel_pstate')
       self.assertEqual(profiles[0]['PlatformDriver'], 'platform_profile')
 
@@ -511,6 +514,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'multiple')
       self.assertEqual(profiles[0]['CpuDriver'], 'intel_pstate')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
 
@@ -586,6 +590,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 2)
+      self.assertEqual(profiles[0]['Driver'], 'placeholder')
       self.assertEqual(profiles[0]['PlatformDriver'], 'placeholder')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
 
@@ -631,7 +636,9 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'multiple')
       self.assertEqual(profiles[0]['CpuDriver'], 'intel_pstate')
+      self.assertEqual(profiles[0]['PlatformDriver'], 'placeholder')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
 
       # Set power-saver mode
@@ -696,6 +703,7 @@ class Tests(dbusmock.DBusTestCase):
       self.start_daemon()
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'multiple')
       self.assertEqual(profiles[0]['CpuDriver'], 'amd_pstate')
       self.assertEqual(profiles[0]['PlatformDriver'], 'placeholder')
 
@@ -751,6 +759,7 @@ class Tests(dbusmock.DBusTestCase):
       # Verify that both drivers are loaded
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'multiple')
       self.assertEqual(profiles[0]['CpuDriver'], 'amd_pstate')
       self.assertEqual(profiles[0]['PlatformDriver'], 'platform_profile')
 
@@ -820,6 +829,8 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
+
+      self.assertEqual(profiles[0]['Driver'], 'multiple')
       self.assertEqual(profiles[0]['CpuDriver'], 'amd_pstate')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
 
@@ -888,6 +899,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'multiple')
       self.assertEqual(profiles[0]['CpuDriver'], 'amd_pstate')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
 
@@ -977,6 +989,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 2)
+      self.assertEqual(profiles[0]['Driver'], 'placeholder')
       self.assertEqual(profiles[0]['PlatformDriver'], 'placeholder')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
 
@@ -1041,6 +1054,7 @@ class Tests(dbusmock.DBusTestCase):
 
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'platform_profile')
       self.assertEqual(profiles[0]['PlatformDriver'], 'platform_profile')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
       self.assertEqual(profiles[2]['PlatformDriver'], 'platform_profile')
@@ -1184,6 +1198,7 @@ class Tests(dbusmock.DBusTestCase):
       self.start_daemon()
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'platform_profile')
       self.assertEqual(profiles[0]['PlatformDriver'], 'platform_profile')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
@@ -1210,6 +1225,7 @@ class Tests(dbusmock.DBusTestCase):
       self.start_daemon()
       profiles = self.get_dbus_property('Profiles')
       self.assertEqual(len(profiles), 3)
+      self.assertEqual(profiles[0]['Driver'], 'platform_profile')
       self.assertEqual(profiles[0]['PlatformDriver'], 'platform_profile')
       self.assertEqual(profiles[0]['Profile'], 'power-saver')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'balanced')
