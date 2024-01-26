@@ -170,6 +170,7 @@ def _list_holds():
         index += 1
 
 def _launch(args, profile, appid, reason):
+    ret = 0
     try:
         bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
         proxy = Gio.DBusProxy.new_sync(bus, Gio.DBusProxyFlags.NONE, None,
@@ -189,7 +190,10 @@ def _launch(args, profile, appid, reason):
     # print (f'Got {cookie} for {profile} hold')
     with subprocess.Popen(args) as launched_app:
         launched_app.wait()
+        ret = launched_app.returncode
     proxy.ReleaseProfile('(u)', cookie)
+
+    return ret
 
 def main(): # pylint: disable=too-many-branches, disable=too-many-statements
     args = None
@@ -277,7 +281,8 @@ def main(): # pylint: disable=too-many-branches, disable=too-many-statements
         if not profile:
             profile = 'performance'
         try:
-            _launch(args, profile, appid, reason)
+            ret = _launch(args, profile, appid, reason)
+            sys.exit(ret)
         except GLib.Error as error:
             sys.stderr.write(f'Failed to communicate with power-profiles-daemon: {format(error)}\n')
             sys.exit(1)
