@@ -977,6 +977,21 @@ stop_profile_drivers (PpdApp *data)
 }
 
 static gboolean
+action_blocked (PpdAction *action)
+{
+  const gchar *action_name = ppd_action_get_action_name (action);
+  const gchar *env = g_getenv ("POWER_PROFILE_DAEMON_ACTION_BLOCK");
+
+  if (env == NULL)
+    return FALSE;
+
+  g_auto(GStrv) actions = NULL;
+
+  actions = g_strsplit (env, ",", -1);
+  return g_strv_contains ((const gchar *const *)actions, action_name);
+}
+
+static gboolean
 driver_blocked (PpdDriver *driver)
 {
   const gchar *driver_name = ppd_driver_get_driver_name (driver);
@@ -1062,6 +1077,11 @@ start_profile_drivers (PpdApp *data)
       PpdAction *action = PPD_ACTION (object);
 
       g_debug ("Handling action '%s'", ppd_action_get_action_name (action));
+
+      if (action_blocked (action)) {
+        g_debug ("Action '%s' is blocked, skipping", ppd_action_get_action_name (action));
+        continue;
+      }
 
       if (ppd_action_probe (action) == PPD_PROBE_RESULT_FAIL) {
         g_debug ("probe () failed for action '%s', skipping",

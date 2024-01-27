@@ -809,6 +809,29 @@ class Tests(dbusmock.DBusTestCase):
 
         self.stop_daemon()
 
+    def test_action_blocklist(self):
+        """Test action blocklist works"""
+        self.testbed.add_device(
+            "drm",
+            "card1-eDP",
+            None,
+            ["amdgpu/panel_power_savings", "0"],
+            ["DEVTYPE", "drm_connector"],
+        )
+
+        self.create_amd_apu()
+
+        self.spawn_server_template(
+            "upower",
+            {"DaemonVersion": "0.99", "OnBattery": False},
+            stdout=subprocess.PIPE,
+        )
+
+        # Block panel_power action
+        os.environ["POWER_PROFILE_DAEMON_ACTION_BLOCK"] = "amdgpu_panel_power"
+        self.start_daemon()
+        self.assertNotIn("amdgpu_panel_power", self.get_dbus_property("Actions"))
+
     def test_driver_blocklist(self):
         """Test driver blocklist works"""
         # Create 2 CPUs with preferences
