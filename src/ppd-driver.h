@@ -16,24 +16,6 @@
 G_DECLARE_DERIVABLE_TYPE (PpdDriver, ppd_driver, PPD, DRIVER, GObject)
 
 /**
- * PpdProbeResult:
- * @PPD_PROBE_RESULT_UNSET: unset
- * @PPD_PROBE_RESULT_DEFER: driver should be kept alive, as kernel
- *   support might appear.
- * @PPD_PROBE_RESULT_FAIL: driver failed to load.
- * @PPD_PROBE_RESULT_SUCCESS: driver successfully loaded.
- *
- * Those are the three possible values returned by a driver probe,
- * along with an unset value for convenience.
- */
-typedef enum {
-  PPD_PROBE_RESULT_UNSET = -2,
-  PPD_PROBE_RESULT_DEFER = -1,
-  PPD_PROBE_RESULT_FAIL = 0,
-  PPD_PROBE_RESULT_SUCCESS = 1
-} PpdProbeResult;
-
-/**
  * PpdProfileActivationReason:
  * @PPD_PROFILE_ACTIVATION_REASON_INTERNAL: the driver profile changed
  *   internally, usually because of a key combination.

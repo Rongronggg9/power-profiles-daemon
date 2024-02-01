@@ -28,7 +28,7 @@ struct _PpdActionClass
 {
   GObjectClass   parent_class;
 
-  gboolean       (* probe)            (PpdAction  *action);
+  PpdProbeResult (* probe)            (PpdAction  *action);
   gboolean       (* activate_profile) (PpdAction  *action,
                                        PpdProfile  profile,
                                        GError    **error);
