@@ -922,18 +922,15 @@ stop_profile_drivers (PpdApp *data)
 static gboolean
 driver_blocked (PpdDriver *driver)
 {
-  guint i;
   const gchar *driver_name = ppd_driver_get_driver_name (driver);
   const gchar *env = g_getenv ("POWER_PROFILE_DAEMON_DRIVER_BLOCK");
-  g_autofree gchar **drivers = NULL;
+
   if (env == NULL)
     return FALSE;
+
+  g_auto(GStrv) drivers = NULL;
   drivers = g_strsplit (env, ",", -1);
-  for (i = 0; drivers[i] != NULL; i++) {
-    if (g_strcmp0 (drivers[i], driver_name) == 0)
-      return TRUE;
-  }
-  return FALSE;
+  return g_strv_contains ((const char **) drivers, driver_name);
 }
 
 static void
