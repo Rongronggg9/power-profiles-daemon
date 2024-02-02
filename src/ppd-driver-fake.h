@@ -11,5 +11,5 @@
 
 #include "ppd-driver-platform.h"
 
-#define PPD_TYPE_DRIVER_FAKE (ppd_driver_fake_get_type())
-G_DECLARE_FINAL_TYPE(PpdDriverFake, ppd_driver_fake, PPD, DRIVER_FAKE, PpdDriverPlatform)
+#define PPD_TYPE_DRIVER_FAKE (ppd_driver_fake_get_type ())
+G_DECLARE_FINAL_TYPE (PpdDriverFake, ppd_driver_fake, PPD, DRIVER_FAKE, PpdDriverPlatform)

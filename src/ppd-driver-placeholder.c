@@ -14,7 +14,7 @@ struct _PpdDriverPlaceholder
   PpdDriverPlatform  parent_instance;
 };
 
-G_DEFINE_TYPE(PpdDriverPlaceholder, ppd_driver_placeholder, PPD_TYPE_DRIVER_PLATFORM)
+G_DEFINE_TYPE (PpdDriverPlaceholder, ppd_driver_placeholder, PPD_TYPE_DRIVER_PLATFORM)
 
 static GObject*
 ppd_driver_placeholder_constructor (GType                  type,
@@ -39,7 +39,7 @@ ppd_driver_placeholder_class_init (PpdDriverPlaceholderClass *klass)
 {
   GObjectClass *object_class;
 
-  object_class = G_OBJECT_CLASS(klass);
+  object_class = G_OBJECT_CLASS (klass);
   object_class->constructor = ppd_driver_placeholder_constructor;
 }
 

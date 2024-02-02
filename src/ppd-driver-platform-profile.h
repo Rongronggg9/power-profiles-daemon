@@ -11,5 +11,5 @@
 
 #include "ppd-driver-platform.h"
 
-#define PPD_TYPE_DRIVER_PLATFORM_PROFILE (ppd_driver_platform_profile_get_type())
-G_DECLARE_FINAL_TYPE(PpdDriverPlatformProfile, ppd_driver_platform_profile, PPD, DRIVER_PLATFORM_PROFILE, PpdDriverPlatform)
+#define PPD_TYPE_DRIVER_PLATFORM_PROFILE (ppd_driver_platform_profile_get_type ())
+G_DECLARE_FINAL_TYPE (PpdDriverPlatformProfile, ppd_driver_platform_profile, PPD, DRIVER_PLATFORM_PROFILE, PpdDriverPlatform)

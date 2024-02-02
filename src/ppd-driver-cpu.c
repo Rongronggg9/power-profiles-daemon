@@ -22,7 +22,7 @@
  * to match the desired platform state.
  */
 
-G_DEFINE_TYPE(PpdDriverCpu, ppd_driver_cpu, PPD_TYPE_DRIVER)
+G_DEFINE_TYPE (PpdDriverCpu, ppd_driver_cpu, PPD_TYPE_DRIVER)
 
 static void
 ppd_driver_cpu_finalize (GObject *object)
@@ -35,7 +35,7 @@ ppd_driver_cpu_class_init (PpdDriverCpuClass *klass)
 {
   GObjectClass *object_class;
 
-  object_class = G_OBJECT_CLASS(klass);
+  object_class = G_OBJECT_CLASS (klass);
   object_class->finalize = ppd_driver_cpu_finalize;
 }
 

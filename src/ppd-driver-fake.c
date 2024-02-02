@@ -27,7 +27,7 @@ struct _PpdDriverFake
   gboolean degraded;
 };
 
-G_DEFINE_TYPE(PpdDriverFake, ppd_driver_fake, PPD_TYPE_DRIVER_PLATFORM)
+G_DEFINE_TYPE (PpdDriverFake, ppd_driver_fake, PPD_TYPE_DRIVER_PLATFORM)
 
 static GObject*
 ppd_driver_fake_constructor (GType                  type,
@@ -107,10 +107,10 @@ setup_keyboard (PpdDriverFake *fake)
 {
   struct termios new_tio;
 
-  tcgetattr(STDIN_FILENO, &fake->old_tio);
+  tcgetattr (STDIN_FILENO, &fake->old_tio);
   new_tio = fake->old_tio;
   new_tio.c_lflag &=(~ICANON & ~ECHO);
-  tcsetattr(STDIN_FILENO, TCSANOW, &new_tio);
+  tcsetattr (STDIN_FILENO, TCSANOW, &new_tio);
 
   fake->channel = g_io_channel_unix_new (STDIN_FILENO);
   if (!fake->channel) {
@@ -180,7 +180,7 @@ ppd_driver_fake_finalize (GObject *object)
   g_clear_pointer (&fake->channel, g_io_channel_unref);
   g_clear_handle_id (&fake->watch_id, g_source_remove);
   if (fake->tio_set)
-    tcsetattr(STDIN_FILENO, TCSANOW, &fake->old_tio);
+    tcsetattr (STDIN_FILENO, TCSANOW, &fake->old_tio);
   G_OBJECT_CLASS (ppd_driver_fake_parent_class)->finalize (object);
 }
 
@@ -190,11 +190,11 @@ ppd_driver_fake_class_init (PpdDriverFakeClass *klass)
   GObjectClass *object_class;
   PpdDriverClass *driver_class;
 
-  object_class = G_OBJECT_CLASS(klass);
+  object_class = G_OBJECT_CLASS (klass);
   object_class->constructor = ppd_driver_fake_constructor;
   object_class->finalize = ppd_driver_fake_finalize;
 
-  driver_class = PPD_DRIVER_CLASS(klass);
+  driver_class = PPD_DRIVER_CLASS (klass);
   driver_class->probe = ppd_driver_fake_probe;
   driver_class->activate_profile = ppd_driver_fake_activate_profile;
 }

@@ -32,7 +32,7 @@ struct _PpdDriverPlatformProfile
   guint acpi_platform_profile_changed_id;
 };
 
-G_DEFINE_TYPE(PpdDriverPlatformProfile, ppd_driver_platform_profile, PPD_TYPE_DRIVER_PLATFORM)
+G_DEFINE_TYPE (PpdDriverPlatformProfile, ppd_driver_platform_profile, PPD_TYPE_DRIVER_PLATFORM)
 
 static GObject*
 ppd_driver_platform_profile_constructor (GType                  type,
@@ -345,11 +345,11 @@ ppd_driver_platform_profile_class_init (PpdDriverPlatformProfileClass *klass)
   GObjectClass *object_class;
   PpdDriverClass *driver_class;
 
-  object_class = G_OBJECT_CLASS(klass);
+  object_class = G_OBJECT_CLASS (klass);
   object_class->constructor = ppd_driver_platform_profile_constructor;
   object_class->finalize = ppd_driver_platform_profile_finalize;
 
-  driver_class = PPD_DRIVER_CLASS(klass);
+  driver_class = PPD_DRIVER_CLASS (klass);
   driver_class->probe = ppd_driver_platform_profile_probe;
   driver_class->activate_profile = ppd_driver_platform_profile_activate_profile;
 }

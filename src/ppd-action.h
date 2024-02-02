@@ -12,8 +12,8 @@
 #include <glib-object.h>
 #include "ppd-profile.h"
 
-#define PPD_TYPE_ACTION (ppd_action_get_type())
-G_DECLARE_DERIVABLE_TYPE(PpdAction, ppd_action, PPD, ACTION, GObject)
+#define PPD_TYPE_ACTION (ppd_action_get_type ())
+G_DECLARE_DERIVABLE_TYPE (PpdAction, ppd_action, PPD, ACTION, GObject)
 
 /**
  * PpdActionClass:

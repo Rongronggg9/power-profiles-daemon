@@ -62,7 +62,7 @@ ppd_action_set_property (GObject        *object,
     priv->action_name = g_value_dup_string (value);
     break;
   default:
-    G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
 }
 
@@ -80,7 +80,7 @@ ppd_action_get_property (GObject        *object,
     g_value_set_string (value, priv->action_name);
     break;
   default:
-    G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
 }
 
@@ -100,7 +100,7 @@ ppd_action_class_init (PpdActionClass *klass)
 {
   GObjectClass *object_class;
 
-  object_class = G_OBJECT_CLASS(klass);
+  object_class = G_OBJECT_CLASS (klass);
   object_class->finalize = ppd_action_finalize;
   object_class->get_property = ppd_action_get_property;
   object_class->set_property = ppd_action_set_property;
@@ -111,7 +111,7 @@ ppd_action_class_init (PpdActionClass *klass)
    * A unique action name, only used for debugging.
    */
   g_object_class_install_property (object_class, PROP_ACTION_NAME,
-                                   g_param_spec_string("action-name",
+                                   g_param_spec_string ("action-name",
                                                        "Action name",
                                                        "Action name",
                                                        NULL,

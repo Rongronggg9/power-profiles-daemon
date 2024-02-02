@@ -11,15 +11,15 @@
 
 #include "ppd-driver.h"
 
-#define PPD_TYPE_DRIVER_PLATFORM (ppd_driver_platform_get_type())
-G_DECLARE_DERIVABLE_TYPE(PpdDriverPlatform, ppd_driver_platform, PPD, DRIVER_PLATFORM, PpdDriver)
+#define PPD_TYPE_DRIVER_PLATFORM (ppd_driver_platform_get_type ())
+G_DECLARE_DERIVABLE_TYPE (PpdDriverPlatform, ppd_driver_platform, PPD, DRIVER_PLATFORM, PpdDriver)
 
 /**
  * PpdDriverPlatformClass:
  * @parent_class: The parent class.
  *
  * New Platform drivers should derive from #PpdDriverPlatform and implement
- * at least one of @probe() and @activate_profile.
+ * at least one of @probe () and @activate_profile.
  */
 struct _PpdDriverPlatformClass
 {

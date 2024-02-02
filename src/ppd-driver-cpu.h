@@ -11,15 +11,15 @@
 
 #include "ppd-driver.h"
 
-#define PPD_TYPE_DRIVER_CPU (ppd_driver_cpu_get_type())
-G_DECLARE_DERIVABLE_TYPE(PpdDriverCpu, ppd_driver_cpu, PPD, DRIVER_CPU, PpdDriver)
+#define PPD_TYPE_DRIVER_CPU (ppd_driver_cpu_get_type ())
+G_DECLARE_DERIVABLE_TYPE (PpdDriverCpu, ppd_driver_cpu, PPD, DRIVER_CPU, PpdDriver)
 
 /**
  * PpdDriverCpuClass:
  * @parent_class: The parent class.
  *
  * New CPU drivers should derive from #PpdDriverCpu and implement
- * both @probe() and @activate_profile.
+ * both @probe () and @activate_profile.
  */
 struct _PpdDriverCpuClass
 {

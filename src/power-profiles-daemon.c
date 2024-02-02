@@ -306,7 +306,7 @@ save_configuration (PpdApp *data)
 
   if (PPD_IS_DRIVER_CPU (data->cpu_driver))
     g_key_file_set_string (data->config, "State", "CpuDriver", ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)));
-  if (PPD_IS_DRIVER_PLATFORM(data->platform_driver))
+  if (PPD_IS_DRIVER_PLATFORM (data->platform_driver))
     g_key_file_set_string (data->config, "State", "PlatformDriver", ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)));
   g_key_file_set_string (data->config, "State", "Profile", ppd_profile_to_str (data->active_profile));
   if (!g_key_file_save_to_file (data->config, data->config_path, &error))
@@ -325,7 +325,7 @@ apply_configuration (PpdApp *data)
   if (PPD_IS_DRIVER_CPU (data->cpu_driver) && g_strcmp0 (ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)), cpu_driver) != 0)
     return FALSE;
   platform_driver = g_key_file_get_string (data->config, "State", "PlatformDriver", NULL);
-  if (PPD_IS_DRIVER_PLATFORM(data->platform_driver) && g_strcmp0 (ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)), platform_driver) != 0)
+  if (PPD_IS_DRIVER_PLATFORM (data->platform_driver) && g_strcmp0 (ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)), platform_driver) != 0)
     return FALSE;
   profile_str = g_key_file_get_string (data->config, "State", "Profile", NULL);
   if (profile_str == NULL)
@@ -401,7 +401,7 @@ activate_target_profile (PpdApp                      *data,
     cpu_set = ppd_driver_activate_profile (PPD_DRIVER (data->cpu_driver), target_profile, reason, error);
 
   if (!cpu_set) {
-    g_prefix_error(error, "Failed to activate CPU driver '%s': ", ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)));
+    g_prefix_error (error, "Failed to activate CPU driver '%s': ", ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)));
     return FALSE;
   }
 
@@ -410,14 +410,14 @@ activate_target_profile (PpdApp                      *data,
     platform_set = ppd_driver_activate_profile (PPD_DRIVER (data->platform_driver), target_profile, reason, error);
 
   if (!platform_set) {
-    g_prefix_error(error, "Failed to activate platform driver '%s': ", ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)));
+    g_prefix_error (error, "Failed to activate platform driver '%s': ", ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)));
     /* Try to recover */
     if (cpu_set) {
       g_debug ("Reverting CPU driver '%s' to profile '%s'",
                ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)),
                ppd_profile_to_str (current_profile));
       if (!ppd_driver_activate_profile (PPD_DRIVER (data->cpu_driver), current_profile, PPD_PROFILE_ACTIVATION_REASON_INTERNAL, &recovery_error)) {
-        g_prefix_error(error, "Failed to revert CPU driver '%s': ", ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)));
+        g_prefix_error (error, "Failed to revert CPU driver '%s': ", ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)));
         g_warning ("Failed to revert CPU driver '%s': %s",
                    ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)),
                    recovery_error->message);
@@ -568,7 +568,7 @@ release_profile_hold (PpdApp *data,
 
   hold = g_hash_table_lookup (data->profile_holds, GUINT_TO_POINTER (cookie));
   if (!hold) {
-    g_debug("No hold with cookie %d", cookie);
+    g_debug ("No hold with cookie %d", cookie);
     return;
   }
 
@@ -660,7 +660,7 @@ hold_profile (PpdApp                *data,
   hold->application_id = g_strdup (application_id);
   hold->requester = g_strdup (g_dbus_method_invocation_get_sender (invocation));
 
-  g_debug ("%s(%s) requesting to hold profile '%s', reason: '%s'", application_id,
+  g_debug ("%s (%s) requesting to hold profile '%s', reason: '%s'", application_id,
            hold->requester, profile_name, reason);
   watch_id = g_bus_watch_name_on_connection (data->connection, hold->requester,
                                              G_BUS_NAME_WATCHER_FLAGS_NONE, NULL,
@@ -864,7 +864,7 @@ static gboolean
 has_required_drivers (PpdApp *data)
 {
   if (!PPD_IS_DRIVER_CPU (data->cpu_driver) &&
-      !PPD_IS_DRIVER_PLATFORM(data->platform_driver))
+      !PPD_IS_DRIVER_PLATFORM (data->platform_driver))
     return FALSE;
 
   if (!get_profile_available (data, PPD_PROFILE_BALANCED | PPD_PROFILE_POWER_SAVER))
@@ -919,7 +919,7 @@ start_profile_drivers (PpdApp *data)
   for (i = 0; i < G_N_ELEMENTS (objects); i++) {
     GObject *object;
 
-    object = g_object_new (objects[i](), NULL);
+    object = g_object_new (objects[i] (), NULL);
     if (PPD_IS_DRIVER (object)) {
       PpdDriver *driver = PPD_DRIVER (object);
       PpdProfile profiles;
@@ -938,7 +938,7 @@ start_profile_drivers (PpdApp *data)
         continue;
       }
 
-      if (PPD_IS_DRIVER_PLATFORM(data->platform_driver) && PPD_IS_DRIVER_PLATFORM(driver)) {
+      if (PPD_IS_DRIVER_PLATFORM (data->platform_driver) && PPD_IS_DRIVER_PLATFORM (driver)) {
         g_debug ("Platform driver '%s' already probed, skipping driver '%s'",
                  ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)),
                  ppd_driver_get_driver_name (driver));
@@ -956,7 +956,7 @@ start_profile_drivers (PpdApp *data)
 
       result = ppd_driver_probe (driver);
       if (result == PPD_PROBE_RESULT_FAIL) {
-        g_debug ("probe() failed for driver %s, skipping",
+        g_debug ("probe () failed for driver %s, skipping",
                  ppd_driver_get_driver_name (driver));
         g_object_unref (object);
         continue;
@@ -968,9 +968,9 @@ start_profile_drivers (PpdApp *data)
       }
 
       if (PPD_IS_DRIVER_CPU (driver))
-          data->cpu_driver = PPD_DRIVER_CPU(driver);
-      else if (PPD_IS_DRIVER_PLATFORM(driver))
-          data->platform_driver = PPD_DRIVER_PLATFORM(driver);
+          data->cpu_driver = PPD_DRIVER_CPU (driver);
+      else if (PPD_IS_DRIVER_PLATFORM (driver))
+          data->platform_driver = PPD_DRIVER_PLATFORM (driver);
       else
           g_assert_not_reached ();
 
@@ -984,7 +984,7 @@ start_profile_drivers (PpdApp *data)
       g_debug ("Handling action '%s'", ppd_action_get_action_name (action));
 
       if (!ppd_action_probe (action)) {
-        g_debug ("probe() failed for action '%s', skipping",
+        g_debug ("probe () failed for action '%s', skipping",
                  ppd_action_get_action_name (action));
         g_object_unref (object);
         continue;
@@ -1004,7 +1004,7 @@ start_profile_drivers (PpdApp *data)
   /* Set initial state either from configuration, or using the currently selected profile */
   apply_configuration (data);
   if (!activate_target_profile (data, data->active_profile, PPD_PROFILE_ACTIVATION_REASON_RESET, &initial_error))
-    g_warning("Failed to activate initial profile: %s", initial_error->message);
+    g_warning ("Failed to activate initial profile: %s", initial_error->message);
 
   send_dbus_event (data, PROP_ALL);
 

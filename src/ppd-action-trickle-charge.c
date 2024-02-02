@@ -23,7 +23,7 @@ struct _PpdActionTrickleCharge
   gboolean active;
 };
 
-G_DEFINE_TYPE(PpdActionTrickleCharge, ppd_action_trickle_charge, PPD_TYPE_ACTION)
+G_DEFINE_TYPE (PpdActionTrickleCharge, ppd_action_trickle_charge, PPD_TYPE_ACTION)
 
 static GObject*
 ppd_action_trickle_charge_constructor (GType                  type,
@@ -130,11 +130,11 @@ ppd_action_trickle_charge_class_init (PpdActionTrickleChargeClass *klass)
   GObjectClass *object_class;
   PpdActionClass *driver_class;
 
-  object_class = G_OBJECT_CLASS(klass);
+  object_class = G_OBJECT_CLASS (klass);
   object_class->constructor = ppd_action_trickle_charge_constructor;
   object_class->finalize = ppd_action_trickle_charge_finalize;
 
-  driver_class = PPD_ACTION_CLASS(klass);
+  driver_class = PPD_ACTION_CLASS (klass);
   driver_class->activate_profile = ppd_action_trickle_charge_activate_profile;
 }
 

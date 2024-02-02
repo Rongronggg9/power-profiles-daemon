@@ -35,7 +35,7 @@ struct _PpdDriverIntelPstate
   char *no_turbo_path;
 };
 
-G_DEFINE_TYPE(PpdDriverIntelPstate, ppd_driver_intel_pstate, PPD_TYPE_DRIVER_CPU)
+G_DEFINE_TYPE (PpdDriverIntelPstate, ppd_driver_intel_pstate, PPD_TYPE_DRIVER_CPU)
 
 static gboolean ppd_driver_intel_pstate_activate_profile (PpdDriver                   *driver,
                                                           PpdProfile                   profile,
@@ -403,11 +403,11 @@ ppd_driver_intel_pstate_class_init (PpdDriverIntelPstateClass *klass)
   GObjectClass *object_class;
   PpdDriverClass *driver_class;
 
-  object_class = G_OBJECT_CLASS(klass);
+  object_class = G_OBJECT_CLASS (klass);
   object_class->constructor = ppd_driver_intel_pstate_constructor;
   object_class->finalize = ppd_driver_intel_pstate_finalize;
 
-  driver_class = PPD_DRIVER_CLASS(klass);
+  driver_class = PPD_DRIVER_CLASS (klass);
   driver_class->probe = ppd_driver_intel_pstate_probe;
   driver_class->activate_profile = ppd_driver_intel_pstate_activate_profile;
 }

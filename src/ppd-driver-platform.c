@@ -9,7 +9,7 @@
 
 #include "ppd-driver-platform.h"
 
-G_DEFINE_TYPE(PpdDriverPlatform, ppd_driver_platform, PPD_TYPE_DRIVER)
+G_DEFINE_TYPE (PpdDriverPlatform, ppd_driver_platform, PPD_TYPE_DRIVER)
 
 /**
  * SECTION:ppd-driver-platform
@@ -24,7 +24,7 @@ G_DEFINE_TYPE(PpdDriverPlatform, ppd_driver_platform, PPD_TYPE_DRIVER)
  * will be put in place, and the `performance` profile will be unavailable.
  *
  * There should not be a need to implement system-specific drivers, as the
- * [`platform_profile`](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/ABI/testing/sysfs-platform_profile)
+ * [`platform_profile`] (https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/ABI/testing/sysfs-platform_profile)
  * kernel API offers a way to implement system-specific profiles which
  * `power-profiles-daemon` can consume.
  *
@@ -46,7 +46,7 @@ ppd_driver_platform_class_init (PpdDriverPlatformClass *klass)
 {
   GObjectClass *object_class;
 
-  object_class = G_OBJECT_CLASS(klass);
+  object_class = G_OBJECT_CLASS (klass);
   object_class->finalize = ppd_driver_platform_finalize;
 }
 

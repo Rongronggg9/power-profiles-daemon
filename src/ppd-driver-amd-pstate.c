@@ -38,7 +38,7 @@ struct _PpdDriverAmdPstate
   GList *epp_devices; /* GList of paths */
 };
 
-G_DEFINE_TYPE(PpdDriverAmdPstate, ppd_driver_amd_pstate, PPD_TYPE_DRIVER_CPU)
+G_DEFINE_TYPE (PpdDriverAmdPstate, ppd_driver_amd_pstate, PPD_TYPE_DRIVER_CPU)
 
 static gboolean ppd_driver_amd_pstate_activate_profile (PpdDriver                   *driver,
                                                         PpdProfile                   profile,
@@ -259,11 +259,11 @@ ppd_driver_amd_pstate_class_init (PpdDriverAmdPstateClass *klass)
   GObjectClass *object_class;
   PpdDriverClass *driver_class;
 
-  object_class = G_OBJECT_CLASS(klass);
+  object_class = G_OBJECT_CLASS (klass);
   object_class->constructor = ppd_driver_amd_pstate_constructor;
   object_class->finalize = ppd_driver_amd_pstate_finalize;
 
-  driver_class = PPD_DRIVER_CLASS(klass);
+  driver_class = PPD_DRIVER_CLASS (klass);
   driver_class->probe = ppd_driver_amd_pstate_probe;
   driver_class->activate_profile = ppd_driver_amd_pstate_activate_profile;
 }

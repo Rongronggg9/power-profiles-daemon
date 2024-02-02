@@ -12,8 +12,8 @@
 #include <glib-object.h>
 #include "ppd-profile.h"
 
-#define PPD_TYPE_DRIVER (ppd_driver_get_type())
-G_DECLARE_DERIVABLE_TYPE(PpdDriver, ppd_driver, PPD, DRIVER, GObject)
+#define PPD_TYPE_DRIVER (ppd_driver_get_type ())
+G_DECLARE_DERIVABLE_TYPE (PpdDriver, ppd_driver, PPD, DRIVER, GObject)
 
 /**
  * PpdProbeResult:
@@ -66,7 +66,7 @@ typedef enum{
  *
  * New profile drivers should not derive from #PpdDriver.  They should
  * derive from the child from #PpdDriverCpu or #PpdDriverPlatform drivers
- * and implement at least one of probe() and @activate_profile.
+ * and implement at least one of probe () and @activate_profile.
  */
 struct _PpdDriverClass
 {

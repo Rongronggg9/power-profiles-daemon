@@ -82,7 +82,7 @@ ppd_driver_set_property (GObject        *object,
     }
     break;
   default:
-    G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
 }
 
@@ -106,7 +106,7 @@ ppd_driver_get_property (GObject        *object,
     g_value_set_string (value, priv->performance_degraded);
     break;
   default:
-    G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
   }
 }
 
@@ -126,7 +126,7 @@ ppd_driver_class_init (PpdDriverClass *klass)
 {
   GObjectClass *object_class;
 
-  object_class = G_OBJECT_CLASS(klass);
+  object_class = G_OBJECT_CLASS (klass);
   object_class->finalize = ppd_driver_finalize;
   object_class->get_property = ppd_driver_get_property;
   object_class->set_property = ppd_driver_set_property;
@@ -172,7 +172,7 @@ ppd_driver_class_init (PpdDriverClass *klass)
    * A unique driver name, only used for debugging.
    */
   g_object_class_install_property (object_class, PROP_DRIVER_NAME,
-                                   g_param_spec_string("driver-name",
+                                   g_param_spec_string ("driver-name",
                                                        "Driver name",
                                                        "Profile driver name",
                                                        NULL,
@@ -184,7 +184,7 @@ ppd_driver_class_init (PpdDriverClass *klass)
    * The bitmask of #PpdProfile<!-- -->s implemented by this driver.
    */
   g_object_class_install_property (object_class, PROP_PROFILES,
-                                   g_param_spec_flags("profiles",
+                                   g_param_spec_flags ("profiles",
                                                       "Profiles",
                                                       "Profiles implemented by this driver",
                                                       PPD_TYPE_PROFILE,
@@ -197,7 +197,7 @@ ppd_driver_class_init (PpdDriverClass *klass)
    * The value must be one of the options listed in the D-Bus API reference.
    */
   g_object_class_install_property (object_class, PROP_PERFORMANCE_DEGRADED,
-                                   g_param_spec_string("performance-degraded",
+                                   g_param_spec_string ("performance-degraded",
                                                        "Performance Degraded",
                                                        "Why the performance profile is degraded, if set",
                                                        NULL,
