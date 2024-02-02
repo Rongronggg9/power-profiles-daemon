@@ -138,6 +138,8 @@ and the [Intel Performance and Energy Bias Hint](https://www.kernel.org/doc/html
 
 ## Operations on AMD-based machines
 
+### CPU power savings
+
 The "driver" for making the hardware act on the user-selected power profile on AMD CPU-based
 machines is based on the [AMD P-State scaling driver](https://www.kernel.org/doc/html/v6.3/admin-guide/pm/amd-pstate.html)
 if available.
@@ -164,6 +166,23 @@ scaling governor will be changed to `powersave` as it is the only P-State scalin
 governor that allows for the "Energy vs Performance Hints" to be taken into consideration.
 
 For more information, please refer to the [AMD P-State scaling driver documentation](https://www.kernel.org/doc/html/v6.3/admin-guide/pm/amd-pstate.html).
+
+### Panel power savings
+
+Laptops with integrated Radeon graphics have a dedicated hardware function
+to decrease panel power consumption in exchange for color accuracy. This
+function is used when the system is on battery and the user has selected
+the "balanced" or "power-saver" profiles.
+
+If you decide that you don't like how this behaves, you can disable the function
+in one of two ways:
+
+1. Adding `amdgpu.abmlevel=0` to the kernel command line.  This will disable abm
+   value changes entirely.
+2. By using `POWER_PROFILE_DAEMON_ACTION_BLOCK=amdgpu_panel_power` in the
+   `power-profiles-daemon` environment as described below. This will allow you to
+   still change values manually in sysfs but `power-profiles-daemon` will not
+   change anything.
 
 ## Testing
 
