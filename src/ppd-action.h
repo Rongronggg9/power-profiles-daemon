@@ -35,7 +35,7 @@ struct _PpdActionClass
 };
 
 #ifndef __GTK_DOC_IGNORE__
-gboolean ppd_action_probe (PpdAction *action);
+PpdProbeResult ppd_action_probe (PpdAction *action);
 gboolean ppd_action_activate_profile (PpdAction *action, PpdProfile profile, GError **error);
 const char *ppd_action_get_action_name (PpdAction *action);
 #endif

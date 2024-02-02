@@ -1061,7 +1061,7 @@ start_profile_drivers (PpdApp *data)
 
       g_debug ("Handling action '%s'", ppd_action_get_action_name (action));
 
-      if (!ppd_action_probe (action)) {
+      if (ppd_action_probe (action) == PPD_PROBE_RESULT_FAIL) {
         g_debug ("probe () failed for action '%s', skipping",
                  ppd_action_get_action_name (action));
         g_object_unref (object);

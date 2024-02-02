@@ -125,13 +125,13 @@ ppd_action_init (PpdAction *self)
 {
 }
 
-gboolean
+PpdProbeResult
 ppd_action_probe (PpdAction *action)
 {
   g_return_val_if_fail (PPD_IS_ACTION (action), FALSE);
 
   if (!PPD_ACTION_GET_CLASS (action)->probe)
-    return TRUE;
+    return PPD_PROBE_RESULT_SUCCESS;
 
   return PPD_ACTION_GET_CLASS (action)->probe (action);
 }
