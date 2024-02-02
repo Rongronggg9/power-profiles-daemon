@@ -31,6 +31,9 @@ build_stable:
     - mkdir tmpdir/
   script:
     - meson setup
+        --werror
+        --fatal-meson-warnings
+        --warnlevel 2
         -Dgtk_doc=true
         -Dpylint=true
         -Dtests=true

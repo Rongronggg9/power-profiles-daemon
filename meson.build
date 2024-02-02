@@ -17,7 +17,12 @@ common_cflags = cc.get_supported_arguments([
     '-Wstrict-prototypes',
     '-Werror-implicit-function-declaration',
     '-Wno-pointer-sign',
-    '-Wshadow'
+    '-Wshadow',
+    '-Wno-sign-compare',
+    '-Wno-cast-function-type',
+    '-Wno-unused-parameter',
+    '-Wno-missing-field-initializers',
+    '-Wno-type-limits',
 ])
 
 prefix = get_option('prefix')
