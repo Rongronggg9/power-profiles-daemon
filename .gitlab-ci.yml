@@ -41,3 +41,6 @@ build_stable:
     paths:
     - _build/meson-logs/*.txt
     - _build/meson-dist/*
+    reports:
+      junit:
+        - _build/meson-logs/testlog.junit.xml
