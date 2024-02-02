@@ -1527,4 +1527,10 @@ if __name__ == '__main__':
     if 'umockdev' not in os.environ.get('LD_PRELOAD', ''):
         os.execvp('umockdev-wrapper', ['umockdev-wrapper', sys.executable] + sys.argv)
 
-    unittest.main()
+    prog = unittest.main(exit=False)
+    if prog.result.errors or prog.result.failures:
+        sys.exit(1)
+
+    # Translate to skip error
+    if prog.result.testsRun == len(prog.result.skipped):
+        sys.exit(77)
