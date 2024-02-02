@@ -1,3 +1,23 @@
+0.20
+----
+
+The project has moved under the freedesktop 'Upower' group. The service is
+now advertised as 'org.freedesktop.UPower.PowerProfiles' in addition to the
+previous 'net.hadess.PowerProfiles' for compatibility reasons.
+
+This release adds support for:
+
+* Multiple power-profiles-daemon drivers to load simultaneously.  This notably
+  allows both CPU based control with amd-pstate or intel-pstate as well as
+  ACPI platform profile based control.
+
+* amdgpu panel power savings which uses dedicated hardware in systems with
+  integrated Radeon graphics to decrease panel power consumption when the
+  system is on battery.
+
+This release also enables the test suite by default, so distribution vendors
+should update packaging accordingly.
+
 0.13
 ----
 
