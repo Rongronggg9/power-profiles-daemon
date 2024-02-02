@@ -129,12 +129,13 @@ class Tests(dbusmock.DBusTestCase):
         self.stop_daemon()
 
         if self.polkitd:
+            self.polkitd.stdout.close()
             try:
                 self.polkitd.kill()
             except OSError:
                 pass
             self.polkitd.wait()
-        self.polkitd = None
+
         self.obj_polkit = None
 
         del self.tp_acpi
