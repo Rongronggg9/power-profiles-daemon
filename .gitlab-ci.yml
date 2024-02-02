@@ -30,7 +30,11 @@ build_stable:
     - if [ -x /bin/dnf ]; then dnf install -y $DEPENDENCIES; else dnf5 install -y $DEPENDENCIES; fi
     - mkdir tmpdir/
   script:
-    - meson setup -Dgtk_doc=true -Dpylint=true -Dtests=true _build
+    - meson setup
+        -Dgtk_doc=true
+        -Dpylint=true
+        -Dtests=true
+        _build
     - env TMPDIR=$(pwd)/tmpdir meson test -C _build --print-errorlogs
     - .ci/fail_skipped_tests.py _build/meson-logs/testlog.junit.xml
     - meson install -C _build
