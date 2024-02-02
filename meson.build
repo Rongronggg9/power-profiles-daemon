@@ -65,6 +65,11 @@ endif
 if get_option('tests')
   # Python 3 required modules
   python3_required_modules = ['dbusmock', 'gi']
+  gi_required_modules = {
+    'GLib': '2.0',
+    'Gio': '2.0',
+    'UMockdev': '1.0',
+  }
 
   python = import('python')
   python3 = python.find_installation('python3')
@@ -73,6 +78,14 @@ if get_option('tests')
     script = 'import importlib.util; import sys; exit(1) if importlib.util.find_spec(\''+ p +'\') is None else exit(0)'
     if run_command(python3, '-c', script, check: false).returncode() != 0
       error('Python3 module \'' + p + '\' required for running tests but not found')
+    endif
+  endforeach
+
+  foreach module, version : gi_required_modules
+    script = 'import gi; gi.require_version("@0@", "@1@")'.format(module, version)
+    if run_command(python3, '-c', script, check: false).returncode() != 0
+      error('''GObject Introspection module '@0@' version @1@ required for running tests but not found'''.format(
+        module, version))
     endif
   endforeach
 
