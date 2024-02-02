@@ -104,8 +104,8 @@ The "driver" for making the hardware act on the user-selected power profile on I
 CPU-based machines is based on the [Intel P-State scaling driver](https://www.kernel.org/doc/html/v5.17/admin-guide/pm/intel_pstate.html)
 or the Energy Performance Bias (EPB) feature if available.
 
-It is only used if a `platform_profile` driver isn't available for the system, and the
-CPU supports either hardware-managed P-states (HWP) or Energy Performance Bias (EPB).
+It is only used if the CPU supports either hardware-managed P-states (HWP)
+or Energy Performance Bias (EPB).
 
 Example of a system without `platform_profile support` but with `active` P-State
 operation mode:
@@ -142,9 +142,9 @@ The "driver" for making the hardware act on the user-selected power profile on A
 machines is based on the [AMD P-State scaling driver](https://www.kernel.org/doc/html/v6.3/admin-guide/pm/amd-pstate.html)
 if available.
 
-It is only used if a `platform_profile` driver isn't available for the system, the
-CPU supports Collaborative Processor Performance Control (CPPC), and the AMD P-State
-scaling driver is in `active` mode.
+It is only used if the CPU supports Collaborative Processor Performance
+Control (CPPC), the machine is a laptop or workstation and the
+AMD P-State scaling driver is in `active` mode.
 
 Example of a system without `platform_profile` support but with `active` P-State
 operation mode:
