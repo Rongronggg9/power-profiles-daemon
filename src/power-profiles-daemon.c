@@ -130,19 +130,25 @@ get_active_profile (PpdApp *data)
 static char *
 get_performance_degraded (PpdApp *data)
 {
-  const gchar *cpu_degraded = "";
-  const gchar *platform_degraded = "";
+  const gchar *cpu_degraded = NULL;
+  const gchar *platform_degraded = NULL;
 
   if (driver_profile_support (PPD_DRIVER (data->platform_driver), PPD_PROFILE_PERFORMANCE))
     platform_degraded = ppd_driver_get_performance_degraded (PPD_DRIVER (data->platform_driver));
+
   if (driver_profile_support (PPD_DRIVER (data->cpu_driver), PPD_PROFILE_PERFORMANCE))
     cpu_degraded = ppd_driver_get_performance_degraded (PPD_DRIVER (data->cpu_driver));
 
-  if (g_strcmp0 (cpu_degraded, "") == 0)
-    return g_strdup(platform_degraded);
-  if (g_strcmp0 (platform_degraded, "") == 0)
-    return g_strdup(cpu_degraded);
-  return g_strdup_printf("%s,%s", cpu_degraded, platform_degraded);
+  if (!cpu_degraded && !platform_degraded)
+    return g_strdup ("");
+
+  if (!cpu_degraded)
+    return g_strdup (platform_degraded);
+
+  if (!platform_degraded)
+    return g_strdup (cpu_degraded);
+
+  return g_strjoin (",", cpu_degraded, platform_degraded, NULL);
 }
 
 static GVariant *

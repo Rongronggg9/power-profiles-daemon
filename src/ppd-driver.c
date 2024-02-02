@@ -72,8 +72,14 @@ ppd_driver_set_property (GObject        *object,
     priv->profiles = g_value_get_flags (value);
     break;
   case PROP_PERFORMANCE_DEGRADED:
-    g_clear_pointer (&priv->performance_degraded, g_free);
-    priv->performance_degraded = g_value_dup_string (value);
+    {
+      const char *degraded = g_value_get_string (value);
+
+      g_clear_pointer (&priv->performance_degraded, g_free);
+
+      if (degraded != NULL && *degraded != '\0')
+        priv->performance_degraded = g_strdup (degraded);
+    }
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -270,7 +276,7 @@ ppd_driver_get_performance_degraded (PpdDriver *driver)
   g_return_val_if_fail (PPD_IS_DRIVER (driver), NULL);
 
   priv = PPD_DRIVER_GET_PRIVATE (driver);
-  return priv->performance_degraded ? priv->performance_degraded : "";
+  return priv->performance_degraded;
 }
 
 gboolean
