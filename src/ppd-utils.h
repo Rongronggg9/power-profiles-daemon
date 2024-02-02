@@ -20,6 +20,10 @@ gboolean ppd_utils_write_sysfs (GUdevDevice  *device,
                                 const char   *attribute,
                                 const char   *value,
                                 GError      **error);
+gboolean ppd_utils_write_sysfs_int (GUdevDevice  *device,
+                                    const char   *attribute,
+                                    gint64        value,
+                                    GError      **error);
 GFileMonitor *ppd_utils_monitor_sysfs_attr (GUdevDevice  *device,
                                             const char   *attribute,
                                             GError      **error);

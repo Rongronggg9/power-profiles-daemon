@@ -77,6 +77,17 @@ gboolean ppd_utils_write_sysfs (GUdevDevice  *device,
   return ppd_utils_write (filename, value, error);
 }
 
+gboolean ppd_utils_write_sysfs_int (GUdevDevice  *device,
+                                    const char   *attribute,
+                                    gint64        value,
+                                    GError      **error)
+{
+  g_autofree char *str_value = NULL;
+
+  str_value = g_strdup_printf ("%" G_GINT64_FORMAT, value);
+  return ppd_utils_write_sysfs (device, attribute, str_value, error);
+}
+
 GFileMonitor *
 ppd_utils_monitor_sysfs_attr (GUdevDevice  *device,
                               const char   *attribute,
