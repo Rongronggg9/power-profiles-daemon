@@ -31,10 +31,10 @@ build_stable:
     - mkdir tmpdir/
   script:
     - meson setup -Dgtk_doc=true -Dpylint=true -Dtests=true _build
-    - meson install -C _build
-    - ninja -C uninstall _build -v
     - env TMPDIR=$(pwd)/tmpdir meson test -C _build --print-errorlogs
     - .ci/fail_skipped_tests.py _build/meson-logs/testlog.junit.xml
+    - meson install -C _build
+    - ninja -C _build uninstall -v
     - TMPDIR=$(pwd)/tmpdir ninja -v -C _build dist
   artifacts:
     when: always
