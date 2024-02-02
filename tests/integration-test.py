@@ -255,7 +255,8 @@ class Tests(dbusmock.DBusTestCase):
         s = '+'
       if os.geteuid() == 0:
         if not GLib.find_program_in_path('chattr'):
-          os._exit(77)
+          self.skipTest('chattr is not found')
+
         subprocess.check_output(['chattr', '%si' % s, f])
       if not enable:
         os.chmod(f, 0o666)
