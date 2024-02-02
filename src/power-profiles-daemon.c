@@ -270,9 +270,9 @@ send_dbus_event (PpdApp     *data,
                            g_variant_new_string (""));
   }
   if (mask & PROP_DEGRADED) {
-    g_autofree gchar *degraded = get_performance_degraded (data);
+    gchar *degraded = get_performance_degraded (data);
     g_variant_builder_add (&props_builder, "{sv}", "PerformanceDegraded",
-                           g_variant_new_string (degraded));
+                           g_variant_new_take_string (g_steal_pointer (&degraded)));
   }
   if (mask & PROP_PROFILES) {
     g_variant_builder_add (&props_builder, "{sv}", "Profiles",
@@ -749,8 +749,8 @@ handle_get_property (GDBusConnection *connection,
   if (g_strcmp0 (property_name, "Actions") == 0)
     return get_actions_variant (data);
   if (g_strcmp0 (property_name, "PerformanceDegraded") == 0) {
-    g_autofree gchar *degraded = get_performance_degraded (data);
-    return g_variant_new_string (degraded);
+    gchar *degraded = get_performance_degraded (data);
+    return g_variant_new_take_string (g_steal_pointer (&degraded));
   }
   if (g_strcmp0 (property_name, "ActiveProfileHolds") == 0)
     return get_profile_holds_variant (data);
