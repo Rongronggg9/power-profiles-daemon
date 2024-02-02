@@ -1509,6 +1509,6 @@ class Tests(dbusmock.DBusTestCase):
 if __name__ == '__main__':
     # run ourselves under umockdev
     if 'umockdev' not in os.environ.get('LD_PRELOAD', ''):
-        os.execvp('umockdev-wrapper', ['umockdev-wrapper'] + sys.argv)
+        os.execvp('umockdev-wrapper', ['umockdev-wrapper', sys.executable] + sys.argv)
 
     unittest.main()
