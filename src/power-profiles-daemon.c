@@ -304,11 +304,19 @@ save_configuration (PpdApp *data)
 {
   g_autoptr(GError) error = NULL;
 
-  if (PPD_IS_DRIVER_CPU (data->cpu_driver))
-    g_key_file_set_string (data->config, "State", "CpuDriver", ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)));
-  if (PPD_IS_DRIVER_PLATFORM (data->platform_driver))
-    g_key_file_set_string (data->config, "State", "PlatformDriver", ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)));
-  g_key_file_set_string (data->config, "State", "Profile", ppd_profile_to_str (data->active_profile));
+  if (PPD_IS_DRIVER_CPU (data->cpu_driver)) {
+    g_key_file_set_string (data->config, "State", "CpuDriver",
+                           ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)));
+  }
+
+  if (PPD_IS_DRIVER_PLATFORM (data->platform_driver)) {
+    g_key_file_set_string (data->config, "State", "PlatformDriver",
+                           ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)));
+  }
+
+  g_key_file_set_string (data->config, "State", "Profile",
+                         ppd_profile_to_str (data->active_profile));
+
   if (!g_key_file_save_to_file (data->config, data->config_path, &error))
     g_warning ("Could not save configuration file '%s': %s", data->config_path, error->message);
 }
@@ -322,14 +330,20 @@ apply_configuration (PpdApp *data)
   PpdProfile profile;
 
   cpu_driver = g_key_file_get_string (data->config, "State", "CpuDriver", NULL);
-  if (PPD_IS_DRIVER_CPU (data->cpu_driver) && g_strcmp0 (ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)), cpu_driver) != 0)
+  if (PPD_IS_DRIVER_CPU (data->cpu_driver) &&
+      g_strcmp0 (ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)), cpu_driver) != 0)
     return FALSE;
+
   platform_driver = g_key_file_get_string (data->config, "State", "PlatformDriver", NULL);
-  if (PPD_IS_DRIVER_PLATFORM (data->platform_driver) && g_strcmp0 (ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)), platform_driver) != 0)
+
+  if (PPD_IS_DRIVER_PLATFORM (data->platform_driver) &&
+      g_strcmp0 (ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)), platform_driver) != 0)
     return FALSE;
+
   profile_str = g_key_file_get_string (data->config, "State", "Profile", NULL);
   if (profile_str == NULL)
     return FALSE;
+
   profile = ppd_profile_from_str (profile_str);
   if (profile == PPD_PROFILE_UNSET) {
     g_debug ("Resetting invalid configuration profile '%s'", profile_str);
@@ -386,7 +400,6 @@ activate_target_profile (PpdApp                      *data,
                          PpdProfileActivationReason   reason,
                          GError                     **error)
 {
-  g_autoptr(GError) recovery_error = NULL;
   PpdProfile current_profile = data->active_profile;
   gboolean cpu_set = TRUE;
   gboolean platform_set = TRUE;
@@ -398,31 +411,44 @@ activate_target_profile (PpdApp                      *data,
 
   /* Try CPU first */
   if (driver_profile_support (PPD_DRIVER (data->cpu_driver), target_profile))
-    cpu_set = ppd_driver_activate_profile (PPD_DRIVER (data->cpu_driver), target_profile, reason, error);
+    cpu_set = ppd_driver_activate_profile (PPD_DRIVER (data->cpu_driver),
+                                           target_profile, reason, error);
 
   if (!cpu_set) {
-    g_prefix_error (error, "Failed to activate CPU driver '%s': ", ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)));
+    g_prefix_error (error, "Failed to activate CPU driver '%s': ",
+                    ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)));
     return FALSE;
   }
 
   /* Then try platform */
-  if (driver_profile_support (PPD_DRIVER (data->platform_driver), target_profile))
-    platform_set = ppd_driver_activate_profile (PPD_DRIVER (data->platform_driver), target_profile, reason, error);
+  if (driver_profile_support (PPD_DRIVER (data->platform_driver), target_profile)) {
+    platform_set = ppd_driver_activate_profile (PPD_DRIVER (data->platform_driver),
+                                                target_profile, reason, error);
+  }
 
   if (!platform_set) {
-    g_prefix_error (error, "Failed to activate platform driver '%s': ", ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)));
+    g_prefix_error (error, "Failed to activate platform driver '%s': ",
+                    ppd_driver_get_driver_name (PPD_DRIVER (data->platform_driver)));
+
     /* Try to recover */
     if (cpu_set) {
+      g_autoptr(GError) recovery_error = NULL;
+
       g_debug ("Reverting CPU driver '%s' to profile '%s'",
                ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)),
                ppd_profile_to_str (current_profile));
-      if (!ppd_driver_activate_profile (PPD_DRIVER (data->cpu_driver), current_profile, PPD_PROFILE_ACTIVATION_REASON_INTERNAL, &recovery_error)) {
-        g_prefix_error (error, "Failed to revert CPU driver '%s': ", ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)));
+
+      if (!ppd_driver_activate_profile (PPD_DRIVER (data->cpu_driver),
+                                        current_profile, PPD_PROFILE_ACTIVATION_REASON_INTERNAL,
+                                        &recovery_error)) {
+        g_prefix_error (error, "Failed to revert CPU driver '%s': ",
+                        ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)));
         g_warning ("Failed to revert CPU driver '%s': %s",
                    ppd_driver_get_driver_name (PPD_DRIVER (data->cpu_driver)),
                    recovery_error->message);
       }
     }
+
     return FALSE;
   }
 
