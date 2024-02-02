@@ -184,6 +184,34 @@ in one of two ways:
    still change values manually in sysfs but `power-profiles-daemon` will not
    change anything.
 
+## Multiple driver and multiple action operations
+
+Power-profiles daemon will load all supported drivers and actions by default.
+If you have a problem with a given driver or action, you can disable it by
+populating the `POWER_PROFILE_DAEMON_DRIVER_BLOCK` or `POWER_PROFILE_DAEMON_ACTION_BLOCK`
+environment variables with the name of the driver or action you want to disable
+in the environment that launches the daemon (such as the systemd unit file).
+
+For example to edit the unit:
+
+```sh
+sudo systemctl edit power-profiles-daemon.service
+```
+
+Then add to the drop-in file:
+
+```text
+[Service]
+Environment=POWER_PROFILE_DAEMON_DRIVER_BLOCK=xxx
+Environment=POWER_PROFILE_DAEMON_ACTION_BLOCK=yyy
+```
+
+Then restart the service:
+
+```sh
+sudo systemctl try-restart power-profiles-daemon.service
+```
+
 ## Testing
 
 If you don't have hardware that can support the performance mode, or the degraded mode
