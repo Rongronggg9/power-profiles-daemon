@@ -48,9 +48,9 @@ check_version()
 	# Look in the first 15 lines for NEWS files, but look
 	# everywhere for other types of files
 	if [ "$2" = "NEWS" ]; then
-		DATA=`sed 15q $SRC_ROOT/"$2"`
+		DATA=$(sed 15q "$SRC_ROOT/$2")
 	else
-		DATA=`cat $SRC_ROOT/"$2"`
+		DATA=$(cat "$SRC_ROOT/$2")
 	fi
 	case "$DATA" in
 	*"$VERSION"*)
@@ -71,12 +71,12 @@ VERSION=$1
 shift
 
 if [ $# -eq 0 ] ; then
-	check_version $VERSION 'NEWS'
+	check_version "$VERSION" 'NEWS'
 	exit 0
 fi
 
-for i in $@ ; do
-	check_version $VERSION "$i"
+for i in "$@"; do
+	check_version "$VERSION" "$i"
 done
 
 exit 0
