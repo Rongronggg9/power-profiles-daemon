@@ -32,8 +32,8 @@ build_stable:
   script:
     - meson setup -Dgtk_doc=true -Dpylint=true -Dtests=true _build
     - meson install -C _build
-    - ninja -C _build uninstall -v
-    - env TMPDIR=$(pwd)/tmpdir meson test -C _build
+    - ninja -C uninstall _build -v
+    - env TMPDIR=$(pwd)/tmpdir meson test -C _build --print-errorlogs
     - .ci/fail_skipped_tests.py _build/meson-logs/testlog.junit.xml
     - TMPDIR=$(pwd)/tmpdir ninja -v -C _build dist
   artifacts:
