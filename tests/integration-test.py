@@ -1080,7 +1080,7 @@ class Tests(dbusmock.DBusTestCase):
       self.assertEventually(lambda: self.read_sysfs_file("sys/firmware/acpi/platform_profile") == b'low-power')
       self.assertEqual(self.get_dbus_property('ActiveProfile'), 'power-saver')
 
-      # And mimick a user pressing a Fn+H
+      # And mimic a user pressing a Fn+H
       with open(os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile"), 'w') as platform_profile:
         platform_profile.write('performance\n')
       self.assertEventually(lambda: self.get_dbus_property('ActiveProfile') == 'performance')
