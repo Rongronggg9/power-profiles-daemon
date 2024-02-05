@@ -46,7 +46,6 @@ build_stable:
         --warnlevel 2
         -Dgtk_doc=true
         -Dpylint=true
-        -Dtests=true
         -Db_coverage=true
         _build
     - env TMPDIR=$(pwd)/tmpdir meson test -C _build --print-errorlogs

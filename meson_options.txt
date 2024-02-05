@@ -13,4 +13,4 @@ option('pylint',
 option('tests',
        description: 'Whether to run tests',
        type: 'boolean',
-       value: false)
+       value: true)
