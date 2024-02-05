@@ -17,3 +17,12 @@ foreach ut: unit_tests
          env: envs,
         )
 endforeach
+
+if get_option('pylint')
+  integration_pylint_flags = ['-d', 'W0511', '-d', 'C0302'] + pylint_flags
+  test('pylint-integration-tests',
+       pylint,
+       args: integration_pylint_flags + integration_tests,
+       env: nomalloc,
+       )
+endif
