@@ -7,6 +7,8 @@
  *
  */
 
+#define G_LOG_DOMAIN "TrickleChargeAction"
+
 #include <gudev/gudev.h>
 
 #include "ppd-action-trickle-charge.h"

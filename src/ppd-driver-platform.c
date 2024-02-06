@@ -7,6 +7,8 @@
  *
  */
 
+#define G_LOG_DOMAIN "PlatformDriver"
+
 #include "ppd-driver-platform.h"
 
 G_DEFINE_TYPE (PpdDriverPlatform, ppd_driver_platform, PPD_TYPE_DRIVER)

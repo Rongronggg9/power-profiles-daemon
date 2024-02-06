@@ -7,6 +7,8 @@
  *
  */
 
+#define G_LOG_DOMAIN "CpuDriver"
+
 #include "ppd-driver-cpu.h"
 
 /**

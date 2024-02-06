@@ -8,6 +8,8 @@
  *
  */
 
+#define G_LOG_DOMAIN "CpuDriver"
+
 #include <upower.h>
 
 #include "ppd-utils.h"

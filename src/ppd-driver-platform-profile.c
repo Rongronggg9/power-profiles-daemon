@@ -7,6 +7,8 @@
  *
  */
 
+#define G_LOG_DOMAIN "PlatformDriver"
+
 #include <gudev/gudev.h>
 #include <gio/gio.h>
 

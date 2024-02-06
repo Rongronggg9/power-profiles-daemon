@@ -7,6 +7,8 @@
  *
  */
 
+#define G_LOG_DOMAIN "Utils"
+
 #include "ppd-utils.h"
 #include <gio/gio.h>
 #include <stdio.h>

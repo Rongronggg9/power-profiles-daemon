@@ -7,6 +7,8 @@
  *
  */
 
+#define G_LOG_DOMAIN "PlatformDriver"
+
 #include "ppd-driver-placeholder.h"
 
 struct _PpdDriverPlaceholder

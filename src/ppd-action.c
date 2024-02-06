@@ -7,6 +7,8 @@
  *
  */
 
+#define G_LOG_DOMAIN "Action"
+
 #include "ppd-action.h"
 #include "ppd-enums.h"
 

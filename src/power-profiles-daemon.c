@@ -8,6 +8,8 @@
  *
  */
 
+#define G_LOG_DOMAIN "Core"
+
 #include "config.h"
 
 #include <locale.h>
