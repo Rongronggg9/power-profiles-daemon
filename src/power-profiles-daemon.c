@@ -14,6 +14,7 @@
 
 #include <locale.h>
 #include <polkit/polkit.h>
+#include <stdio.h>
 
 #include "power-profiles-daemon-resources.h"
 #include "power-profiles-daemon.h"
@@ -46,6 +47,7 @@ typedef struct {
   PpdDriverPlatform *platform_driver;
   GPtrArray *actions;
   GHashTable *profile_holds;
+  GLogLevelFlags log_level;
 } PpdApp;
 
 typedef struct {
@@ -1124,6 +1126,53 @@ main_loop_quit (void)
   g_main_loop_quit (ppd_app->main_loop);
 }
 
+static inline gboolean
+use_colored_ouput (void)
+{
+  if (g_getenv ("NO_COLOR"))
+    return FALSE;
+  return isatty (fileno (stdout));
+}
+
+static void
+debug_handler_cb (const gchar *log_domain,
+                  GLogLevelFlags log_level,
+                  const gchar *message,
+                  gpointer user_data)
+{
+  PpdApp *data = user_data;
+  g_autoptr(GString) domain = NULL;
+  gboolean use_color;
+  gint color;
+
+  /* not in verbose mode */
+  if (log_level > data->log_level)
+   return;
+
+  domain = g_string_new (log_domain);
+  use_color = use_colored_ouput ();
+
+  for (gsize i = domain->len; i < 15; i++)
+    g_string_append_c (domain, ' ');
+  g_print ("%s", domain->str);
+
+  switch (log_level) {
+  case G_LOG_LEVEL_ERROR:
+  case G_LOG_LEVEL_CRITICAL:
+  case G_LOG_LEVEL_WARNING:
+    color = 31; /* red */
+    break;
+  default:
+    color = 34; /* blue */
+    break;
+  }
+
+  if (use_color)
+    g_print ("%c[%dm%s\n%c[%dm", 0x1B, color, message, 0x1B, 0);
+  else
+    g_print ("%s\n", message);
+}
+
 int main (int argc, char **argv)
 {
   PpdApp *data;
@@ -1148,11 +1197,6 @@ int main (int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if (verbose)
-    g_setenv ("G_MESSAGES_DEBUG", "all", TRUE);
-
-  g_debug ("Starting power-profiles-daemon version "VERSION);
-
   data = g_new0 (PpdApp, 1);
   data->main_loop = g_main_loop_new (NULL, TRUE);
   data->auth = polkit_authority_get_sync (NULL, NULL);
@@ -1161,6 +1205,14 @@ int main (int argc, char **argv)
   data->profile_holds = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, (GDestroyNotify) profile_hold_free);
   data->active_profile = PPD_PROFILE_BALANCED;
   data->selected_profile = PPD_PROFILE_BALANCED;
+  data->log_level = verbose ? G_LOG_LEVEL_DEBUG : G_LOG_LEVEL_MESSAGE;
+
+  /* redirect all domains */
+  if (verbose && !g_log_writer_is_journald (fileno (stdout)))
+    g_log_set_default_handler (debug_handler_cb, data);
+
+  g_debug ("Starting power-profiles-daemon version "VERSION);
+
   load_configuration (data);
   ppd_app = data;
 
