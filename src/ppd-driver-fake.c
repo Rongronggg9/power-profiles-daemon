@@ -150,6 +150,10 @@ ppd_driver_fake_probe (PpdDriver  *driver)
   if (!envvar_set ("POWER_PROFILE_DAEMON_FAKE_DRIVER"))
     return PPD_PROBE_RESULT_FAIL;
 
+  /* don't activate stdin unless interactive */
+  if (isatty (fileno (stdout)) == 0)
+    return PPD_PROBE_RESULT_SUCCESS;
+
   fake = PPD_DRIVER_FAKE (driver);
   if (!setup_keyboard (fake))
     return PPD_PROBE_RESULT_FAIL;
