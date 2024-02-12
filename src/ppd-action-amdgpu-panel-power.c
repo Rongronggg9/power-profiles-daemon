@@ -20,6 +20,7 @@
 #define PROC_CPUINFO_PATH      "/proc/cpuinfo"
 
 #define PANEL_POWER_SYSFS_NAME "amdgpu/panel_power_savings"
+#define PANEL_STATUS_SYSFS_NAME "status"
 
 #define UPOWER_DBUS_NAME       "org.freedesktop.UPower"
 #define UPOWER_DBUS_PATH       "/org/freedesktop/UPower"
@@ -69,6 +70,20 @@ ppd_action_amdgpu_panel_power_constructor (GType                  type,
 }
 
 static gboolean
+panel_connected (GUdevDevice *device)
+{
+  const char *value;
+  g_autofree gchar *stripped = NULL;
+
+  value = g_udev_device_get_sysfs_attr_uncached (device, PANEL_STATUS_SYSFS_NAME);
+  if (!value)
+    return FALSE;
+  stripped = g_strchomp (g_strdup (value));
+
+  return g_strcmp0 (stripped, "connected") == 0;
+}
+
+static gboolean
 set_panel_power (PpdActionAmdgpuPanelPower *self, gint power, GError **error)
 {
   GList *devices, *l;
@@ -89,6 +104,9 @@ set_panel_power (PpdActionAmdgpuPanelPower *self, gint power, GError **error)
 
     value = g_udev_device_get_devtype (dev);
     if (g_strcmp0 (value, "drm_connector") != 0)
+      continue;
+
+    if (!panel_connected (dev))
       continue;
 
     value = g_udev_device_get_sysfs_attr_uncached (dev, PANEL_POWER_SYSFS_NAME);
@@ -202,6 +220,9 @@ udev_uevent_cb (GUdevClient *client,
 
   if (!g_udev_device_has_sysfs_attr (device, PANEL_POWER_SYSFS_NAME))
     return;
+
+  if (!panel_connected (device))
+      return;
 
   g_debug ("Updating panel power saving for '%s' to '%d'",
            g_udev_device_get_sysfs_path (device),

@@ -1393,7 +1393,7 @@ class Tests(dbusmock.DBusTestCase):
             "drm",
             "card1-eDP",
             None,
-            ["amdgpu/panel_power_savings", "0"],
+            ["status", "connected\n", "amdgpu/panel_power_savings", "0"],
             ["DEVTYPE", "drm_connector"],
         )
 
@@ -1428,13 +1428,27 @@ class Tests(dbusmock.DBusTestCase):
             "drm",
             "card2-eDP",
             None,
-            ["amdgpu/panel_power_savings", "0"],
+            ["status", "connected\n", "amdgpu/panel_power_savings", "0"],
             ["DEVTYPE", "drm_connector"],
         )
 
         # verify power saver got updated for it
         self.assert_eventually(
             lambda: self.read_sysfs_attr(edp2, "amdgpu/panel_power_savings") == b"4"
+        )
+
+        # add another device that supports the feature, but panel is disconnected
+        edp3 = self.testbed.add_device(
+            "drm",
+            "card3-eDP",
+            None,
+            ["status", "disconnected\n", "amdgpu/panel_power_savings", "0"],
+            ["DEVTYPE", "drm_connector"],
+        )
+
+        # verify power saver didn't get updated for it
+        self.assert_eventually(
+            lambda: self.read_sysfs_attr(edp3, "amdgpu/panel_power_savings") == b"0"
         )
 
     def test_trickle_charge_system(self):
