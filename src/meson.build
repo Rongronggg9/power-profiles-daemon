@@ -8,11 +8,46 @@ config_h_files = configure_file(
   configuration: config_h
 )
 
+dbus_xml = {}
+dbus_xml_sources = []
+resources_contents = []
+
+foreach name, path: bus_names
+  config = {
+    'dbus_name': name,
+    'dbus_iface': name,
+    'dbus_path': path,
+  }
+
+  xml_source = configure_file(
+    input: 'power-profiles-daemon.dbus.xml.in',
+    output: name + '.xml',
+    configuration: config,
+  )
+  dbus_xml_sources += xml_source
+  dbus_xml += {name: xml_source}
+
+  resources_contents += '<file preprocess="xml-stripblanks">@0@.xml</file>'.format(name)
+endforeach
+
+resources_xml = configure_file(
+  input: 'power-profiles-daemon.gresource.xml.in',
+  output: '@BASENAME@',
+  configuration: {
+    'prefix': bus_names['org.freedesktop.UPower.PowerProfiles'],
+    'contents': '\n'.join(resources_contents),
+  },
+)
+
 resources = gnome.compile_resources(
-    'power-profiles-daemon-resources', 'power-profiles-daemon.gresource.xml',
-    c_name: 'power_profiles_daemon',
-    source_dir: '.',
-    export: true
+  'power-profiles-daemon-resources', resources_xml,
+  c_name: 'power_profiles_daemon',
+  dependencies: dbus_xml_sources,
+  source_dir: [
+    meson.current_source_dir(),
+    meson.current_build_dir(),
+  ],
+  export: true
 )
 
 sources = [

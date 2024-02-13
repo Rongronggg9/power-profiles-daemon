@@ -54,14 +54,13 @@ except ImportError:
     sys.exit(77)
 
 
-PP = "net.hadess.PowerProfiles"
-PP_PATH = "/net/hadess/PowerProfiles"
-PP_INTERFACE = "net.hadess.PowerProfiles"
-
-
 # pylint: disable=too-many-public-methods
 class Tests(dbusmock.DBusTestCase):
     """Dbus based integration unit tests"""
+
+    PP = "org.freedesktop.UPower.PowerProfiles"
+    PP_PATH = "/org/freedesktop/UPower/PowerProfiles"
+    PP_INTERFACE = "org.freedesktop.UPower.PowerProfiles"
 
     @classmethod
     def setUpClass(cls):
@@ -207,7 +206,13 @@ class Tests(dbusmock.DBusTestCase):
             self.fail("daemon did not start in 10 seconds")
 
         self.proxy = Gio.DBusProxy.new_sync(
-            self.dbus, Gio.DBusProxyFlags.DO_NOT_AUTO_START, None, PP, PP_PATH, PP, None
+            self.dbus,
+            Gio.DBusProxyFlags.DO_NOT_AUTO_START,
+            None,
+            self.PP,
+            self.PP_PATH,
+            self.PP_INTERFACE,
+            None,
         )
 
         self.assertEqual(self.daemon.poll(), None, "daemon crashed")
@@ -231,12 +236,12 @@ class Tests(dbusmock.DBusTestCase):
             self.dbus,
             Gio.DBusProxyFlags.DO_NOT_AUTO_START,
             None,
-            PP,
-            PP_PATH,
+            self.PP,
+            self.PP_PATH,
             "org.freedesktop.DBus.Properties",
             None,
         )
-        return proxy.Get("(ss)", PP, name)
+        return proxy.Get("(ss)", self.PP, name)
 
     def set_dbus_property(self, name, value):
         """Set property value on daemon D-Bus interface."""
@@ -245,12 +250,12 @@ class Tests(dbusmock.DBusTestCase):
             self.dbus,
             Gio.DBusProxyFlags.DO_NOT_AUTO_START,
             None,
-            PP,
-            PP_PATH,
+            self.PP,
+            self.PP_PATH,
             "org.freedesktop.DBus.Properties",
             None,
         )
-        return proxy.Set("(ssv)", PP, name, value)
+        return proxy.Set("(ssv)", self.PP, name, value)
 
     def call_dbus_method(self, name, parameters):
         """Call a method of the daemon D-Bus interface."""
@@ -259,9 +264,9 @@ class Tests(dbusmock.DBusTestCase):
             self.dbus,
             Gio.DBusProxyFlags.DO_NOT_AUTO_START,
             None,
-            PP,
-            PP_PATH,
-            PP_INTERFACE,
+            self.PP,
+            self.PP_PATH,
+            self.PP_INTERFACE,
             None,
         )
         return proxy.call_sync(
@@ -1737,14 +1742,17 @@ class Tests(dbusmock.DBusTestCase):
             self.dbus,
             Gio.DBusProxyFlags.DO_NOT_AUTO_START,
             None,
-            PP,
-            PP_PATH,
+            self.PP,
+            self.PP_PATH,
             "org.freedesktop.DBus.Properties",
             None,
         )
         with self.assertRaises(gi.repository.GLib.GError) as error:
             proxy.Set(
-                "(ssv)", PP, "ActiveProfile", GLib.Variant.new_string("power-saver")
+                "(ssv)",
+                self.PP,
+                "ActiveProfile",
+                GLib.Variant.new_string("power-saver"),
             )
         self.assertIn("AccessDenied", str(error.exception))
 
@@ -1872,6 +1880,14 @@ class Tests(dbusmock.DBusTestCase):
             for key, val in properties.items():
                 prop_str += f"{key}={val}\n"
         return prop_str
+
+
+class LegacyDBusNameTests(Tests):
+    """This will repeats all the tests in the Tests class using the legacy dbus name"""
+
+    PP = "net.hadess.PowerProfiles"
+    PP_PATH = "/net/hadess/PowerProfiles"
+    PP_INTERFACE = "net.hadess.PowerProfiles"
 
 
 if __name__ == "__main__":

@@ -63,7 +63,7 @@
 	Power Profiles daemon.
       </para>
     </partintro>
-    <xi:include href="docs-net.hadess.PowerProfiles.xml"/>
+    <xi:include href="docs-org.freedesktop.UPower.PowerProfiles.xml"/>
   </reference>
 
   <reference id="internal-api">

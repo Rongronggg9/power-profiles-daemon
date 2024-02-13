@@ -84,8 +84,12 @@ reboot in `/var/lib/power-profiles-daemon/state.ini`.
 Those commands are also available through the D-Bus interface:
 
 ```sh
-gdbus introspect --system --dest net.hadess.PowerProfiles --object-path /net/hadess/PowerProfiles
-gdbus call --system --dest net.hadess.PowerProfiles --object-path /net/hadess/PowerProfiles --method org.freedesktop.DBus.Properties.Set 'net.hadess.PowerProfiles' 'ActiveProfile' "<'power-saver'>"
+gdbus introspect --system --dest org.freedesktop.UPower.PowerProfiles \
+  --object-path /org/freedesktop/UPower/PowerProfiles
+gdbus call --system --dest org.freedesktop.UPower.PowerProfiles \
+  --object-path /org/freedesktop/UPower/PowerProfiles \
+  --method org.freedesktop.DBus.Properties.Set 'org.freedesktop.UPower.PowerProfiles' \
+  'ActiveProfile' "<'power-saver'>"
 ```
 
 If that doesn't work, please file an issue, attach the output of:

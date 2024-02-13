@@ -5,7 +5,7 @@
 # the Free Software Foundation.
 
 [D-BUS Service]
-Name=net.hadess.PowerProfiles
+Name=@dbus_name@
 Exec=/bin/false
 User=root
 SystemdService=power-profiles-daemon.service

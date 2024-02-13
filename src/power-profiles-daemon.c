@@ -23,11 +23,17 @@
 #include "ppd-action.h"
 #include "ppd-enums.h"
 
-#define POWER_PROFILES_DBUS_NAME          "net.hadess.PowerProfiles"
-#define POWER_PROFILES_DBUS_PATH          "/net/hadess/PowerProfiles"
+#define POWER_PROFILES_DBUS_NAME          "org.freedesktop.UPower.PowerProfiles"
+#define POWER_PROFILES_DBUS_PATH          "/org/freedesktop/UPower/PowerProfiles"
 #define POWER_PROFILES_IFACE_NAME         POWER_PROFILES_DBUS_NAME
 
+#define POWER_PROFILES_LEGACY_DBUS_NAME   "net.hadess.PowerProfiles"
+#define POWER_PROFILES_LEGACY_DBUS_PATH   "/net/hadess/PowerProfiles"
+#define POWER_PROFILES_LEGACY_IFACE_NAME  POWER_PROFILES_LEGACY_DBUS_NAME
+
 #define POWER_PROFILES_POLICY_NAMESPACE "org.freedesktop.UPower.PowerProfiles"
+
+#define POWER_PROFILES_RESOURCES_PATH "/org/freedesktop/UPower/PowerProfiles"
 
 #ifndef POLKIT_HAS_AUTOPOINTERS
 /* FIXME: Remove this once we're fine to depend on polkit 0.114 */
@@ -37,9 +43,9 @@ G_DEFINE_AUTOPTR_CLEANUP_FUNC (PolkitSubject, g_object_unref)
 
 typedef struct {
   GMainLoop *main_loop;
-  GDBusNodeInfo *introspection_data;
   GDBusConnection *connection;
   guint name_id;
+  guint legacy_name_id;
   gboolean was_started;
   int ret;
 
@@ -837,7 +843,8 @@ handle_method_call (GDBusConnection       *connection,
   PpdApp *data = user_data;
   g_assert (data->connection);
 
-  if (g_strcmp0 (interface_name, POWER_PROFILES_IFACE_NAME) != 0) {
+  if (!g_str_equal (interface_name, POWER_PROFILES_IFACE_NAME) &&
+      !g_str_equal (interface_name, POWER_PROFILES_LEGACY_IFACE_NAME)) {
     g_dbus_method_invocation_return_error (invocation,G_DBUS_ERROR, G_DBUS_ERROR_UNKNOWN_INTERFACE,
                                            "Unknown interface %s", interface_name);
     return;
@@ -870,16 +877,34 @@ static const GDBusInterfaceVTable interface_vtable =
   handle_set_property
 };
 
+typedef struct {
+  PpdApp *app;
+  GBusNameOwnerFlags flags;
+  GDBusInterfaceInfo *interface;
+  GDBusInterfaceInfo *legacy_interface;
+} PpdBusOwnData;
+
+static void
+ppd_bus_own_data_free (PpdBusOwnData *data)
+{
+  g_clear_pointer (&data->interface, g_dbus_interface_info_unref);
+  g_clear_pointer (&data->legacy_interface, g_dbus_interface_info_unref);
+  g_free (data);
+}
+
 static void
 name_lost_handler (GDBusConnection *connection,
                    const gchar     *name,
                    gpointer         user_data)
 {
-  PpdApp *data = user_data;
+  PpdBusOwnData *data = user_data;
+  PpdApp *app = data->app;
+
   g_debug ("power-profiles-daemon is already running, or it cannot own its D-Bus name. Verify installation.");
-  if (!data->was_started)
-    data->ret = 1;
-  g_main_loop_quit (data->main_loop);
+  if (!app->was_started)
+    app->ret = 1;
+
+  g_main_loop_quit (app->main_loop);
 }
 
 static void
@@ -887,17 +912,33 @@ bus_acquired_handler (GDBusConnection *connection,
                       const gchar     *name,
                       gpointer         user_data)
 {
-  PpdApp *data = user_data;
+  PpdBusOwnData *data = user_data;
 
   g_dbus_connection_register_object (connection,
                                      POWER_PROFILES_DBUS_PATH,
-                                     data->introspection_data->interfaces[0],
+                                     data->interface,
                                      &interface_vtable,
-                                     data,
+                                     data->app,
                                      NULL,
                                      NULL);
 
-  data->connection = g_object_ref (connection);
+  g_dbus_connection_register_object (connection,
+                                     POWER_PROFILES_LEGACY_DBUS_PATH,
+                                     data->legacy_interface,
+                                     &interface_vtable,
+                                     data->app,
+                                     NULL,
+                                     NULL);
+
+  data->app->legacy_name_id = g_bus_own_name_on_connection (connection,
+                                                            POWER_PROFILES_LEGACY_DBUS_NAME,
+                                                            data->flags,
+                                                            NULL,
+                                                            name_lost_handler,
+                                                            data,
+                                                            NULL);
+
+  data->app->connection = g_object_ref (connection);
 }
 
 static gboolean
@@ -1067,37 +1108,63 @@ name_acquired_handler (GDBusConnection *connection,
                        const gchar     *name,
                        gpointer         user_data)
 {
-  PpdApp *data = user_data;
+  PpdBusOwnData *data = user_data;
 
-  start_profile_drivers (data);
+  start_profile_drivers (data->app);
 }
 
 static gboolean
-setup_dbus (PpdApp   *data,
-            gboolean  replace)
+setup_dbus (PpdApp    *data,
+            gboolean   replace,
+            GError   **error)
 {
-  GBytes *bytes;
-  GBusNameOwnerFlags flags;
+  g_autoptr(GBytes) iface_data = NULL;
+  g_autoptr(GBytes) legacy_iface_data = NULL;
+  g_autoptr(GDBusNodeInfo) introspection_data = NULL;
+  g_autoptr(GDBusNodeInfo) legacy_introspection_data = NULL;
+  PpdBusOwnData *own_data;
 
-  bytes = g_resources_lookup_data ("/net/hadess/PowerProfiles/net.hadess.PowerProfiles.xml",
-                                   G_RESOURCE_LOOKUP_FLAGS_NONE,
-                                   NULL);
-  data->introspection_data = g_dbus_node_info_new_for_xml (g_bytes_get_data (bytes, NULL), NULL);
-  g_bytes_unref (bytes);
-  g_assert (data->introspection_data != NULL);
+  iface_data = g_resources_lookup_data (POWER_PROFILES_RESOURCES_PATH "/"
+                                        POWER_PROFILES_DBUS_NAME ".xml",
+                                        G_RESOURCE_LOOKUP_FLAGS_NONE,
+                                        error);
+  if (!iface_data)
+    return FALSE;
 
-  flags = G_BUS_NAME_OWNER_FLAGS_ALLOW_REPLACEMENT;
+  legacy_iface_data = g_resources_lookup_data (POWER_PROFILES_RESOURCES_PATH "/"
+                                               POWER_PROFILES_LEGACY_DBUS_NAME ".xml",
+                                               G_RESOURCE_LOOKUP_FLAGS_NONE,
+                                               error);
+  if (!legacy_iface_data)
+    return FALSE;
+
+  introspection_data =  g_dbus_node_info_new_for_xml (g_bytes_get_data (iface_data, NULL),
+                                                      error);
+  if (!introspection_data)
+    return FALSE;
+
+  legacy_introspection_data =  g_dbus_node_info_new_for_xml (g_bytes_get_data (legacy_iface_data, NULL),
+                                                             error);
+  if (!legacy_introspection_data)
+    return FALSE;
+
+  own_data = g_new0 (PpdBusOwnData, 1);
+  own_data->app = data;
+  own_data->interface = g_dbus_interface_info_ref (introspection_data->interfaces[0]);
+  own_data->legacy_interface = g_dbus_interface_info_ref (legacy_introspection_data->interfaces[0]);
+
+  own_data->flags = G_BUS_NAME_OWNER_FLAGS_ALLOW_REPLACEMENT;
   if (replace)
-    flags |= G_BUS_NAME_OWNER_FLAGS_REPLACE;
+    own_data->flags |= G_BUS_NAME_OWNER_FLAGS_REPLACE;
 
   data->name_id = g_bus_own_name (G_BUS_TYPE_SYSTEM,
                                   POWER_PROFILES_DBUS_NAME,
-                                  flags,
+                                  own_data->flags,
                                   bus_acquired_handler,
                                   name_acquired_handler,
                                   name_lost_handler,
-                                  data,
-                                  NULL);
+                                  own_data,
+                                  (GDestroyNotify) ppd_bus_own_data_free);
 
   return TRUE;
 }
@@ -1108,10 +1175,8 @@ free_app_data (PpdApp *data)
   if (data == NULL)
     return;
 
-  if (data->name_id != 0) {
-    g_bus_unown_name (data->name_id);
-    data->name_id = 0;
-  }
+  g_clear_handle_id (&data->name_id, g_bus_unown_name);
+  g_clear_handle_id (&data->legacy_name_id, g_bus_unown_name);
 
   g_clear_pointer (&data->config_path, g_free);
   g_clear_pointer (&data->config, g_key_file_unref);
@@ -1124,7 +1189,6 @@ free_app_data (PpdApp *data)
   g_clear_object (&data->auth);
 
   g_clear_pointer (&data->main_loop, g_main_loop_unref);
-  g_clear_pointer (&data->introspection_data, g_dbus_node_info_unref);
   g_clear_object (&data->connection);
   g_free (data);
   ppd_app = NULL;
@@ -1227,7 +1291,10 @@ int main (int argc, char **argv)
   ppd_app = data;
 
   /* Set up D-Bus */
-  setup_dbus (data, replace);
+  if (!setup_dbus (data, replace, &error)) {
+    g_error ("Failed to start dbus: %s", error->message);
+    return 1;
+  }
 
   g_main_loop_run (data->main_loop);
   ret = data->ret;

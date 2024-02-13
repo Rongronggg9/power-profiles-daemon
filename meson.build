@@ -54,6 +54,11 @@ if get_option('pylint')
 endif
 xmllint = find_program('xmllint', required: false)
 
+bus_names = {
+  'org.freedesktop.UPower.PowerProfiles': '/org/freedesktop/UPower/PowerProfiles',
+  'net.hadess.PowerProfiles': '/net/hadess/PowerProfiles',
+}
+
 subdir('src')
 subdir('data')
 

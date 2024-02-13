@@ -11,8 +11,8 @@ content_files += configure_file(
 
 content_files += gnome.gdbus_codegen(
   meson.project_name(),
-  sources: meson.source_root() / 'src' / 'net.hadess.PowerProfiles.xml',
-  interface_prefix: 'net.hadess',
+  sources: dbus_xml['org.freedesktop.UPower.PowerProfiles'],
+  interface_prefix: 'org.freedesktop.UPower',
   namespace: 'PowerProfiles',
   docbook: 'docs',
   build_by_default: true,

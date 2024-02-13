@@ -4,7 +4,7 @@
 <node>
 
   <!--
-      net.hadess.PowerProfiles:
+      @dbus_iface@:
       @short_description: Power Profiles daemon
 
       The power-profiles-daemon API is meant to be used by parts of the OS or
@@ -21,9 +21,9 @@
       existing projects is explained <ulink href=" https://gitlab.freedesktop.org/hadess/power-profiles-daemon/-/blob/master/README.md">
       in the project's README file</ulink>.
 
-      The object path will be "/net/hadess/PowerProfiles".
+      The object path will be "@dbus_path@".
   -->
-  <interface name="net.hadess.PowerProfiles">
+  <interface name="@dbus_iface@">
 
     <!--
         HoldProfile:

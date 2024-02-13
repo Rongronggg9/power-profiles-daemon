@@ -5,7 +5,7 @@ Before=multi-user.target display-manager.target
 
 [Service]
 Type=dbus
-BusName=net.hadess.PowerProfiles
+BusName=org.freedesktop.UPower.PowerProfiles
 ExecStart=@libexecdir@/power-profiles-daemon
 Restart=on-failure
 # This always corresponds to /var/lib/power-profiles-daemon
