@@ -2,6 +2,7 @@ deps = [ gio_dep, gudev_dep, upower_dep, polkit_gobject_dep ]
 
 config_h = configuration_data()
 config_h.set_quoted('VERSION', meson.project_version())
+config_h.set('POLKIT_HAS_AUTOPOINTERS', polkit_gobject_dep.version().version_compare('>= 0.114'))
 config_h_files = configure_file(
   output: 'config.h',
   configuration: config_h

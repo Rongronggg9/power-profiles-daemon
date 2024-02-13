@@ -27,6 +27,12 @@
 #define POWER_PROFILES_DBUS_PATH          "/net/hadess/PowerProfiles"
 #define POWER_PROFILES_IFACE_NAME         POWER_PROFILES_DBUS_NAME
 
+#ifndef POLKIT_HAS_AUTOPOINTERS
+/* FIXME: Remove this once we're fine to depend on polkit 0.114 */
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (PolkitAuthorizationResult, g_object_unref)
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (PolkitSubject, g_object_unref)
+#endif
+
 typedef struct {
   GMainLoop *main_loop;
   GDBusNodeInfo *introspection_data;
