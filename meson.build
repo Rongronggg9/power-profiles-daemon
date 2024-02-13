@@ -6,7 +6,7 @@ project('power-profiles-daemon', [ 'c' ],
           'warning_level=1',
           'c_std=c99',
         ],
-        meson_version: '>= 0.58.0')
+        meson_version: '>= 0.59.0')
 
 cc = meson.get_compiler('c')
 
