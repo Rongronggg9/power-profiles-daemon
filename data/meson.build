@@ -26,7 +26,7 @@ if xmllint.found()
        xmllint,
        args: [
            '--noout',
-           meson.source_root() / 'data' / polkit_policy,
+           meson.project_source_root() / 'data' / polkit_policy,
        ])
 endif
 

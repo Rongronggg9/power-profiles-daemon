@@ -24,13 +24,13 @@
 #
 # Checks NEWS for the version number:
 # meson.add_dist_script(
-#   find_program('check-news.sh').path(),
+#   find_program('check-news.sh').full_path(),
 #   '@0@'.format(meson.project_version())
 # )
 #
 # Checks NEWS and data/foo.appdata.xml for the version number:
 # meson.add_dist_script(
-#   find_program('check-news.sh').path(),
+#   find_program('check-news.sh').full_path(),
 #   '@0@'.format(meson.project_version()),
 #   'NEWS',
 #   'data/foo.appdata.xml'

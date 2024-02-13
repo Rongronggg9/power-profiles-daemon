@@ -6,7 +6,7 @@ project('power-profiles-daemon', [ 'c' ],
           'warning_level=1',
           'c_std=c99',
         ],
-        meson_version: '>= 0.54.0')
+        meson_version: '>= 0.58.0')
 
 cc = meson.get_compiler('c')
 
@@ -34,13 +34,13 @@ dbusservicedir = get_option('datadir') / 'dbus-1' / 'system-services'
 systemd_system_unit_dir = get_option('systemdsystemunitdir')
 if systemd_system_unit_dir == 'auto'
     systemd_dep = dependency('systemd')
-    systemd_system_unit_dir = systemd_dep.get_pkgconfig_variable('systemdsystemunitdir')
+    systemd_system_unit_dir = systemd_dep.get_variable('systemdsystemunitdir')
 endif
 gio_dep = dependency('gio-2.0')
 gudev_dep = dependency('gudev-1.0', version: '>= 234')
 upower_dep = dependency('upower-glib')
 polkit_gobject_dep = dependency('polkit-gobject-1', version: '>= 0.91')
-polkit_policy_directory = polkit_gobject_dep.get_pkgconfig_variable('policydir')
+polkit_policy_directory = polkit_gobject_dep.get_variable('policydir')
 
 gnome = import('gnome')
 
@@ -98,6 +98,6 @@ if get_option('tests')
 endif
 
 meson.add_dist_script(
-  find_program('check-news.sh').path(),
+  find_program('check-news.sh').full_path(),
   '@0@'.format(meson.project_version())
 )

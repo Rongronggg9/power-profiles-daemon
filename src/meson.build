@@ -67,7 +67,7 @@ py_installation = python.find_installation('python3', required: true)
 
 ppd_conf = configuration_data()
 ppd_conf.set('VERSION', meson.project_version())
-ppd_conf.set('PYTHON3', py_installation.path())
+ppd_conf.set('PYTHON3', py_installation.full_path())
 
 script = configure_file(
   input: 'powerprofilesctl.in',

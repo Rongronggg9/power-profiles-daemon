@@ -1,6 +1,6 @@
 envs = environment()
-envs.set ('top_builddir', meson.build_root())
-envs.set ('top_srcdir', meson.source_root())
+envs.set ('top_builddir', meson.project_build_root())
+envs.set ('top_srcdir', meson.project_source_root())
 
 unittest_inspector = find_program('unittest_inspector.py')
 integration_tests = files('integration_test.py')

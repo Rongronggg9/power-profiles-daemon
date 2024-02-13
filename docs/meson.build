@@ -37,8 +37,8 @@ gnome.gtkdoc(
   dependencies: libpower_profiles_daemon_dep,
   gobject_typesfile: [join_paths(meson.current_source_dir(), 'power-profiles-daemon.types')],
   src_dir: [
-    meson.source_root() /'src',
-    meson.build_root() / 'src',
+    meson.project_source_root() /'src',
+    meson.project_build_root() / 'src',
   ],
   ignore_headers: private_headers,
 )
