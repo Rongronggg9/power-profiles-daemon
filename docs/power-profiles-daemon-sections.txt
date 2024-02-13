@@ -1,4 +1,11 @@
 <SECTION>
+<FILE>config</FILE>
+<SUBSECTION Private>
+VERSION
+</SECTION>
+</SECTION>
+
+<SECTION>
 <FILE>ppd-action</FILE>
 <TITLE>Profile Actions</TITLE>
 PpdActionClass
@@ -16,6 +23,8 @@ PpdProbeResult
 PpdProfileActivationReason
 <SUBSECTION Private>
 PPD_TYPE_DRIVER
+PPD_TYPE_DRIVER_CPU
+PPD_TYPE_DRIVER_PLATFORM
 </SECTION>
 
 <SECTION>
