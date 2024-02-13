@@ -10,6 +10,7 @@ VERSION = '@VERSION@'
 PP_NAME = 'org.freedesktop.UPower.PowerProfiles'
 PP_PATH = '/org/freedesktop/UPower/PowerProfiles'
 PP_IFACE = 'org.freedesktop.UPower.PowerProfiles'
+PROPERTIES_IFACE = 'org.freedesktop.DBus.Properties'
 
 def usage_main():
     print('Usage:')
@@ -98,7 +99,7 @@ def get_proxy():
     try:
         bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
         proxy = Gio.DBusProxy.new_sync(bus, Gio.DBusProxyFlags.NONE, None,
-                                       PP_NAME, PP_PATH, PP_IFACE, None)
+                                       PP_NAME, PP_PATH, PROPERTIES_IFACE, None)
     except:
         raise
     return proxy
