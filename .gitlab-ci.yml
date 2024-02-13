@@ -67,3 +67,17 @@ build_stable:
         coverage_format: cobertura
         path: _build/meson-logs/coverage.xml
   coverage: '/^TOTAL.*\s+(\d+\%)$/'
+
+scan_build:
+  variables:
+    JOB_DEPS: clang-analyzer
+  before_script:
+    - dnf update -y
+    - if [ -x /bin/dnf ]; then dnf install -y $DEPENDENCIES $JOB_DEPS; else dnf5 install -y $DEPENDENCIES $JOB_DEPS; fi
+  script:
+    - meson setup _build
+    -  env SCANBUILD=$(which scan-build) ninja -C _build scan-build
+  artifacts:
+    when: on_failure
+    paths:
+      - _build/meson-logs
