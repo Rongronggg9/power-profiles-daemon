@@ -127,8 +127,8 @@ class Tests(dbusmock.DBusTestCase):
         )
         self.obj_polkit.SetAllowed(
             [
-                "net.hadess.PowerProfiles.switch-profile",
-                "net.hadess.PowerProfiles.hold-profile",
+                "org.freedesktop.UPower.PowerProfiles.switch-profile",
+                "org.freedesktop.UPower.PowerProfiles.hold-profile",
             ]
         )
 

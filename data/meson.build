@@ -20,7 +20,7 @@ install_data(
   install_dir: dbusservicedir
 )
 
-polkit_policy = 'net.hadess.PowerProfiles.policy'
+polkit_policy = 'power-profiles-daemon.policy'
 if xmllint.found()
   test(polkit_policy,
        xmllint,

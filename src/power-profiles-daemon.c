@@ -27,6 +27,8 @@
 #define POWER_PROFILES_DBUS_PATH          "/net/hadess/PowerProfiles"
 #define POWER_PROFILES_IFACE_NAME         POWER_PROFILES_DBUS_NAME
 
+#define POWER_PROFILES_POLICY_NAMESPACE "org.freedesktop.UPower.PowerProfiles"
+
 #ifndef POLKIT_HAS_AUTOPOINTERS
 /* FIXME: Remove this once we're fine to depend on polkit 0.114 */
 G_DEFINE_AUTOPTR_CLEANUP_FUNC (PolkitAuthorizationResult, g_object_unref)
@@ -813,7 +815,9 @@ handle_set_property (GDBusConnection  *connection,
                  "No such property: %s", property_name);
     return FALSE;
   }
-  if (!check_action_permission (data, sender, "net.hadess.PowerProfiles.switch-profile", error))
+  if (!check_action_permission (data, sender,
+                                POWER_PROFILES_POLICY_NAMESPACE ".switch-profile",
+                                error))
     return FALSE;
 
   g_variant_get (value, "&s", &profile);
@@ -843,7 +847,7 @@ handle_method_call (GDBusConnection       *connection,
     g_autoptr(GError) local_error = NULL;
     if (!check_action_permission (data,
                                   g_dbus_method_invocation_get_sender (invocation),
-                                  "net.hadess.PowerProfiles.hold-profile",
+                                  POWER_PROFILES_POLICY_NAMESPACE ".hold-profile",
                                   &local_error)) {
       g_dbus_method_invocation_return_gerror (invocation, local_error);
       return;

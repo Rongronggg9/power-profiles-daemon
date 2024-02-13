@@ -8,7 +8,7 @@
   <vendor>power-profiles-daemon</vendor>
   <vendor_url>https://gitlab.freedesktop.org/hadess/power-profiles-daemon</vendor_url>
 
-  <action id="net.hadess.PowerProfiles.switch-profile">
+  <action id="org.freedesktop.UPower.PowerProfiles.switch-profile">
     <description>Switch Power Profile</description>
     <message>Privileges are required to switch power profiles.</message>
     <defaults>
@@ -18,7 +18,7 @@
     </defaults>
   </action>
 
-  <action id="net.hadess.PowerProfiles.hold-profile">
+  <action id="org.freedesktop.UPower.PowerProfiles.hold-profile">
     <description>Hold Power Profile</description>
     <message>Privileges are required to hold power profiles.</message>
     <defaults>
