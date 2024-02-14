@@ -117,6 +117,7 @@ ppd_driver_finalize (GObject *object)
 
   priv = PPD_DRIVER_GET_PRIVATE (PPD_DRIVER (object));
   g_clear_pointer (&priv->driver_name, g_free);
+  g_clear_pointer (&priv->performance_degraded, g_free);
 
   G_OBJECT_CLASS (ppd_driver_parent_class)->finalize (object);
 }
