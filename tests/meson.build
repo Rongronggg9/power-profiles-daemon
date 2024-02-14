@@ -7,6 +7,32 @@ integration_tests = files('integration_test.py')
 r = run_command(python3, unittest_inspector, integration_tests, check: true)
 unit_tests = r.stdout().strip().split('\n')
 
+valgrind = find_program('valgrind', required: false)
+if valgrind.found()
+    glib_share = glib_dep.get_variable('prefix') / 'share' / glib_dep.name()
+    glib_suppressions = glib_share + '/valgrind/glib.supp'
+    libfprint_wrapper = [
+        valgrind.full_path(),
+        '--tool=memcheck',
+        '--leak-check=full',
+        '--leak-resolution=high',
+        '--error-exitcode=1',
+        '--errors-for-leak-kinds=definite',
+        '--track-origins=yes',
+        '--show-leak-kinds=definite,possible',
+        '--show-error-list=yes',
+        '--gen-suppressions=all',
+        '--suppressions=' + glib_suppressions,
+    ]
+    add_test_setup('valgrind',
+        timeout_multiplier: 5,
+        env: [
+            'G_SLICE=always-malloc',
+            'UNDER_VALGRIND=1',
+            'PPD_TEST_WRAPPER=' + ' '.join(libfprint_wrapper),
+        ])
+endif
+
 preloaded_libs = []
 ppd_tests_ld_preload = []
 

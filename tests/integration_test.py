@@ -183,10 +183,11 @@ class Tests(dbusmock.DBusTestCase):
         env["UMOCKDEV_DIR"] = self.testbed.get_root_dir()
         env["LD_PRELOAD"] = os.getenv("PPD_LD_PRELOAD") + " " + os.getenv("LD_PRELOAD")
         self.log = tempfile.NamedTemporaryFile()  # pylint: disable=consider-using-with
-        if os.getenv("VALGRIND") is not None:
-            daemon_path = ["valgrind", self.daemon_path, "-v"]
-        else:
-            daemon_path = [self.daemon_path, "-v"]
+        daemon_path = [self.daemon_path, "-v"]
+        if os.getenv("PPD_TEST_WRAPPER"):
+            daemon_path = os.getenv("PPD_TEST_WRAPPER").split(' ') + daemon_path
+        elif os.getenv("VALGRIND"):
+            daemon_path = ["valgrind"] + daemon_path
 
         # pylint: disable=consider-using-with
         self.daemon = subprocess.Popen(
@@ -381,8 +382,11 @@ class Tests(dbusmock.DBusTestCase):
         """D-Bus startup error"""
 
         self.start_daemon()
+        daemon_path = [self.daemon_path]
+        if os.getenv("PPD_TEST_WRAPPER"):
+            daemon_path = os.getenv("PPD_TEST_WRAPPER").split(' ') + daemon_path
         out = subprocess.run(
-            [self.daemon_path],
+            daemon_path,
             env={
                 "LD_PRELOAD": os.getenv("PPD_LD_PRELOAD")
                 + " "
