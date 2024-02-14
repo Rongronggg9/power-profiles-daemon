@@ -59,6 +59,10 @@ bus_names = {
   'net.hadess.PowerProfiles': '/net/hadess/PowerProfiles',
 }
 
+address_sanitizer = get_option('b_sanitize') == 'address' or \
+  get_option('b_sanitize') == 'address,undefined' or \
+  get_option('b_sanitize') == 'leak'
+
 subdir('src')
 subdir('data')
 

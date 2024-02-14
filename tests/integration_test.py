@@ -181,6 +181,7 @@ class Tests(dbusmock.DBusTestCase):
         # note: Python doesn't propagate the setenv from Testbed.new(), so we
         # have to do that ourselves
         env["UMOCKDEV_DIR"] = self.testbed.get_root_dir()
+        env["LD_PRELOAD"] = os.getenv("PPD_LD_PRELOAD") + " " + os.getenv("LD_PRELOAD")
         self.log = tempfile.NamedTemporaryFile()  # pylint: disable=consider-using-with
         if os.getenv("VALGRIND") is not None:
             daemon_path = ["valgrind", self.daemon_path, "-v"]
@@ -382,6 +383,11 @@ class Tests(dbusmock.DBusTestCase):
         self.start_daemon()
         out = subprocess.run(
             [self.daemon_path],
+            env={
+                "LD_PRELOAD": os.getenv("PPD_LD_PRELOAD")
+                + " "
+                + os.getenv("LD_PRELOAD")
+            },
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             check=False,
