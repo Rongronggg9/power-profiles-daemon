@@ -132,6 +132,7 @@ class Tests(dbusmock.DBusTestCase):
         )
 
         self.proxy = None
+        self.props_proxy = None
         self.log = None
         self.daemon = None
         self.changed_properties = {}
@@ -195,27 +196,31 @@ class Tests(dbusmock.DBusTestCase):
             daemon_path, env=env, stdout=self.log, stderr=subprocess.STDOUT
         )
 
-        # wait until the daemon gets online
-        timeout = 100
-        while timeout > 0:
-            time.sleep(0.1)
-            timeout -= 1
+        def on_proxy_connected(_, res):
             try:
-                self.get_dbus_property("ActiveProfile")
-                break
-            except GLib.GError:
-                pass
-        else:
-            self.fail("daemon did not start in 10 seconds")
+                self.proxy = Gio.DBusProxy.new_finish(res)
+                print(f"Proxy to {self.proxy.get_name()} connected")
+            except GLib.Error as exc:
+                self.fail(exc)
 
-        self.proxy = Gio.DBusProxy.new_sync(
+        cancellable = Gio.Cancellable()
+        self.addCleanup(cancellable.cancel)
+        Gio.DBusProxy.new(
             self.dbus,
             Gio.DBusProxyFlags.DO_NOT_AUTO_START,
             None,
             self.PP,
             self.PP_PATH,
             self.PP_INTERFACE,
-            None,
+            cancellable,
+            on_proxy_connected,
+        )
+
+        # wait until the daemon gets online
+        self.assert_eventually(
+            lambda: self.proxy and self.proxy.get_name_owner(),
+            timeout=100,
+            message="daemon did not start in 10 seconds",
         )
 
         def properties_changed_cb(_, changed_properties, invalidated):
@@ -227,6 +232,20 @@ class Tests(dbusmock.DBusTestCase):
         )
 
         self.assertEqual(self.daemon.poll(), None, "daemon crashed")
+
+    def ensure_dbus_properties_proxies(self):
+        self.props_proxy = Gio.DBusProxy.new_sync(
+            self.dbus,
+            Gio.DBusProxyFlags.DO_NOT_AUTO_START
+            | Gio.DBusProxyFlags.DO_NOT_AUTO_START_AT_CONSTRUCTION
+            | Gio.DBusProxyFlags.DO_NOT_LOAD_PROPERTIES
+            | Gio.DBusProxyFlags.DO_NOT_CONNECT_SIGNALS,
+            None,
+            self.PP,
+            self.PP_PATH,
+            "org.freedesktop.DBus.Properties",
+            None,
+        )
 
     def stop_daemon(self):
         """Stop the daemon if it is running."""
@@ -242,45 +261,17 @@ class Tests(dbusmock.DBusTestCase):
 
     def get_dbus_property(self, name):
         """Get property value from daemon D-Bus interface."""
-
-        proxy = Gio.DBusProxy.new_sync(
-            self.dbus,
-            Gio.DBusProxyFlags.DO_NOT_AUTO_START,
-            None,
-            self.PP,
-            self.PP_PATH,
-            "org.freedesktop.DBus.Properties",
-            None,
-        )
-        return proxy.Get("(ss)", self.PP, name)
+        self.ensure_dbus_properties_proxies()
+        return self.props_proxy.Get("(ss)", self.PP, name)
 
     def set_dbus_property(self, name, value):
         """Set property value on daemon D-Bus interface."""
-
-        proxy = Gio.DBusProxy.new_sync(
-            self.dbus,
-            Gio.DBusProxyFlags.DO_NOT_AUTO_START,
-            None,
-            self.PP,
-            self.PP_PATH,
-            "org.freedesktop.DBus.Properties",
-            None,
-        )
-        return proxy.Set("(ssv)", self.PP, name, value)
+        self.ensure_dbus_properties_proxies()
+        return self.props_proxy.Set("(ssv)", self.PP, name, value)
 
     def call_dbus_method(self, name, parameters):
         """Call a method of the daemon D-Bus interface."""
-
-        proxy = Gio.DBusProxy.new_sync(
-            self.dbus,
-            Gio.DBusProxyFlags.DO_NOT_AUTO_START,
-            None,
-            self.PP,
-            self.PP_PATH,
-            self.PP_INTERFACE,
-            None,
-        )
-        return proxy.call_sync(
+        return self.proxy.call_sync(
             name, parameters, Gio.DBusCallFlags.NO_AUTO_START, -1, None
         )
 
