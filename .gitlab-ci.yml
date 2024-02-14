@@ -1,8 +1,6 @@
 image: fedora:rawhide
 
 variables:
-  PRECOMMIT: pre-commit
-             git
   DEPENDENCIES: gcc
                 gcovr
                 gtk-doc
@@ -27,19 +25,26 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_PIPELINE_SOURCE == 'push'
 
-pre_commit:
+.install-deps:
   before_script:
     - dnf update -y
-    - if [ -x /bin/dnf ]; then dnf install -y $PRECOMMIT; else dnf5 install -y $PRECOMMIT; fi
+    - if [ -x /bin/dnf ]; then dnf install -y $DEPENDENCIES $JOB_DEPS; else dnf5 install -y $DEPENDENCIES $JOB_DEPS; fi
+
+pre_commit:
+  variables:
+    DEPENDENCIES: {}
+    JOB_DEPS: pre-commit
+              git
+  extends:
+    - .install-deps
   script:
     - pre-commit run --all-files
 
 build_stable:
-  before_script:
-    - dnf update -y
-    - if [ -x /bin/dnf ]; then dnf install -y $DEPENDENCIES; else dnf5 install -y $DEPENDENCIES; fi
-    - mkdir tmpdir/
+  extends:
+    - .install-deps
   script:
+    - mkdir tmpdir/
     - meson setup
         --werror
         --fatal-meson-warnings
@@ -71,9 +76,8 @@ build_stable:
 scan_build:
   variables:
     JOB_DEPS: clang-analyzer
-  before_script:
-    - dnf update -y
-    - if [ -x /bin/dnf ]; then dnf install -y $DEPENDENCIES $JOB_DEPS; else dnf5 install -y $DEPENDENCIES $JOB_DEPS; fi
+  extends:
+    - .install-deps
   script:
     - meson setup _build
     -  env SCANBUILD=$(which scan-build) ninja -C _build scan-build
