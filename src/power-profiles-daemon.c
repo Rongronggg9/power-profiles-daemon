@@ -500,6 +500,21 @@ activate_target_profile (PpdApp                      *data,
 }
 
 static void
+release_hold_notify (PpdApp      *data,
+                     ProfileHold *hold,
+                     guint        cookie)
+{
+  const char *req_path = POWER_PROFILES_DBUS_PATH;
+
+  if (g_strcmp0 (hold->requester_iface, POWER_PROFILES_LEGACY_IFACE_NAME) == 0)
+    req_path = POWER_PROFILES_LEGACY_DBUS_PATH;
+
+  g_dbus_connection_emit_signal (data->connection, hold->requester, req_path,
+                                 hold->requester_iface, "ProfileReleased",
+                                 g_variant_new ("(u)", cookie), NULL);
+}
+
+static void
 release_all_profile_holds (PpdApp *data)
 {
   GHashTableIter iter;
@@ -509,14 +524,8 @@ release_all_profile_holds (PpdApp *data)
   while (g_hash_table_iter_next (&iter, &key, &value)) {
     ProfileHold *hold = value;
     guint cookie = GPOINTER_TO_UINT (key);
-    const char *req_path = POWER_PROFILES_DBUS_PATH;
 
-    if (g_strcmp0 (hold->requester_iface, POWER_PROFILES_LEGACY_IFACE_NAME) == 0)
-      req_path = POWER_PROFILES_LEGACY_DBUS_PATH;
-
-    g_dbus_connection_emit_signal (data->connection, hold->requester, req_path,
-                                   hold->requester_iface, "ProfileReleased",
-                                   g_variant_new ("(u)", cookie), NULL);
+    release_hold_notify (data, hold, cookie);
     g_bus_unwatch_name (cookie);
   }
   g_hash_table_remove_all (data->profile_holds);
@@ -640,6 +649,7 @@ release_profile_hold (PpdApp *data,
 
   g_bus_unwatch_name (cookie);
   hold_profile = hold->profile;
+  release_hold_notify (data, hold, cookie);
   g_hash_table_remove (data->profile_holds, GUINT_TO_POINTER (cookie));
 
   if (g_hash_table_size (data->profile_holds) == 0 &&

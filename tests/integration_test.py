@@ -1666,6 +1666,17 @@ class Tests(dbusmock.DBusTestCase):
             ]
         )
 
+        released_cookie = None
+
+        def signal_cb(_, sender, signal, params):
+            nonlocal released_cookie
+            if signal == "ProfileReleased":
+                released_cookie = params
+
+        self.addCleanup(
+            self.proxy.disconnect, self.proxy.connect("g-signal", signal_cb)
+        )
+
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "performance")
         profile_holds = self.get_dbus_property("ActiveProfileHolds")
         self.assertEqual(len(profile_holds), 1)
@@ -1674,6 +1685,7 @@ class Tests(dbusmock.DBusTestCase):
         self.assertEqual(profile_holds[0]["ApplicationId"], "testApplication")
 
         self.call_dbus_method("ReleaseProfile", GLib.Variant("(u)", cookie))
+        self.assert_eventually(lambda: released_cookie == cookie)
         self.assert_eventually(
             lambda: self.changed_properties.get("ActiveProfile") == "balanced"
         )
@@ -1725,6 +1737,7 @@ class Tests(dbusmock.DBusTestCase):
         )
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "performance")
         self.call_dbus_method("ReleaseProfile", GLib.Variant("(u)", cookie))
+        self.assert_eventually(lambda: released_cookie == cookie)
         self.assert_eventually(
             lambda: self.changed_properties.get("ActiveProfileHolds") == []
         )
