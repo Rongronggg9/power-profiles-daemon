@@ -197,6 +197,7 @@ class Tests(dbusmock.DBusTestCase):
         self.daemon = subprocess.Popen(
             daemon_path, env=env, stdout=self.log, stderr=subprocess.STDOUT
         )
+        self.addCleanup(self.daemon.kill)
 
         def on_proxy_connected(_, res):
             try:
@@ -254,10 +255,11 @@ class Tests(dbusmock.DBusTestCase):
 
         if self.daemon:
             try:
-                self.daemon.kill()
+                self.daemon.terminate()
             except OSError:
                 pass
-            self.daemon.wait()
+            self.daemon.wait(timeout=3000)
+
         self.daemon = None
         self.proxy = None
 
