@@ -1,4 +1,5 @@
 envs = environment()
+envs.set('PPD_TEST_VERBOSE', 'true')
 envs.set ('top_builddir', meson.project_build_root())
 envs.set ('top_srcdir', meson.project_source_root())
 

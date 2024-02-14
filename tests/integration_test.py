@@ -142,7 +142,9 @@ class Tests(dbusmock.DBusTestCase):
 
     def run(self, result=None):
         super().run(result)
-        if result and len(result.errors) + len(result.failures) > 0 and self.log:
+        if not result or not self.log:
+            return
+        if len(result.errors) + len(result.failures) or os.getenv("PPD_TEST_VERBOSE"):
             with open(self.log.name, encoding="utf-8") as tmpf:
                 sys.stderr.write("\n-------------- daemon log: ----------------\n")
                 sys.stderr.write(tmpf.read())
