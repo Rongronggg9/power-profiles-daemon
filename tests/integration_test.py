@@ -405,6 +405,14 @@ class Tests(dbusmock.DBusTestCase):
             + "but '{self.read_sysfs_attr(device, attribute)}'",
         )
 
+    def assert_dbus_property_eventually_is(self, prop, value, timeout=1200):
+        """Asserts that a dbus property eventually is what expected"""
+        return self.assert_eventually(
+            lambda: self.get_dbus_property(prop) == value,
+            timeout=timeout,
+            message=f"property '{prop}' is not '{value}', but '{self.get_dbus_property(prop)}'",
+        )
+
     #
     # Actual test cases
     #
@@ -1240,16 +1248,12 @@ class Tests(dbusmock.DBusTestCase):
 
         # lapmode detected
         self.testbed.set_attribute(self.tp_acpi, "dytc_lapmode", "1\n")
-        self.assert_eventually(
-            lambda: self.get_dbus_property("PerformanceDegraded") == "lap-detected"
-        )
+        self.assert_dbus_property_eventually_is("PerformanceDegraded", "lap-detected")
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "performance")
 
         # Reset lapmode
         self.testbed.set_attribute(self.tp_acpi, "dytc_lapmode", "0\n")
-        self.assert_eventually(
-            lambda: self.get_dbus_property("PerformanceDegraded") == ""
-        )
+        self.assert_dbus_property_eventually_is("PerformanceDegraded", "")
 
         # Performance mode didn't change
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "performance")
@@ -1267,9 +1271,7 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile"
         )
         self.write_file_contents(platform_profile, "performance\n")
-        self.assert_eventually(
-            lambda: self.get_dbus_property("ActiveProfile") == "performance"
-        )
+        self.assert_dbus_property_eventually_is("ActiveProfile", "performance")
 
     def test_fake_driver(self):
         """Test that the fake driver works"""
@@ -1767,9 +1769,7 @@ class Tests(dbusmock.DBusTestCase):
             os.path.join(acpi_dir, "platform_profile"), "performance\n"
         )
 
-        self.assert_eventually(
-            lambda: self.get_dbus_property("ActiveProfile") == "power-saver"
-        )
+        self.assert_dbus_property_eventually_is("ActiveProfile", "power-saver")
         self.stop_daemon()
 
     def test_not_allowed_profile(self):
