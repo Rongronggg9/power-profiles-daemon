@@ -2019,6 +2019,8 @@ class Tests(dbusmock.DBusTestCase):
         sourcedir = os.getenv("top_srcdir", ".")
         tool_path = os.path.join(sourcedir, "src", "powerprofilesctl")
 
+        self.assertEqual(self.get_dbus_property("ActiveProfile"), "balanced")
+
         cmd = subprocess.run([tool_path, "get"], capture_output=True, check=True)
         self.assertEqual(cmd.returncode, 0)
         self.assertEqual(cmd.stdout, b"balanced\n")
@@ -2027,6 +2029,8 @@ class Tests(dbusmock.DBusTestCase):
             [tool_path, "set", "power-saver"], capture_output=True, check=True
         )
         self.assertEqual(cmd.returncode, 0)
+
+        self.assertEqual(self.get_dbus_property("ActiveProfile"), "power-saver")
 
         cmd = subprocess.run([tool_path, "get"], capture_output=True, check=True)
         self.assertEqual(cmd.returncode, 0)
