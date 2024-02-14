@@ -1143,8 +1143,8 @@ class Tests(dbusmock.DBusTestCase):
             {"DaemonVersion": "0.99", "OnBattery": False},
             stdout=subprocess.PIPE,
         )
-        assert upowerd
-        assert obj_upower
+        self.assertTrue(upowerd)
+        self.assertTrue(obj_upower)
 
         self.start_daemon()
 
@@ -1746,7 +1746,7 @@ class Tests(dbusmock.DBusTestCase):
             stdout=sys.stdout,
             stderr=sys.stderr,
         ) as launch_process:
-            assert launch_process
+            self.assertTrue(launch_process)
             time.sleep(1)
             holds = self.get_dbus_property("ActiveProfileHolds")
             self.assertEqual(len(holds), 1)
@@ -1851,7 +1851,7 @@ class Tests(dbusmock.DBusTestCase):
         performance_cookie = self.call_dbus_method(
             "HoldProfile", GLib.Variant("(sss)", ("performance", "", ""))
         )
-        assert performance_cookie
+        self.assertTrue(performance_cookie)
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "performance")
         self.stop_daemon()
 
