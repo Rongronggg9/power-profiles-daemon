@@ -219,7 +219,7 @@ class Tests(dbusmock.DBusTestCase):
         # wait until the daemon gets online
         self.assert_eventually(
             lambda: self.proxy and self.proxy.get_name_owner(),
-            timeout=100,
+            timeout=10 * 1000,
             message="daemon did not start in 10 seconds",
         )
 
@@ -353,22 +353,29 @@ class Tests(dbusmock.DBusTestCase):
         os.remove(os.path.join(acpi_dir, "platform_profile"))
         os.removedirs(acpi_dir)
 
-    def assert_eventually(self, condition, message=None, timeout=50):
+    def assert_eventually(self, condition, message=None, timeout=5000):
         """Assert that condition function eventually returns True.
 
-        Timeout is in deciseconds, defaulting to 50 (5 seconds). message is
+        Timeout is in milliseconds, defaulting to 5000 (5 seconds). message is
         printed on failure.
         """
-        while timeout >= 0:
-            context = GLib.MainContext.default()
-            while context.iteration(False):
-                pass
+        if condition():
+            return
+
+        done = False
+
+        def on_timeout_reached():
+            nonlocal done
+            done = True
+
+        source = GLib.timeout_add(timeout, on_timeout_reached)
+        while not done:
             if condition():
-                break
-            timeout -= 1
-            time.sleep(0.1)
-        else:
-            self.fail(message or "timed out waiting for " + str(condition))
+                GLib.source_remove(source)
+                return
+            GLib.MainContext.default().iteration(False)
+
+        self.fail(message or "timed out waiting for " + str(condition))
 
     #
     # Actual test cases
