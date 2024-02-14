@@ -1271,6 +1271,8 @@ free_app_data (PpdApp *data)
   ppd_app = NULL;
 }
 
+G_DEFINE_AUTOPTR_CLEANUP_FUNC (PpdApp, free_app_data)
+
 void
 main_loop_quit (void)
 {
@@ -1335,8 +1337,7 @@ quit_signal_callback (gpointer user_data)
 
 int main (int argc, char **argv)
 {
-  PpdApp *data;
-  int ret = 0;
+  g_autoptr (PpdApp) data = NULL;
   g_autoptr(GOptionContext) option_context = NULL;
   g_autoptr(GError) error = NULL;
   gboolean verbose = FALSE;
@@ -1351,8 +1352,7 @@ int main (int argc, char **argv)
   option_context = g_option_context_new ("");
   g_option_context_add_main_entries (option_context, options, NULL);
 
-  ret = g_option_context_parse (option_context, &argc, &argv, &error);
-  if (!ret) {
+  if (!g_option_context_parse (option_context, &argc, &argv, &error)) {
     g_print ("Failed to parse arguments: %s\n", error->message);
     return EXIT_FAILURE;
   }
@@ -1386,8 +1386,6 @@ int main (int argc, char **argv)
   }
 
   g_main_loop_run (data->main_loop);
-  ret = data->ret;
-  free_app_data (data);
 
-  return ret;
+  return data->ret;
 }
