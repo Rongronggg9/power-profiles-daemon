@@ -26,7 +26,10 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == 'push'
 
 .install-deps:
+  variables:
+    TMPDIR: $CI_BUILDS_DIR/tmpdir
   before_script:
+    - mkdir -m 700 $TMPDIR -p
     - dnf update -y
     - if [ -x /bin/dnf ]; then dnf install -y $DEPENDENCIES $JOB_DEPS; else dnf5 install -y $DEPENDENCIES $JOB_DEPS; fi
 
@@ -44,7 +47,6 @@ build_stable:
   extends:
     - .install-deps
   script:
-    - mkdir tmpdir/
     - meson setup
         --werror
         --fatal-meson-warnings
@@ -53,13 +55,13 @@ build_stable:
         -Dpylint=true
         -Db_coverage=true
         _build
-    - env TMPDIR=$(pwd)/tmpdir meson test -C _build --print-errorlogs
+    - meson test -C _build --print-errorlogs
     - .ci/fail_skipped_tests.py _build/meson-logs/testlog.junit.xml
     - ninja -C _build coverage
     - cat _build/meson-logs/coverage.txt || true
     - meson install -C _build
     - ninja -C _build uninstall -v
-    - TMPDIR=$(pwd)/tmpdir ninja -v -C _build dist
+    - meson dist -C _build
   artifacts:
     when: always
     paths:
