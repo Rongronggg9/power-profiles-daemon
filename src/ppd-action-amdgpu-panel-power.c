@@ -149,10 +149,10 @@ ppd_action_amdgpu_panel_update_target (PpdActionAmdgpuPanelPower  *self,
   if (self->on_battery) {
     switch (self->last_profile) {
     case PPD_PROFILE_POWER_SAVER:
-      target = 4;
+      target = 3;
       break;
     case PPD_PROFILE_BALANCED:
-      target = 3;
+      target = 1;
       break;
     case PPD_PROFILE_PERFORMANCE:
       target = 0;

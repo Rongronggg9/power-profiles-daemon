@@ -1318,11 +1318,11 @@ class Tests(dbusmock.DBusTestCase):
 
         # verify balanced updated it
         self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("balanced"))
-        self.assert_sysfs_attr_eventually_is(edp, amdgpu_panel_power_savings, "3")
+        self.assert_sysfs_attr_eventually_is(edp, amdgpu_panel_power_savings, "1")
 
         # verify power saver updated it
         self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("power-saver"))
-        self.assert_sysfs_attr_eventually_is(edp, amdgpu_panel_power_savings, "4")
+        self.assert_sysfs_attr_eventually_is(edp, amdgpu_panel_power_savings, "3")
 
         # add another device that supports the feature
         edp2 = self.testbed.add_device(
@@ -1334,7 +1334,7 @@ class Tests(dbusmock.DBusTestCase):
         )
 
         # verify power saver got updated for it
-        self.assert_sysfs_attr_eventually_is(edp2, amdgpu_panel_power_savings, "4")
+        self.assert_sysfs_attr_eventually_is(edp2, amdgpu_panel_power_savings, "3")
 
         # add another device that supports the feature, but panel is disconnected
         edp3 = self.testbed.add_device(
