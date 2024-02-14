@@ -54,7 +54,7 @@ except ImportError:
     sys.exit(77)
 
 
-# pylint: disable=too-many-public-methods
+# pylint: disable=too-many-public-methods,too-many-instance-attributes
 class Tests(dbusmock.DBusTestCase):
     """Dbus based integration unit tests"""
 
@@ -134,6 +134,7 @@ class Tests(dbusmock.DBusTestCase):
         self.proxy = None
         self.log = None
         self.daemon = None
+        self.changed_properties = {}
 
         # Used for dytc devices
         self.tp_acpi = None
@@ -215,6 +216,14 @@ class Tests(dbusmock.DBusTestCase):
             self.PP_PATH,
             self.PP_INTERFACE,
             None,
+        )
+
+        def properties_changed_cb(_, changed_properties, invalidated):
+            self.changed_properties.update(changed_properties.unpack())
+
+        self.addCleanup(
+            self.proxy.disconnect,
+            self.proxy.connect("g-properties-changed", properties_changed_cb),
         )
 
         self.assertEqual(self.daemon.poll(), None, "daemon crashed")
@@ -1643,6 +1652,20 @@ class Tests(dbusmock.DBusTestCase):
             "HoldProfile",
             GLib.Variant("(sss)", ("performance", "testReason", "testApplication")),
         )
+        self.assert_eventually(
+            lambda: self.changed_properties.get("ActiveProfile") == "performance"
+        )
+        self.assert_eventually(
+            lambda: self.changed_properties.get("ActiveProfileHolds")
+            == [
+                {
+                    "ApplicationId": "testApplication",
+                    "Profile": "performance",
+                    "Reason": "testReason",
+                }
+            ]
+        )
+
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "performance")
         profile_holds = self.get_dbus_property("ActiveProfileHolds")
         self.assertEqual(len(profile_holds), 1)
@@ -1651,6 +1674,12 @@ class Tests(dbusmock.DBusTestCase):
         self.assertEqual(profile_holds[0]["ApplicationId"], "testApplication")
 
         self.call_dbus_method("ReleaseProfile", GLib.Variant("(u)", cookie))
+        self.assert_eventually(
+            lambda: self.changed_properties.get("ActiveProfile") == "balanced"
+        )
+        self.assert_eventually(
+            lambda: self.changed_properties.get("ActiveProfileHolds") == []
+        )
         profile_holds = self.get_dbus_property("ActiveProfileHolds")
         self.assertEqual(len(profile_holds), 0)
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "balanced")
@@ -1660,20 +1689,48 @@ class Tests(dbusmock.DBusTestCase):
             "HoldProfile", GLib.Variant("(sss)", ("performance", "", ""))
         )
         self.assertEqual(len(self.get_dbus_property("ActiveProfileHolds")), 1)
+        self.assert_eventually(
+            lambda: self.changed_properties.get("ActiveProfile") == "performance"
+        )
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "performance")
 
         self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("balanced"))
+        self.assert_eventually(
+            lambda: self.changed_properties.get("ActiveProfile") == "balanced"
+        )
         self.assertEqual(len(self.get_dbus_property("ActiveProfileHolds")), 0)
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "balanced")
 
         # When all holds are released, the last manually selected profile should be activated
         self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("power-saver"))
+        self.assert_eventually(
+            lambda: self.changed_properties.get("ActiveProfile") == "power-saver"
+        )
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "power-saver")
         cookie = self.call_dbus_method(
             "HoldProfile", GLib.Variant("(sss)", ("performance", "", ""))
         )
+        self.assert_eventually(
+            lambda: self.changed_properties.get("ActiveProfileHolds")
+            == [
+                {
+                    "ApplicationId": "",
+                    "Profile": "performance",
+                    "Reason": "",
+                }
+            ]
+        )
+        self.assert_eventually(
+            lambda: self.changed_properties.get("ActiveProfile") == "performance"
+        )
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "performance")
         self.call_dbus_method("ReleaseProfile", GLib.Variant("(u)", cookie))
+        self.assert_eventually(
+            lambda: self.changed_properties.get("ActiveProfileHolds") == []
+        )
+        self.assert_eventually(
+            lambda: self.changed_properties.get("ActiveProfile") == "power-saver"
+        )
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "power-saver")
 
         self.stop_daemon()
