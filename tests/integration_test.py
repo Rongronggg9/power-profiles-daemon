@@ -300,6 +300,13 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir() + "/" + device + "/" + attribute
         )
 
+    def write_file_contents(self, path, contents):
+        """Set the contents of a file"""
+        with open(path, "wb") as tmpf:
+            return tmpf.write(
+                contents if isinstance(contents, bytes) else contents.encode("utf-8")
+            )
+
     def change_immutable(self, fname, enable):
         attr = "-"
         if enable:
@@ -325,32 +332,28 @@ class Tests(dbusmock.DBusTestCase):
     def create_amd_apu(self):
         proc_dir = os.path.join(self.testbed.get_root_dir(), "proc/")
         os.makedirs(proc_dir)
-        with open(os.path.join(proc_dir, "cpuinfo"), "w", encoding="ASCII") as cpu:
-            cpu.write("vendor_id	: AuthenticAMD\n")
+        self.write_file_contents(
+            os.path.join(proc_dir, "cpuinfo"), "vendor_id	: AuthenticAMD\n"
+        )
 
     def create_empty_platform_profile(self):
         acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
         os.makedirs(acpi_dir)
-        with open(
-            os.path.join(acpi_dir, "platform_profile"), "w", encoding="ASCII"
-        ) as profile:
-            profile.write("\n")
-        with open(
-            os.path.join(acpi_dir, "platform_profile_choices"), "w", encoding="ASCII"
-        ) as choices:
-            choices.write("\n")
+        self.write_file_contents(os.path.join(acpi_dir, "platform_profile"), "\n")
+        self.write_file_contents(
+            os.path.join(acpi_dir, "platform_profile_choices"), "\n"
+        )
 
     def create_platform_profile(self):
         acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
         os.makedirs(acpi_dir, exist_ok=True)
-        with open(
-            os.path.join(acpi_dir, "platform_profile"), "w", encoding="ASCII"
-        ) as profile:
-            profile.write("performance\n")
-        with open(
-            os.path.join(acpi_dir, "platform_profile_choices"), "w", encoding="ASCII"
-        ) as choices:
-            choices.write("low-power balanced performance\n")
+        self.write_file_contents(
+            os.path.join(acpi_dir, "platform_profile"), "performance\n"
+        )
+        self.write_file_contents(
+            os.path.join(acpi_dir, "platform_profile_choices"),
+            "low-power balanced performance\n",
+        )
 
     def remove_platform_profile(self):
         acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
@@ -482,24 +485,18 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/"
         )
         os.makedirs(dir1)
-        with open(os.path.join(dir1, "scaling_governor"), "w", encoding="ASCII") as gov:
-            gov.write("powersave\n")
-        with open(
-            os.path.join(dir1, "energy_performance_preference"), "w", encoding="ASCII"
-        ) as prefs:
-            prefs.write("performance\n")
+        self.write_file_contents(os.path.join(dir1, "scaling_governor"), "powersave\n")
+        self.write_file_contents(
+            os.path.join(dir1, "energy_performance_preference"), "performance\n"
+        )
 
         # Create Intel P-State configuration
         pstate_dir = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate"
         )
         os.makedirs(pstate_dir)
-        with open(
-            os.path.join(pstate_dir, "no_turbo"), "w", encoding="ASCII"
-        ) as no_turbo:
-            no_turbo.write("0\n")
-        with open(os.path.join(pstate_dir, "status"), "w", encoding="ASCII") as status:
-            status.write("active\n")
+        self.write_file_contents(os.path.join(pstate_dir, "no_turbo"), "0\n")
+        self.write_file_contents(os.path.join(pstate_dir, "status"), "active\n")
 
         self.start_daemon()
 
@@ -508,10 +505,7 @@ class Tests(dbusmock.DBusTestCase):
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "performance")
 
         # Degraded CPU
-        with open(
-            os.path.join(pstate_dir, "no_turbo"), "w", encoding="ASCII"
-        ) as no_turbo:
-            no_turbo.write("1\n")
+        self.write_file_contents(os.path.join(pstate_dir, "no_turbo"), "1\n")
         self.assert_eventually(
             lambda: self.have_text_in_log("File monitor change happened for ")
         )
@@ -560,34 +554,26 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/"
         )
         os.makedirs(dir1)
-        with open(os.path.join(dir1, "scaling_governor"), "w", encoding="ASCII") as gov:
-            gov.write("powersave\n")
-        with open(
-            os.path.join(dir1, "energy_performance_preference"), "w", encoding="ASCII"
-        ) as prefs:
-            prefs.write("performance\n")
+        self.write_file_contents(os.path.join(dir1, "scaling_governor"), "powersave\n")
+        self.write_file_contents(
+            os.path.join(dir1, "energy_performance_preference"), "performance\n"
+        )
         dir2 = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy1/"
         )
         os.makedirs(dir2)
-        with open(os.path.join(dir2, "scaling_governor"), "w", encoding="ASCII") as gov:
-            gov.write("powersave\n")
-        with open(
-            os.path.join(dir2, "energy_performance_preference"), "w", encoding="ASCII"
-        ) as prefs:
-            prefs.write("performance\n")
+        self.write_file_contents(os.path.join(dir2, "scaling_governor"), "powersave\n")
+        self.write_file_contents(
+            os.path.join(dir2, "energy_performance_preference"), "performance\n"
+        )
 
         # Create Intel P-State configuration
         pstate_dir = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate"
         )
         os.makedirs(pstate_dir)
-        with open(
-            os.path.join(pstate_dir, "no_turbo"), "w", encoding="ASCII"
-        ) as no_turbo:
-            no_turbo.write("0\n")
-        with open(os.path.join(pstate_dir, "status"), "w", encoding="ASCII") as status:
-            status.write("active\n")
+        self.write_file_contents(os.path.join(pstate_dir, "no_turbo"), "0\n")
+        self.write_file_contents(os.path.join(pstate_dir, "status"), "active\n")
 
         self.start_daemon()
 
@@ -607,10 +593,7 @@ class Tests(dbusmock.DBusTestCase):
         self.assert_file_eventually_contains(energy_prefs, "performance")
 
         # Disable turbo
-        with open(
-            os.path.join(pstate_dir, "no_turbo"), "w", encoding="ASCII"
-        ) as no_turbo:
-            no_turbo.write("1\n")
+        self.write_file_contents(os.path.join(pstate_dir, "no_turbo"), "1\n")
 
         self.assert_eventually(
             lambda: self.have_text_in_log("File monitor change happened for ")
@@ -641,18 +624,15 @@ class Tests(dbusmock.DBusTestCase):
         )
         os.makedirs(dir1)
         gov_path = os.path.join(dir1, "scaling_governor")
-        with open(gov_path, "w", encoding="ASCII") as gov:
-            gov.write("performance\n")
-        with open(
-            os.path.join(dir1, "energy_performance_preference"), "w", encoding="ASCII"
-        ) as prefs:
-            prefs.write("performance\n")
+        self.write_file_contents(gov_path, "performance\n")
+        self.write_file_contents(
+            os.path.join(dir1, "energy_performance_preference"), "performance\n"
+        )
         pstate_dir = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate"
         )
         os.makedirs(pstate_dir)
-        with open(os.path.join(pstate_dir, "status"), "w", encoding="ASCII") as status:
-            status.write("active\n")
+        self.write_file_contents(os.path.join(pstate_dir, "status"), "active\n")
 
         upowerd, obj_upower = self.spawn_server_template(
             "upower",
@@ -689,19 +669,16 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate"
         )
         os.makedirs(pstate_dir)
-        with open(os.path.join(pstate_dir, "status"), "w", encoding="ASCII") as status:
-            status.write("active\n")
+        self.write_file_contents(os.path.join(pstate_dir, "status"), "active\n")
 
         dir1 = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/"
         )
         os.makedirs(dir1)
-        with open(os.path.join(dir1, "scaling_governor"), "w", encoding="ASCII") as gov:
-            gov.write("powersave\n")
+        self.write_file_contents(os.path.join(dir1, "scaling_governor"), "powersave\n")
         pref_path = os.path.join(dir1, "energy_performance_preference")
         old_umask = os.umask(0o333)
-        with open(pref_path, "w", encoding="ASCII") as prefs:
-            prefs.write("balance_performance\n")
+        self.write_file_contents(pref_path, "balance_performance\n")
         os.umask(old_umask)
         # Make file non-writable to root
         self.change_immutable(pref_path, True)
@@ -731,24 +708,18 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/"
         )
         os.makedirs(dir1)
-        with open(os.path.join(dir1, "scaling_governor"), "w", encoding="ASCII") as gov:
-            gov.write("powersave\n")
-        with open(
-            os.path.join(dir1, "energy_performance_preference"), "w", encoding="ASCII"
-        ) as prefs:
-            prefs.write("performance\n")
+        self.write_file_contents(os.path.join(dir1, "scaling_governor"), "powersave\n")
+        self.write_file_contents(
+            os.path.join(dir1, "energy_performance_preference"), "performance\n"
+        )
 
         # Create Intel P-State configuration
         pstate_dir = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate"
         )
         os.makedirs(pstate_dir)
-        with open(
-            os.path.join(pstate_dir, "no_turbo"), "w", encoding="ASCII"
-        ) as no_turbo:
-            no_turbo.write("0\n")
-        with open(os.path.join(pstate_dir, "status"), "w", encoding="ASCII") as status:
-            status.write("passive\n")
+        self.write_file_contents(os.path.join(pstate_dir, "no_turbo"), "0\n")
+        self.write_file_contents(os.path.join(pstate_dir, "status"), "passive\n")
 
         self.start_daemon()
 
@@ -777,30 +748,23 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/"
         )
         os.makedirs(dir1)
-        with open(os.path.join(dir1, "scaling_governor"), "w", encoding="ASCII") as gov:
-            gov.write("powersave\n")
-        with open(
-            os.path.join(dir1, "energy_performance_preference"), "w", encoding="ASCII"
-        ) as prefs:
-            prefs.write("performance\n")
+        self.write_file_contents(os.path.join(dir1, "scaling_governor"), "powersave\n")
+        self.write_file_contents(
+            os.path.join(dir1, "energy_performance_preference"), "performance\n"
+        )
         dir2 = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpu0/power/"
         )
         os.makedirs(dir2)
-        with open(os.path.join(dir2, "energy_perf_bias"), "w", encoding="ASCII") as epb:
-            epb.write("6")
+        self.write_file_contents(os.path.join(dir2, "energy_perf_bias"), "6")
 
         # Create Intel P-State configuration
         pstate_dir = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate"
         )
         os.makedirs(pstate_dir)
-        with open(
-            os.path.join(pstate_dir, "no_turbo"), "w", encoding="ASCII"
-        ) as no_turbo:
-            no_turbo.write("0\n")
-        with open(os.path.join(pstate_dir, "status"), "w", encoding="ASCII") as status:
-            status.write("passive\n")
+        self.write_file_contents(os.path.join(pstate_dir, "no_turbo"), "0\n")
+        self.write_file_contents(os.path.join(pstate_dir, "status"), "passive\n")
 
         self.start_daemon()
 
@@ -856,36 +820,30 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/"
         )
         os.makedirs(dir1)
-        with open(
-            os.path.join(dir1, "scaling_governor"), "w", encoding="ASCII"
-        ) as tmpf:
-            tmpf.write("powersave\n")
+        scaling_governor = os.path.join(dir1, "scaling_governor")
+        self.write_file_contents(scaling_governor, "powersave\n")
+
         prefs1 = os.path.join(dir1, "energy_performance_preference")
-        with open(prefs1, "w", encoding="ASCII") as tmpf:
-            tmpf.write("performance\n")
+        self.write_file_contents(prefs1, "performance\n")
 
         dir2 = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy1/"
         )
         os.makedirs(dir2)
-        with open(
-            os.path.join(dir2, "scaling_governor"), "w", encoding="ASCII"
-        ) as tmpf:
-            tmpf.write("powersave\n")
+        scaling_governor = os.path.join(dir2, "scaling_governor")
+        self.write_file_contents(scaling_governor, "powersave\n")
         prefs2 = os.path.join(
             dir2,
             "energy_performance_preference",
         )
-        with open(prefs2, "w", encoding="ASCII") as tmpf:
-            tmpf.write("performance\n")
+        self.write_file_contents(prefs2, "prformance\n")
 
         # Create AMD P-State configuration
         pstate_dir = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/amd_pstate"
         )
         os.makedirs(pstate_dir)
-        with open(os.path.join(pstate_dir, "status"), "w", encoding="ASCII") as status:
-            status.write("active\n")
+        self.write_file_contents(os.path.join(pstate_dir, "status"), "active\n")
 
         # create ACPI platform profile
         self.create_platform_profile()
@@ -897,10 +855,7 @@ class Tests(dbusmock.DBusTestCase):
         # desktop PM profile
         dir3 = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
         os.makedirs(dir3, exist_ok=True)
-        with open(
-            os.path.join(dir3, "pm_profile"), "w", encoding="ASCII"
-        ) as pm_profile:
-            pm_profile.write("1\n")
+        self.write_file_contents(os.path.join(dir3, "pm_profile"), "1\n")
 
         # block platform profile
         os.environ["POWER_PROFILE_DAEMON_DRIVER_BLOCK"] = "platform_profile"
@@ -933,33 +888,24 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/"
         )
         os.makedirs(dir1)
-        with open(
-            os.path.join(dir1, "scaling_governor"), "w", encoding="ASCII"
-        ) as tmpf:
-            tmpf.write("powersave\n")
+        self.write_file_contents(os.path.join(dir1, "scaling_governor"), "powersave\n")
         prefs1 = os.path.join(dir1, "energy_performance_preference")
-        with open(prefs1, "w", encoding="ASCII") as tmpf:
-            tmpf.write("performance\n")
+        self.write_file_contents(prefs1, "performance\n")
 
         dir2 = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy1/"
         )
         os.makedirs(dir2)
-        with open(
-            os.path.join(dir2, "scaling_governor"), "w", encoding="ASCII"
-        ) as tmpf:
-            tmpf.write("powersave\n")
+        self.write_file_contents(os.path.join(dir2, "scaling_governor"), "powersave\n")
         prefs2 = os.path.join(dir2, "energy_performance_preference")
-        with open(prefs2, "w", encoding="ASCII") as tmpf:
-            tmpf.write("performance\n")
+        self.write_file_contents(prefs2, "performance\n")
 
         # Create AMD P-State configuration
         pstate_dir = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/amd_pstate"
         )
         os.makedirs(pstate_dir)
-        with open(os.path.join(pstate_dir, "status"), "w", encoding="ASCII") as status:
-            status.write("active\n")
+        self.write_file_contents(os.path.join(pstate_dir, "status"), "active\n")
 
         # create ACPI platform profile
         self.create_platform_profile()
@@ -970,10 +916,7 @@ class Tests(dbusmock.DBusTestCase):
         # desktop PM profile
         dir3 = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
         os.makedirs(dir3, exist_ok=True)
-        with open(
-            os.path.join(dir3, "pm_profile"), "w", encoding="ASCII"
-        ) as pm_profile:
-            pm_profile.write("1\n")
+        self.write_file_contents(os.path.join(dir3, "pm_profile"), "1\n")
 
         self.start_daemon()
 
@@ -1042,38 +985,30 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/"
         )
         os.makedirs(dir1)
-        with open(os.path.join(dir1, "scaling_governor"), "w", encoding="ASCII") as gov:
-            gov.write("powersave\n")
-        with open(
-            os.path.join(dir1, "energy_performance_preference"), "w", encoding="ASCII"
-        ) as prefs:
-            prefs.write("performance\n")
+        self.write_file_contents(os.path.join(dir1, "scaling_governor"), "powersave\n")
+        self.write_file_contents(
+            os.path.join(dir1, "energy_performance_preference"), "performance\n"
+        )
         dir2 = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy1/"
         )
         os.makedirs(dir2)
-        with open(os.path.join(dir2, "scaling_governor"), "w", encoding="ASCII") as gov:
-            gov.write("powersave\n")
-        with open(
-            os.path.join(dir2, "energy_performance_preference"), "w", encoding="ASCII"
-        ) as prefs:
-            prefs.write("performance\n")
+        self.write_file_contents(os.path.join(dir2, "scaling_governor"), "powersave\n")
+        self.write_file_contents(
+            os.path.join(dir2, "energy_performance_preference"), "performance\n"
+        )
 
         # Create AMD P-State configuration
         pstate_dir = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/amd_pstate"
         )
         os.makedirs(pstate_dir)
-        with open(os.path.join(pstate_dir, "status"), "w", encoding="ASCII") as status:
-            status.write("active\n")
+        self.write_file_contents(os.path.join(pstate_dir, "status"), "active\n")
 
         # desktop PM profile
         dir3 = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
         os.makedirs(dir3)
-        with open(
-            os.path.join(dir3, "pm_profile"), "w", encoding="ASCII"
-        ) as pm_profile:
-            pm_profile.write("1\n")
+        self.write_file_contents(os.path.join(dir3, "pm_profile"), "1\n")
 
         self.start_daemon()
 
@@ -1115,26 +1050,20 @@ class Tests(dbusmock.DBusTestCase):
         )
         os.makedirs(dir1)
         gov_path = os.path.join(dir1, "scaling_governor")
-        with open(gov_path, "w", encoding="ASCII") as gov:
-            gov.write("performance\n")
-        with open(
-            os.path.join(dir1, "energy_performance_preference"), "w", encoding="ASCII"
-        ) as prefs:
-            prefs.write("performance\n")
+        self.write_file_contents(gov_path, "performance\n")
+        self.write_file_contents(
+            os.path.join(dir1, "energy_performance_preference"), "performance\n"
+        )
         pstate_dir = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/amd_pstate"
         )
         os.makedirs(pstate_dir)
-        with open(os.path.join(pstate_dir, "status"), "w", encoding="ASCII") as status:
-            status.write("active\n")
+        self.write_file_contents(os.path.join(pstate_dir, "status"), "active\n")
 
         # desktop PM profile
         dir2 = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
         os.makedirs(dir2)
-        with open(
-            os.path.join(dir2, "pm_profile"), "w", encoding="ASCII"
-        ) as pm_profile:
-            pm_profile.write("1\n")
+        self.write_file_contents(os.path.join(dir2, "pm_profile"), "1\n")
 
         upowerd, obj_upower = self.spawn_server_template(
             "upower",
@@ -1172,19 +1101,16 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir(), "sys/devices/system/cpu/amd_pstate"
         )
         os.makedirs(pstate_dir)
-        with open(os.path.join(pstate_dir, "status"), "w", encoding="ASCII") as status:
-            status.write("active\n")
+        self.write_file_contents(os.path.join(pstate_dir, "status"), "active\n")
 
         dir1 = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/"
         )
         os.makedirs(dir1)
-        with open(os.path.join(dir1, "scaling_governor"), "w", encoding="ASCII") as gov:
-            gov.write("powersave\n")
+        self.write_file_contents(os.path.join(dir1, "scaling_governor"), "powersave\n")
         pref_path = os.path.join(dir1, "energy_performance_preference")
         old_umask = os.umask(0o333)
-        with open(pref_path, "w", encoding="ASCII") as prefs:
-            prefs.write("balance_performance\n")
+        self.write_file_contents(pref_path, "balance_performance\n")
         os.umask(old_umask)
         # Make file non-writable to root
         self.change_immutable(pref_path, True)
@@ -1192,10 +1118,7 @@ class Tests(dbusmock.DBusTestCase):
         # desktop PM profile
         dir2 = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
         os.makedirs(dir2)
-        with open(
-            os.path.join(dir2, "pm_profile"), "w", encoding="ASCII"
-        ) as pm_profile:
-            pm_profile.write("1\n")
+        self.write_file_contents(os.path.join(dir2, "pm_profile"), "1\n")
 
         self.start_daemon()
 
@@ -1222,28 +1145,22 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/"
         )
         os.makedirs(dir1)
-        with open(os.path.join(dir1, "scaling_governor"), "w", encoding="ASCII") as gov:
-            gov.write("powersave\n")
-        with open(
-            os.path.join(dir1, "energy_performance_preference"), "w", encoding="ASCII"
-        ) as prefs:
-            prefs.write("performance\n")
+        self.write_file_contents(os.path.join(dir1, "scaling_governor"), "powersave\n")
+        self.write_file_contents(
+            os.path.join(dir1, "energy_performance_preference"), "performance\n"
+        )
 
         # Create AMD P-State configuration
         pstate_dir = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/amd_pstate"
         )
         os.makedirs(pstate_dir)
-        with open(os.path.join(pstate_dir, "status"), "w", encoding="ASCII") as status:
-            status.write("passive\n")
+        self.write_file_contents(os.path.join(pstate_dir, "status"), "passive\n")
 
         # desktop PM profile
         dir2 = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
         os.makedirs(dir2)
-        with open(
-            os.path.join(dir2, "pm_profile"), "w", encoding="ASCII"
-        ) as pm_profile:
-            pm_profile.write("1\n")
+        self.write_file_contents(os.path.join(dir2, "pm_profile"), "1\n")
 
         self.start_daemon()
 
@@ -1270,38 +1187,30 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/"
         )
         os.makedirs(dir1)
-        with open(os.path.join(dir1, "scaling_governor"), "w", encoding="ASCII") as gov:
-            gov.write("powersave\n")
-        with open(
-            os.path.join(dir1, "energy_performance_preference"), "w", encoding="ASCII"
-        ) as prefs:
-            prefs.write("performance\n")
+        self.write_file_contents(os.path.join(dir1, "scaling_governor"), "powersave\n")
+        self.write_file_contents(
+            os.path.join(dir1, "energy_performance_preference"), "performance\n"
+        )
         dir2 = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy1/"
         )
         os.makedirs(dir2)
-        with open(os.path.join(dir2, "scaling_governor"), "w", encoding="ASCII") as gov:
-            gov.write("powersave\n")
-        with open(
-            os.path.join(dir2, "energy_performance_preference"), "w", encoding="ASCII"
-        ) as prefs:
-            prefs.write("performance\n")
+        self.write_file_contents(os.path.join(dir2, "scaling_governor"), "powersave\n")
+        self.write_file_contents(
+            os.path.join(dir2, "energy_performance_preference"), "performance\n"
+        )
 
         # Create AMD P-State configuration
         pstate_dir = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/amd_pstate"
         )
         os.makedirs(pstate_dir)
-        with open(os.path.join(pstate_dir, "status"), "w", encoding="ASCII") as status:
-            status.write("active\n")
+        self.write_file_contents(os.path.join(pstate_dir, "status"), "active\n")
 
         # server PM profile
         dir3 = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
         os.makedirs(dir3)
-        with open(
-            os.path.join(dir3, "pm_profile"), "w", encoding="ASCII"
-        ) as pm_profile:
-            pm_profile.write("4\n")
+        self.write_file_contents(os.path.join(dir3, "pm_profile"), "4\n")
 
         self.start_daemon()
 
@@ -1354,14 +1263,10 @@ class Tests(dbusmock.DBusTestCase):
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "power-saver")
 
         # And mimic a user pressing a Fn+H
-        with open(
-            os.path.join(
-                self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile"
-            ),
-            "w",
-            encoding="ASCII",
-        ) as platform_profile:
-            platform_profile.write("performance\n")
+        platform_profile = os.path.join(
+            self.testbed.get_root_dir(), "sys/firmware/acpi/platform_profile"
+        )
+        self.write_file_contents(platform_profile, "performance\n")
         self.assert_eventually(
             lambda: self.get_dbus_property("ActiveProfile") == "performance"
         )
@@ -1525,14 +1430,13 @@ class Tests(dbusmock.DBusTestCase):
         self.assertEqual(len(profiles), 2)
 
         acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
-        with open(
-            os.path.join(acpi_dir, "platform_profile_choices"), "w", encoding="ASCII"
-        ) as choices:
-            choices.write("low-power\nbalanced\nperformance\n")
-        with open(
-            os.path.join(acpi_dir, "platform_profile"), "w", encoding="ASCII"
-        ) as profile:
-            profile.write("performance\n")
+        self.write_file_contents(
+            os.path.join(acpi_dir, "platform_profile_choices"),
+            "low-power\nbalanced\nperformance\n",
+        )
+        self.write_file_contents(
+            os.path.join(acpi_dir, "platform_profile"), "performance\n"
+        )
 
         # Wait for profiles to get reloaded
         self.assert_eventually(lambda: len(self.get_dbus_property("Profiles")) == 3)
@@ -1548,14 +1452,11 @@ class Tests(dbusmock.DBusTestCase):
         # Uses cool instead of low-power
         acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
         os.makedirs(acpi_dir)
-        with open(
-            os.path.join(acpi_dir, "platform_profile"), "w", encoding="ASCII"
-        ) as profile:
-            profile.write("cool\n")
-        with open(
-            os.path.join(acpi_dir, "platform_profile_choices"), "w", encoding="ASCII"
-        ) as choices:
-            choices.write("cool balanced performance\n")
+        self.write_file_contents(os.path.join(acpi_dir, "platform_profile"), "cool\n")
+        self.write_file_contents(
+            os.path.join(acpi_dir, "platform_profile_choices"),
+            "cool balanced performance\n",
+        )
 
         self.start_daemon()
         profiles = self.get_dbus_property("Profiles")
@@ -1585,14 +1486,11 @@ class Tests(dbusmock.DBusTestCase):
         # Uses quiet instead of low-power
         acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
         os.makedirs(acpi_dir)
-        with open(
-            os.path.join(acpi_dir, "platform_profile"), "w", encoding="ASCII"
-        ) as profile:
-            profile.write("quiet\n")
-        with open(
-            os.path.join(acpi_dir, "platform_profile_choices"), "w", encoding="ASCII"
-        ) as choices:
-            choices.write("quiet balanced balanced-performance performance\n")
+        self.write_file_contents(os.path.join(acpi_dir, "platform_profile"), "quiet\n")
+        self.write_file_contents(
+            os.path.join(acpi_dir, "platform_profile_choices"),
+            "quiet balanced balanced-performance performance\n",
+        )
 
         self.start_daemon()
         profiles = self.get_dbus_property("Profiles")
@@ -1861,14 +1759,13 @@ class Tests(dbusmock.DBusTestCase):
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "balanced")
 
         acpi_dir = os.path.join(self.testbed.get_root_dir(), "sys/firmware/acpi/")
-        with open(
-            os.path.join(acpi_dir, "platform_profile_choices"), "w", encoding="ASCII"
-        ) as choices:
-            choices.write("low-power\nbalanced\nperformance\n")
-        with open(
-            os.path.join(acpi_dir, "platform_profile"), "w", encoding="ASCII"
-        ) as profile:
-            profile.write("performance\n")
+        self.write_file_contents(
+            os.path.join(acpi_dir, "platform_profile_choices"),
+            "low-power\nbalanced\nperformance\n",
+        )
+        self.write_file_contents(
+            os.path.join(acpi_dir, "platform_profile"), "performance\n"
+        )
 
         self.assert_eventually(
             lambda: self.get_dbus_property("ActiveProfile") == "power-saver"
@@ -1933,28 +1830,19 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir(), "sys/devices/system/cpu/cpufreq/policy0/"
         )
         os.makedirs(dir1)
-        with open(os.path.join(dir1, "scaling_governor"), "w", encoding="ASCII") as gov:
-            gov.write("powersave\n")
-        with open(
-            os.path.join(dir1, "energy_performance_preference"), "w", encoding="ASCII"
-        ) as prefs:
-            prefs.write("performance\n")
+        self.write_file_contents(os.path.join(dir1, "scaling_governor"), "powersave\n")
+        self.write_file_contents(
+            os.path.join(dir1, "energy_performance_preference"), "performance\n"
+        )
 
         # Create Intel P-State configuration
         pstate_dir = os.path.join(
             self.testbed.get_root_dir(), "sys/devices/system/cpu/intel_pstate"
         )
         os.makedirs(pstate_dir)
-        with open(
-            os.path.join(pstate_dir, "no_turbo"), "w", encoding="ASCII"
-        ) as no_turbo:
-            no_turbo.write("1\n")
-        with open(
-            os.path.join(pstate_dir, "turbo_pct"), "w", encoding="ASCII"
-        ) as no_turbo:
-            no_turbo.write("0\n")
-        with open(os.path.join(pstate_dir, "status"), "w", encoding="ASCII") as status:
-            status.write("active\n")
+        self.write_file_contents(os.path.join(pstate_dir, "no_turbo"), "1\n")
+        self.write_file_contents(os.path.join(pstate_dir, "turbo_pct"), "0\n")
+        self.write_file_contents(os.path.join(pstate_dir, "status"), "active\n")
 
         self.start_daemon()
 
