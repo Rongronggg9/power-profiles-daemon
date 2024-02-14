@@ -83,6 +83,7 @@ address_sanitizer:
   script:
     - meson setup
         --werror
+        --buildtype=debug
         _build
         -Db_sanitize=address,undefined
     - meson test -C _build --print-errorlogs -t 3
@@ -99,6 +100,7 @@ valgrind:
   script:
     - meson setup
         --werror
+        --buildtype=debug
         _build
     - meson test -C _build --print-errorlogs --setup=valgrind
   artifacts:
