@@ -1993,6 +1993,50 @@ class Tests(dbusmock.DBusTestCase):
 
         self.stop_daemon()
 
+    def test_powerprofilesctl_version_command(self):
+        """Check powerprofilesctl version command works"""
+
+        self.start_daemon()
+
+        sourcedir = os.getenv("top_srcdir", ".")
+        tool_path = os.path.join(sourcedir, "src", "powerprofilesctl")
+
+        cmd = subprocess.run([tool_path, "version"], check=True)
+        self.assertEqual(cmd.returncode, 0)
+
+    def test_powerprofilesctl_list_command(self):
+        """Check powerprofilesctl list command works"""
+
+        self.start_daemon()
+
+        sourcedir = os.getenv("top_srcdir", ".")
+        tool_path = os.path.join(sourcedir, "src", "powerprofilesctl")
+
+        cmd = subprocess.run([tool_path, "list"], capture_output=True, check=True)
+        self.assertEqual(cmd.returncode, 0)
+        self.assertIn("* balanced", cmd.stdout.decode("utf-8"))
+
+    def test_powerprofilesctl_set_get_commands(self):
+        """Check powerprofilesctl set/get command works"""
+
+        self.start_daemon()
+
+        sourcedir = os.getenv("top_srcdir", ".")
+        tool_path = os.path.join(sourcedir, "src", "powerprofilesctl")
+
+        cmd = subprocess.run([tool_path, "get"], capture_output=True, check=True)
+        self.assertEqual(cmd.returncode, 0)
+        self.assertEqual(cmd.stdout, b"balanced\n")
+
+        cmd = subprocess.run(
+            [tool_path, "set", "power-saver"], capture_output=True, check=True
+        )
+        self.assertEqual(cmd.returncode, 0)
+
+        cmd = subprocess.run([tool_path, "get"], capture_output=True, check=True)
+        self.assertEqual(cmd.returncode, 0)
+        self.assertEqual(cmd.stdout, b"power-saver\n")
+
     def test_powerprofilesctl_error(self):
         """Check that powerprofilesctl returns 1 rather than an exception on error"""
 
