@@ -282,10 +282,15 @@ class Tests(dbusmock.DBusTestCase):
         with open(self.log.name, encoding="utf-8") as tmpf:
             return tmpf.read().count(text)
 
+    def read_file_contents(self, path):
+        """Get the contents of a file"""
+        with open(path, "rb") as tmpf:
+            return tmpf.read()
+
     def read_sysfs_file(self, path):
-        with open(self.testbed.get_root_dir() + "/" + path, "rb") as tmpf:
-            return tmpf.read().rstrip()
-        return None
+        return self.read_file_contents(
+            self.testbed.get_root_dir() + "/" + path
+        ).rstrip()
 
     def read_sysfs_attr(self, device, attribute):
         return self.read_sysfs_file(device + "/" + attribute)
@@ -376,6 +381,26 @@ class Tests(dbusmock.DBusTestCase):
             GLib.MainContext.default().iteration(False)
 
         self.fail(message or "timed out waiting for " + str(condition))
+
+    def assert_file_eventually_contains(self, path, contents, timeout=800):
+        """Asserts that file contents eventually matches expectations"""
+        encoded = contents.encode("utf-8")
+        return self.assert_eventually(
+            lambda: self.read_file_contents(path) == encoded,
+            timeout=timeout,
+            message=f"file '{path}' does not contain '{contents}', "
+            + "but '{self.read_file_contents(path)}'",
+        )
+
+    def assert_sysfs_attr_eventually_is(self, device, attribute, contents, timeout=800):
+        """Asserts that file contents eventually matches expectations"""
+        encoded = contents.encode("utf-8")
+        return self.assert_eventually(
+            lambda: self.read_sysfs_attr(device, attribute) == encoded,
+            timeout=timeout,
+            message=f"file {device} '{attribute}' does not contain '{contents}', "
+            + "but '{self.read_sysfs_attr(device, attribute)}'",
+        )
 
     #
     # Actual test cases
@@ -572,19 +597,14 @@ class Tests(dbusmock.DBusTestCase):
         self.assertEqual(profiles[0]["CpuDriver"], "intel_pstate")
         self.assertEqual(profiles[0]["Profile"], "power-saver")
 
-        contents = None
-        with open(os.path.join(dir2, "energy_performance_preference"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"balance_performance")
+        energy_prefs = os.path.join(dir2, "energy_performance_preference")
+        self.assert_file_eventually_contains(energy_prefs, "balance_performance")
 
         # Set performance mode
         self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("performance"))
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "performance")
 
-        contents = None
-        with open(os.path.join(dir2, "energy_performance_preference"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"performance")
+        self.assert_file_eventually_contains(energy_prefs, "performance")
 
         # Disable turbo
         with open(
@@ -644,9 +664,7 @@ class Tests(dbusmock.DBusTestCase):
 
         self.start_daemon()
 
-        with open(gov_path, "rb") as tmpf:
-            contents = tmpf.read()
-            self.assertEqual(contents, b"powersave")
+        self.assert_file_eventually_contains(gov_path, "powersave")
 
         profiles = self.get_dbus_property("Profiles")
         self.assertEqual(len(profiles), 3)
@@ -654,11 +672,9 @@ class Tests(dbusmock.DBusTestCase):
         self.assertEqual(profiles[0]["CpuDriver"], "intel_pstate")
         self.assertEqual(profiles[0]["Profile"], "power-saver")
 
-        contents = None
-        with open(os.path.join(dir1, "energy_performance_preference"), "rb") as tmpf:
-            contents = tmpf.read()
-        # This matches what's written by ppd-driver-intel-pstate.c
-        self.assertEqual(contents, b"balance_performance")
+        self.assert_file_eventually_contains(
+            os.path.join(dir1, "energy_performance_preference"), "balance_performance"
+        )
 
         self.stop_daemon()
 
@@ -701,10 +717,8 @@ class Tests(dbusmock.DBusTestCase):
             )
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "balanced")
 
-        contents = None
-        with open(os.path.join(dir1, "energy_performance_preference"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"balance_performance\n")
+        energy_prefs = os.path.join(dir1, "energy_performance_preference")
+        self.assert_file_eventually_contains(energy_prefs, "balance_performance\n")
 
         self.stop_daemon()
 
@@ -744,19 +758,15 @@ class Tests(dbusmock.DBusTestCase):
         self.assertEqual(profiles[0]["PlatformDriver"], "placeholder")
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "balanced")
 
-        contents = None
-        with open(os.path.join(dir1, "energy_performance_preference"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"performance\n")
+        energy_prefs = os.path.join(dir1, "energy_performance_preference")
+        self.assert_file_eventually_contains(energy_prefs, "performance\n")
 
         # Set performance mode
         self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("power-saver"))
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "power-saver")
 
-        contents = None
-        with open(os.path.join(dir1, "energy_performance_preference"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"performance\n")
+        energy_prefs = os.path.join(dir1, "energy_performance_preference")
+        self.assert_file_eventually_contains(energy_prefs, "performance\n")
 
         self.stop_daemon()
 
@@ -805,19 +815,14 @@ class Tests(dbusmock.DBusTestCase):
         self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("power-saver"))
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "power-saver")
 
-        contents = None
-        with open(os.path.join(dir2, "energy_perf_bias"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"15")
+        energy_perf_bias = os.path.join(dir2, "energy_perf_bias")
+        self.assert_file_eventually_contains(energy_perf_bias, "15")
 
         # Set performance mode
         self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("performance"))
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "performance")
 
-        contents = None
-        with open(os.path.join(dir2, "energy_perf_bias"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"0")
+        self.assert_file_eventually_contains(energy_perf_bias, "0")
 
         self.stop_daemon()
 
@@ -1079,39 +1084,25 @@ class Tests(dbusmock.DBusTestCase):
         self.assertEqual(profiles[0]["CpuDriver"], "amd_pstate")
         self.assertEqual(profiles[0]["Profile"], "power-saver")
 
-        contents = None
-        with open(os.path.join(dir2, "energy_performance_preference"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"balance_performance")
-        with open(os.path.join(dir2, "scaling_governor"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"powersave")
+        energy_prefs = os.path.join(dir2, "energy_performance_preference")
+        scaling_governor = os.path.join(dir2, "scaling_governor")
+
+        self.assert_file_eventually_contains(energy_prefs, "balance_performance")
+        self.assert_file_eventually_contains(scaling_governor, "powersave")
 
         # Set performance mode
         self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("performance"))
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "performance")
 
-        contents = None
-        with open(os.path.join(dir2, "energy_performance_preference"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"performance")
-        contents = None
-        with open(os.path.join(dir2, "scaling_governor"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"performance")
+        self.assert_file_eventually_contains(energy_prefs, "performance")
+        self.assert_file_eventually_contains(scaling_governor, "performance")
 
         # Set powersave mode
         self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("power-saver"))
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "power-saver")
 
-        contents = None
-        with open(os.path.join(dir2, "energy_performance_preference"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"power")
-        contents = None
-        with open(os.path.join(dir2, "scaling_governor"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"powersave")
+        self.assert_file_eventually_contains(energy_prefs, "power")
+        self.assert_file_eventually_contains(scaling_governor, "powersave")
 
         self.stop_daemon()
 
@@ -1161,15 +1152,12 @@ class Tests(dbusmock.DBusTestCase):
         self.assertEqual(profiles[0]["CpuDriver"], "amd_pstate")
         self.assertEqual(profiles[0]["Profile"], "power-saver")
 
-        contents = None
-        with open(os.path.join(dir1, "energy_performance_preference"), "rb") as tmpf:
-            contents = tmpf.read()
         # This matches what's written by ppd-driver-amd-pstate.c
-        self.assertEqual(contents, b"balance_performance")
-        contents = None
-        with open(os.path.join(dir1, "scaling_governor"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"powersave")
+        energy_prefs = os.path.join(dir1, "energy_performance_preference")
+        self.assert_file_eventually_contains(energy_prefs, "balance_performance")
+
+        scaling_governor = os.path.join(dir1, "scaling_governor")
+        self.assert_file_eventually_contains(scaling_governor, "powersave")
 
         self.stop_daemon()
 
@@ -1220,10 +1208,8 @@ class Tests(dbusmock.DBusTestCase):
             )
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "balanced")
 
-        contents = None
-        with open(os.path.join(dir1, "energy_performance_preference"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"balance_performance\n")
+        energy_prefs = os.path.join(dir1, "energy_performance_preference")
+        self.assert_file_eventually_contains(energy_prefs, "balance_performance\n")
 
         self.stop_daemon()
 
@@ -1267,19 +1253,14 @@ class Tests(dbusmock.DBusTestCase):
         self.assertEqual(profiles[0]["PlatformDriver"], "placeholder")
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "balanced")
 
-        contents = None
-        with open(os.path.join(dir1, "energy_performance_preference"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"performance\n")
+        energy_prefs = os.path.join(dir1, "energy_performance_preference")
+        self.assert_file_eventually_contains(energy_prefs, "performance\n")
 
         # Set performance mode
         self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("power-saver"))
         self.assertEqual(self.get_dbus_property("ActiveProfile"), "power-saver")
 
-        contents = None
-        with open(os.path.join(dir1, "energy_performance_preference"), "rb") as tmpf:
-            contents = tmpf.read()
-        self.assertEqual(contents, b"performance\n")
+        self.assert_file_eventually_contains(energy_prefs, "performance\n")
 
         self.stop_daemon()
 
@@ -1401,11 +1382,12 @@ class Tests(dbusmock.DBusTestCase):
 
     def test_amdgpu_panel_power(self):
         """Verify AMDGPU Panel power actions"""
+        amdgpu_panel_power_savings = "amdgpu/panel_power_savings"
         edp = self.testbed.add_device(
             "drm",
             "card1-eDP",
             None,
-            ["status", "connected\n", "amdgpu/panel_power_savings", "0"],
+            ["status", "connected\n", amdgpu_panel_power_savings, "0"],
             ["DEVTYPE", "drm_connector"],
         )
 
@@ -1416,7 +1398,7 @@ class Tests(dbusmock.DBusTestCase):
         self.assertIn("amdgpu_panel_power", self.get_dbus_property("Actions"))
 
         # verify it hasn't been updated yet due to missing upower
-        self.assertEqual(self.read_sysfs_attr(edp, "amdgpu/panel_power_savings"), b"0")
+        self.assert_sysfs_attr_eventually_is(edp, amdgpu_panel_power_savings, "0")
 
         # start upower and try again
         self.stop_daemon()
@@ -1429,39 +1411,35 @@ class Tests(dbusmock.DBusTestCase):
 
         # verify balanced updated it
         self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("balanced"))
-        self.assertEqual(self.read_sysfs_attr(edp, "amdgpu/panel_power_savings"), b"3")
+        self.assert_sysfs_attr_eventually_is(edp, amdgpu_panel_power_savings, "3")
 
         # verify power saver updated it
         self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("power-saver"))
-        self.assertEqual(self.read_sysfs_attr(edp, "amdgpu/panel_power_savings"), b"4")
+        self.assert_sysfs_attr_eventually_is(edp, amdgpu_panel_power_savings, "4")
 
         # add another device that supports the feature
         edp2 = self.testbed.add_device(
             "drm",
             "card2-eDP",
             None,
-            ["status", "connected\n", "amdgpu/panel_power_savings", "0"],
+            ["status", "connected\n", amdgpu_panel_power_savings, "0"],
             ["DEVTYPE", "drm_connector"],
         )
 
         # verify power saver got updated for it
-        self.assert_eventually(
-            lambda: self.read_sysfs_attr(edp2, "amdgpu/panel_power_savings") == b"4"
-        )
+        self.assert_sysfs_attr_eventually_is(edp2, amdgpu_panel_power_savings, "4")
 
         # add another device that supports the feature, but panel is disconnected
         edp3 = self.testbed.add_device(
             "drm",
             "card3-eDP",
             None,
-            ["status", "disconnected\n", "amdgpu/panel_power_savings", "0"],
+            ["status", "disconnected\n", amdgpu_panel_power_savings, "0"],
             ["DEVTYPE", "drm_connector"],
         )
 
         # verify power saver didn't get updated for it
-        self.assert_eventually(
-            lambda: self.read_sysfs_attr(edp3, "amdgpu/panel_power_savings") == b"0"
-        )
+        self.assert_sysfs_attr_eventually_is(edp3, amdgpu_panel_power_savings, "0")
 
     def test_trickle_charge_system(self):
         """Trickle power_supply charge type"""
@@ -1501,7 +1479,7 @@ class Tests(dbusmock.DBusTestCase):
         self.assertIn("trickle_charge", self.get_dbus_property("Actions"))
 
         # Verify that charge-type didn't get touched
-        self.assertEqual(self.read_sysfs_attr(fastcharge, "charge_type"), b"Fast")
+        self.assert_sysfs_attr_eventually_is(fastcharge, "charge_type", "Fast")
         self.assertEqual(self.get_mtime(fastcharge, "charge_type"), mtime)
 
     def test_trickle_charge_mode(self):
@@ -1527,16 +1505,16 @@ class Tests(dbusmock.DBusTestCase):
         self.assertIn("trickle_charge", self.get_dbus_property("Actions"))
 
         # Verify that charge-type got changed to Fast on startup
-        self.assertEqual(self.read_sysfs_attr(fastcharge, "charge_type"), b"Fast")
+        self.assert_sysfs_attr_eventually_is(fastcharge, "charge_type", "Fast")
 
         # Verify that charge-type got changed to Trickle when power saving
         self.set_dbus_property("ActiveProfile", GLib.Variant.new_string("power-saver"))
-        self.assertEqual(self.read_sysfs_attr(fastcharge, "charge_type"), b"Trickle")
+        self.assert_sysfs_attr_eventually_is(fastcharge, "charge_type", "Trickle")
 
         # FIXME no performance mode
         # Verify that charge-type got changed to Fast in a non-default, non-power save mode
         # self.set_dbus_property('ActiveProfile', GLib.Variant.new_string('performance'))
-        # self.assertEqual(self.read_sysfs_attr(fastcharge, 'charge_type'), 'Fast')
+        # self.assert_sysfs_attr_eventually_is(fastcharge, "charge_type", "Fast")
 
     def test_platform_driver_late_load(self):
         """Test that we can handle the platform_profile driver getting loaded late"""
