@@ -258,7 +258,7 @@ class Tests(dbusmock.DBusTestCase):
                 self.daemon.terminate()
             except OSError:
                 pass
-            self.daemon.wait(timeout=3000)
+            self.assertEqual(self.daemon.wait(timeout=3000), 0)
 
         self.daemon = None
         self.proxy = None
