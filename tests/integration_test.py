@@ -1752,8 +1752,8 @@ class Tests(dbusmock.DBusTestCase):
         self.create_platform_profile()
         self.start_daemon()
 
-        builddir = os.getenv("top_builddir", ".")
-        tool_path = os.path.join(builddir, "src", "powerprofilesctl")
+        sourcedir = os.getenv("top_srcdir", ".")
+        tool_path = os.path.join(sourcedir, "src", "powerprofilesctl")
 
         with subprocess.Popen(
             [tool_path, "launch", "-p", "power-saver", "sleep", "3600"],
@@ -1996,8 +1996,8 @@ class Tests(dbusmock.DBusTestCase):
     def test_powerprofilesctl_error(self):
         """Check that powerprofilesctl returns 1 rather than an exception on error"""
 
-        builddir = os.getenv("top_builddir", ".")
-        tool_path = os.path.join(builddir, "src", "powerprofilesctl")
+        sourcedir = os.getenv("top_srcdir", ".")
+        tool_path = os.path.join(sourcedir, "src", "powerprofilesctl")
 
         with self.assertRaises(subprocess.CalledProcessError) as error:
             subprocess.check_output(
