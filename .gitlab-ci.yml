@@ -31,7 +31,11 @@ workflow:
   before_script:
     - mkdir -m 700 $TMPDIR -p
     - dnf update -y
-    - if [ -x /bin/dnf ]; then dnf install -y $DEPENDENCIES $JOB_DEPS; else dnf5 install -y $DEPENDENCIES $JOB_DEPS; fi
+    - if [ -x /bin/dnf ]; then
+        dnf install -y $DEPENDENCIES $JOB_DEPS;
+      else
+        dnf5 install -y $DEPENDENCIES $JOB_DEPS;
+      fi
 
 pre_commit:
   variables:
