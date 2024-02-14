@@ -266,8 +266,10 @@ get_profile_holds_variant (PpdApp *data)
 }
 
 static void
-send_dbus_event (PpdApp     *data,
-                 PropertiesMask  mask)
+send_dbus_event_iface (PpdApp         *data,
+                       PropertiesMask  mask,
+                       const gchar    *iface,
+                       const gchar    *path)
 {
   GVariantBuilder props_builder;
   GVariant *props_changed = NULL;
@@ -307,16 +309,28 @@ send_dbus_event (PpdApp     *data,
                            get_profile_holds_variant (data));
   }
 
-  props_changed = g_variant_new ("(s@a{sv}@as)", POWER_PROFILES_IFACE_NAME,
+  props_changed = g_variant_new ("(s@a{sv}@as)", iface,
                                  g_variant_builder_end (&props_builder),
                                  g_variant_new_strv (NULL, 0));
 
   g_dbus_connection_emit_signal (data->connection,
                                  NULL,
-                                 POWER_PROFILES_DBUS_PATH,
+                                 path,
                                  "org.freedesktop.DBus.Properties",
                                  "PropertiesChanged",
                                  props_changed, NULL);
+}
+
+static void
+send_dbus_event (PpdApp         *data,
+                 PropertiesMask  mask)
+{
+  send_dbus_event_iface (data, mask,
+                         POWER_PROFILES_IFACE_NAME,
+                         POWER_PROFILES_DBUS_PATH);
+  send_dbus_event_iface (data, mask,
+                         POWER_PROFILES_LEGACY_IFACE_NAME,
+                         POWER_PROFILES_LEGACY_DBUS_PATH);
 }
 
 static void
