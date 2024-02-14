@@ -29,6 +29,7 @@ workflow:
   variables:
     TMPDIR: $CI_BUILDS_DIR/tmpdir
   before_script:
+    - echo 8096000 > /proc/sys/fs/inotify/max_user_instances
     - mkdir -m 700 $TMPDIR -p
     - dnf update -y
     - if [ -x /bin/dnf ]; then
