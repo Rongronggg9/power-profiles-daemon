@@ -92,8 +92,6 @@ def usage(_command=None):
     else:
         usage_main()
 
-def version():
-    print (VERSION)
 
 def get_proxy():
     try:
@@ -103,6 +101,11 @@ def get_proxy():
     except:
         raise
     return proxy
+
+def version():
+    proxy = get_proxy()
+    ver = proxy.Get('(ss)', PP_IFACE, 'Version')
+    print(ver)
 
 def _get():
     proxy = get_proxy()

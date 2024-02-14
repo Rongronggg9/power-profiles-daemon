@@ -121,10 +121,17 @@ typedef enum {
   PROP_PROFILES                   = 1 << 2,
   PROP_ACTIONS                    = 1 << 3,
   PROP_DEGRADED                   = 1 << 4,
-  PROP_ACTIVE_PROFILE_HOLDS       = 1 << 5
+  PROP_ACTIVE_PROFILE_HOLDS       = 1 << 5,
+  PROP_VERSION                    = 1 << 6,
 } PropertiesMask;
 
-#define PROP_ALL (PROP_ACTIVE_PROFILE | PROP_INHIBITED | PROP_PROFILES | PROP_ACTIONS | PROP_DEGRADED | PROP_ACTIVE_PROFILE_HOLDS)
+#define PROP_ALL (PROP_ACTIVE_PROFILE       | \
+                  PROP_INHIBITED            | \
+                  PROP_PROFILES             | \
+                  PROP_ACTIONS              | \
+                  PROP_DEGRADED             | \
+                  PROP_ACTIVE_PROFILE_HOLDS | \
+                  PROP_VERSION)
 
 static gboolean
 driver_profile_support (PpdDriver *driver,
@@ -309,6 +316,10 @@ send_dbus_event_iface (PpdApp         *data,
   if (mask & PROP_ACTIVE_PROFILE_HOLDS) {
     g_variant_builder_add (&props_builder, "{sv}", "ActiveProfileHolds",
                            get_profile_holds_variant (data));
+  }
+  if (mask & PROP_VERSION) {
+    g_variant_builder_add (&props_builder, "{sv}", "Version",
+                           g_variant_new_string (VERSION));
   }
 
   props_changed = g_variant_new ("(s@a{sv}@as)", iface,
@@ -831,6 +842,8 @@ handle_get_property (GDBusConnection *connection,
   }
   if (g_strcmp0 (property_name, "ActiveProfileHolds") == 0)
     return get_profile_holds_variant (data);
+  if (g_strcmp0 (property_name, "Version") == 0)
+    return g_variant_new_string (VERSION);
   return NULL;
 }
 

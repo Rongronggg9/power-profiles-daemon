@@ -136,5 +136,12 @@
     -->
     <property name="ActiveProfileHolds" type="aa{sv}" access="read"/>
 
+    <!--
+        Version:
+
+        The version of the power-profiles-daemon software.
+    -->
+    <property name="Version" type="s" access="read"/>
+
   </interface>
 </node>

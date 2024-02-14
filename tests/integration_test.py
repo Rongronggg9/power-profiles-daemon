@@ -1949,6 +1949,11 @@ class Tests(dbusmock.DBusTestCase):
 
         self.stop_daemon()
 
+    def test_get_version_prop(self):
+        """Checks that the version property is advertised"""
+        self.start_daemon()
+        self.assertTrue(self.get_dbus_property("Version"))
+
     def test_intel_pstate_noturbo(self):
         """Intel P-State driver (balance)"""
 
