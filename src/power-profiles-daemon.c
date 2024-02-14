@@ -69,6 +69,7 @@ typedef struct {
   char *reason;
   char *application_id;
   char *requester;
+  char *requester_iface;
 } ProfileHold;
 
 static void
@@ -79,6 +80,7 @@ profile_hold_free (ProfileHold *hold)
   g_free (hold->reason);
   g_free (hold->application_id);
   g_free (hold->requester);
+  g_free (hold->requester_iface);
   g_free (hold);
 }
 
@@ -507,9 +509,13 @@ release_all_profile_holds (PpdApp *data)
   while (g_hash_table_iter_next (&iter, &key, &value)) {
     ProfileHold *hold = value;
     guint cookie = GPOINTER_TO_UINT (key);
+    const char *req_path = POWER_PROFILES_DBUS_PATH;
 
-    g_dbus_connection_emit_signal (data->connection, hold->requester, POWER_PROFILES_DBUS_PATH,
-                                   POWER_PROFILES_IFACE_NAME, "ProfileReleased",
+    if (g_strcmp0 (hold->requester_iface, POWER_PROFILES_LEGACY_IFACE_NAME) == 0)
+      req_path = POWER_PROFILES_LEGACY_DBUS_PATH;
+
+    g_dbus_connection_emit_signal (data->connection, hold->requester, req_path,
+                                   hold->requester_iface, "ProfileReleased",
                                    g_variant_new ("(u)", cookie), NULL);
     g_bus_unwatch_name (cookie);
   }
@@ -719,6 +725,7 @@ hold_profile (PpdApp                *data,
   hold->reason = g_strdup (reason);
   hold->application_id = g_strdup (application_id);
   hold->requester = g_strdup (g_dbus_method_invocation_get_sender (invocation));
+  hold->requester_iface = g_strdup (g_dbus_method_invocation_get_interface_name (invocation));
 
   g_debug ("%s (%s) requesting to hold profile '%s', reason: '%s'", application_id,
            hold->requester, profile_name, reason);
