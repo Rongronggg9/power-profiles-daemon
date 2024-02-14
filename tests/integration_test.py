@@ -304,11 +304,6 @@ class Tests(dbusmock.DBusTestCase):
             self.testbed.get_root_dir() + "/" + device + "/" + attribute
         )
 
-    def read_file(self, path):
-        with open(path, "rb") as tmpf:
-            return tmpf.read()
-        return None
-
     def change_immutable(self, fname, enable):
         attr = "-"
         if enable:
