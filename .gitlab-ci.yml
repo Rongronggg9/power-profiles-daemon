@@ -73,6 +73,23 @@ build_stable:
         path: _build/meson-logs/coverage.xml
   coverage: '/^TOTAL.*\s+(\d+\%)$/'
 
+address_sanitizer:
+  variables:
+    JOB_DEPS: libasan
+              libubsan
+  extends:
+    - .install-deps
+  script:
+    - meson setup
+        --werror
+        _build
+        -Db_sanitize=address,undefined
+    - meson test -C _build --print-errorlogs -t 3
+  artifacts:
+    when: on_failure
+    paths:
+    - _build/meson-logs/*.txt
+
 scan_build:
   variables:
     JOB_DEPS: clang-analyzer
