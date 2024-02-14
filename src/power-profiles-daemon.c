@@ -1068,6 +1068,7 @@ start_profile_drivers (PpdApp *data)
     g_autoptr(GObject) object = NULL;
 
     object = g_object_new (objects[i] (), NULL);
+
     if (PPD_IS_DRIVER (object)) {
       g_autoptr(PpdDriver) driver = PPD_DRIVER (g_steal_pointer (&object));
       PpdProfile profiles;
@@ -1106,7 +1107,9 @@ start_profile_drivers (PpdApp *data)
         g_debug ("probe () failed for driver %s, skipping",
                  ppd_driver_get_driver_name (driver));
         continue;
-      } else if (result == PPD_PROBE_RESULT_DEFER) {
+      }
+
+      if (result == PPD_PROBE_RESULT_DEFER) {
         g_signal_connect (G_OBJECT (driver), "probe-request",
                           G_CALLBACK (driver_probe_request_cb), data);
         g_ptr_array_add (data->probed_drivers, g_steal_pointer (&driver));
@@ -1124,7 +1127,10 @@ start_profile_drivers (PpdApp *data)
                         G_CALLBACK (driver_performance_degraded_changed_cb), data);
       g_signal_connect (G_OBJECT (driver), "profile-changed",
                         G_CALLBACK (driver_profile_changed_cb), data);
-    } else if (PPD_IS_ACTION (object)) {
+      continue;
+    }
+
+    if (PPD_IS_ACTION (object)) {
       g_autoptr(PpdAction) action = PPD_ACTION (g_steal_pointer (&object));
 
       g_debug ("Handling action '%s'", ppd_action_get_action_name (action));
@@ -1141,9 +1147,10 @@ start_profile_drivers (PpdApp *data)
       }
 
       g_ptr_array_add (data->actions, g_steal_pointer (&action));
-    } else {
-      g_assert_not_reached ();
+      continue;
     }
+
+    g_assert_not_reached ();
   }
 
   if (!has_required_drivers (data)) {
