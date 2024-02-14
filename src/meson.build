@@ -98,20 +98,11 @@ executable('power-profiles-daemon',
   install_dir: libexecdir
 )
 
-python = import('python')
-py_installation = python.find_installation('python3', required: true)
-
-ppd_conf = configuration_data()
-ppd_conf.set('VERSION', meson.project_version())
-ppd_conf.set('PYTHON3', py_installation.full_path())
-
-script = configure_file(
-  input: 'powerprofilesctl.in',
-  output: 'powerprofilesctl',
-  configuration: ppd_conf,
-  install_dir: get_option('bindir')
+script = 'powerprofilesctl'
+install_data(script,
+             install_dir: get_option('bindir')
 )
-
+script = join_paths(meson.current_source_dir(), script)
 if get_option('pylint')
   test('pylint-powerprofilesctl',
        pylint,

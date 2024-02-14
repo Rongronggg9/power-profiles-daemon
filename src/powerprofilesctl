@@ -1,11 +1,9 @@
-#!@PYTHON3@
+#!/usr/bin/env python3
 
 import signal
 import subprocess
 import sys
 from gi.repository import Gio, GLib
-
-VERSION = "@VERSION@"
 
 PP_NAME = "org.freedesktop.UPower.PowerProfiles"
 PP_PATH = "/org/freedesktop/UPower/PowerProfiles"
