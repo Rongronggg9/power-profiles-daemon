@@ -1644,7 +1644,7 @@ class Tests(dbusmock.DBusTestCase):
 
             # Make sure to handle vanishing clients
             launch_process.terminate()
-            launch_process.wait()
+            self.assertEqual(launch_process.wait(), 0)
 
         holds = self.get_dbus_property("ActiveProfileHolds")
         self.assertEqual(len(holds), 0)
