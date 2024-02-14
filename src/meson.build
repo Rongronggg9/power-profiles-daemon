@@ -1,4 +1,10 @@
-deps = [ gio_dep, gudev_dep, upower_dep, polkit_gobject_dep ]
+deps = [
+  gio_dep,
+  gio_unix_dep,
+  gudev_dep,
+  polkit_gobject_dep,
+  upower_dep,
+]
 
 config_h = configuration_data()
 config_h.set_quoted('VERSION', meson.project_version())

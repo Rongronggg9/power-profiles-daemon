@@ -12,6 +12,7 @@
 
 #include "config.h"
 
+#include <glib-unix.h>
 #include <locale.h>
 #include <polkit/polkit.h>
 #include <stdio.h>
@@ -1323,6 +1324,15 @@ debug_handler_cb (const gchar *log_domain,
     g_print ("%s\n", message);
 }
 
+static gboolean
+quit_signal_callback (gpointer user_data)
+{
+  PpdApp *data = user_data;
+
+  g_main_loop_quit (data->main_loop);
+  return FALSE;
+}
+
 int main (int argc, char **argv)
 {
   PpdApp *data;
@@ -1356,6 +1366,9 @@ int main (int argc, char **argv)
   data->active_profile = PPD_PROFILE_BALANCED;
   data->selected_profile = PPD_PROFILE_BALANCED;
   data->log_level = verbose ? G_LOG_LEVEL_DEBUG : G_LOG_LEVEL_MESSAGE;
+
+  g_unix_signal_add (SIGTERM, quit_signal_callback, data);
+  g_unix_signal_add (SIGINT, quit_signal_callback, data);
 
   /* redirect all domains */
   if (verbose && !g_log_writer_is_journald (fileno (stdout)))
