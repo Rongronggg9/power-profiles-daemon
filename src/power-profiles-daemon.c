@@ -954,6 +954,14 @@ name_lost_handler (GDBusConnection *connection,
 }
 
 static void
+legacy_name_acquired_handler (GDBusConnection *connection,
+                              const gchar     *name,
+                              gpointer         user_data)
+{
+  g_debug ("Name '%s' acquired", name);
+}
+
+static void
 bus_acquired_handler (GDBusConnection *connection,
                       const gchar     *name,
                       gpointer         user_data)
@@ -979,7 +987,7 @@ bus_acquired_handler (GDBusConnection *connection,
   data->app->legacy_name_id = g_bus_own_name_on_connection (connection,
                                                             POWER_PROFILES_LEGACY_DBUS_NAME,
                                                             data->flags,
-                                                            NULL,
+                                                            legacy_name_acquired_handler,
                                                             name_lost_handler,
                                                             data,
                                                             NULL);
@@ -1175,6 +1183,8 @@ name_acquired_handler (GDBusConnection *connection,
                        gpointer         user_data)
 {
   PpdBusOwnData *data = user_data;
+
+  g_debug ("Name '%s' acquired", name);
 
   start_profile_drivers (data->app);
 }
