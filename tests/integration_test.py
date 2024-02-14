@@ -185,7 +185,7 @@ class Tests(dbusmock.DBusTestCase):
         self.log = tempfile.NamedTemporaryFile()  # pylint: disable=consider-using-with
         daemon_path = [self.daemon_path, "-v"]
         if os.getenv("PPD_TEST_WRAPPER"):
-            daemon_path = os.getenv("PPD_TEST_WRAPPER").split(' ') + daemon_path
+            daemon_path = os.getenv("PPD_TEST_WRAPPER").split(" ") + daemon_path
         elif os.getenv("VALGRIND"):
             daemon_path = ["valgrind"] + daemon_path
 
@@ -384,7 +384,7 @@ class Tests(dbusmock.DBusTestCase):
         self.start_daemon()
         daemon_path = [self.daemon_path]
         if os.getenv("PPD_TEST_WRAPPER"):
-            daemon_path = os.getenv("PPD_TEST_WRAPPER").split(' ') + daemon_path
+            daemon_path = os.getenv("PPD_TEST_WRAPPER").split(" ") + daemon_path
         out = subprocess.run(
             daemon_path,
             env={

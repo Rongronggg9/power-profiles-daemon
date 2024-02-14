@@ -90,6 +90,21 @@ address_sanitizer:
     paths:
     - _build/meson-logs/*.txt
 
+valgrind:
+  variables:
+    JOB_DEPS: valgrind
+  extends:
+    - .install-deps
+  script:
+    - meson setup
+        --werror
+        _build
+    - meson test -C _build --print-errorlogs --setup=valgrind
+  artifacts:
+    when: on_failure
+    paths:
+    - _build/meson-logs/*.txt
+
 scan_build:
   variables:
     JOB_DEPS: clang-analyzer
