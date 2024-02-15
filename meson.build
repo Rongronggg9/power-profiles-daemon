@@ -41,7 +41,7 @@ gio_unix_dep = dependency('gio-unix-2.0')
 gio_dep = dependency('gio-2.0')
 gudev_dep = dependency('gudev-1.0', version: '>= 234')
 upower_dep = dependency('upower-glib')
-polkit_gobject_dep = dependency('polkit-gobject-1', version: '>= 0.91')
+polkit_gobject_dep = dependency('polkit-gobject-1', version: '>= 0.99')
 polkit_policy_directory = polkit_gobject_dep.get_variable('policydir')
 
 gnome = import('gnome')
