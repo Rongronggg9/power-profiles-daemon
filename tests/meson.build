@@ -76,7 +76,7 @@ foreach ut: unit_tests
         )
 endforeach
 
-if get_option('pylint')
+if pylint.found()
   integration_pylint_flags = ['-d', 'W0511', '-d', 'C0302'] + pylint_flags
   test('pylint-integration-tests',
        pylint,

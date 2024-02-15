@@ -60,7 +60,7 @@ build_stable:
         --fatal-meson-warnings
         --warnlevel 2
         -Dgtk_doc=true
-        -Dpylint=true
+        -Dpylint=enabled
         -Dmanpage=enabled
         -Db_coverage=true
         _build

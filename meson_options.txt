@@ -7,8 +7,8 @@ option('gtk_doc',
        value: false,
        description: 'Build docs')
 option('pylint',
-       type: 'boolean',
-       value: false,
+       type: 'feature',
+       value: 'auto',
        description: 'Run pylint checks, for developers only')
 option('tests',
        description: 'Whether to run tests',

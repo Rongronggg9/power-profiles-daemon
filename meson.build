@@ -49,8 +49,8 @@ gnome = import('gnome')
 add_global_arguments('-D_GNU_SOURCE=1', language: 'c')
 add_global_arguments(common_cflags, language: 'c')
 
-if get_option('pylint')
-    pylint = find_program('pylint-3', 'pylint3', 'pylint', required: true)
+pylint = find_program('pylint-3', 'pylint3', 'pylint', required: get_option('pylint'))
+if pylint.found()
     nomalloc = environment({'MALLOC_PERTURB_': '0'})
     pylint_flags = ['-d', 'C0116', '-d', 'C0114', '-d', 'W0707', '-d', 'W0706' ]
 endif

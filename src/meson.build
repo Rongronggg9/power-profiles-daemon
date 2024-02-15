@@ -108,7 +108,7 @@ powerprofilesctl = files('powerprofilesctl')
 install_data(powerprofilesctl,
              install_dir: get_option('bindir')
 )
-if get_option('pylint')
+if pylint.found()
   test('pylint-powerprofilesctl',
        pylint,
        args: pylint_flags + [ powerprofilesctl ],
