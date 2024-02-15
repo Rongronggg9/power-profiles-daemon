@@ -1627,6 +1627,7 @@ class Tests(dbusmock.DBusTestCase):
     def test_vanishing_hold(self):
         self.create_platform_profile()
         self.start_daemon()
+        self.assert_eventually(lambda: self.get_dbus_property("ActiveProfile"))
 
         sourcedir = os.getenv("top_srcdir", ".")
         tool_path = os.path.join(sourcedir, "src", "powerprofilesctl")
