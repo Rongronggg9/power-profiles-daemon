@@ -9,19 +9,45 @@
     <releaseinfo>Version &version;</releaseinfo>
     <authorgroup>
       <author>
-	<firstname>Bastien</firstname>
-	<surname>Nocera</surname>
-	<affiliation>
-	  <address>
-	    <email>hadess@hadess.net</email>
-	  </address>
-	</affiliation>
+        <firstname>Bastien</firstname>
+        <surname>Nocera</surname>
+        <affiliation>
+          <address>
+            <email>hadess@hadess.net</email>
+          </address>
+        </affiliation>
+      </author>
+      <author>
+        <firstname>Mario</firstname>
+        <surname>Limonciello</surname>
+        <affiliation>
+          <address>
+            <email>superm1@gmail.com</email>
+          </address>
+        </affiliation>
       </author>
     </authorgroup>
+      <author>
+        <firstname>Marco</firstname>
+        <surname>Trevisan</surname>
+        <affiliation>
+          <address>
+            <email>mail@3v1n0.net</email>
+          </address>
+        </affiliation>
+      </author>
 
     <copyright>
       <year>2020</year>
       <holder>Red Hat, Inc.</holder>
+    </copyright>
+    <copyright>
+      <year>2024</year>
+      <holder>Advanced Micro Devices, Inc</holder>
+    </copyright>
+    <copyright>
+      <year>2024</year>
+      <holder>Canonical Ltd</holder>
     </copyright>
 
     <legalnotice>
