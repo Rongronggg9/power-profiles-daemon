@@ -15,6 +15,6 @@ option('tests',
        type: 'boolean',
        value: true)
 option('manpage',
-       description: 'gemerate powerprofilesctl man page',
+       description: 'generate powerprofilesctl man page',
        type: 'feature',
        value: 'auto')
