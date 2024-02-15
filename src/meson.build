@@ -104,15 +104,14 @@ executable('power-profiles-daemon',
   install_dir: libexecdir
 )
 
-script = 'powerprofilesctl'
-install_data(script,
+powerprofilesctl = files('powerprofilesctl')
+install_data(powerprofilesctl,
              install_dir: get_option('bindir')
 )
-script = join_paths(meson.current_source_dir(), script)
 if get_option('pylint')
   test('pylint-powerprofilesctl',
        pylint,
-       args: pylint_flags + [ script ],
+       args: pylint_flags + [ powerprofilesctl ],
        env: nomalloc,
        )
 endif
