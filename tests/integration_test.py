@@ -397,7 +397,7 @@ class Tests(dbusmock.DBusTestCase):
             lambda: self.read_file_contents(path) == encoded,
             timeout=timeout,
             message=f"file '{path}' does not contain '{contents}', "
-            + "but '{self.read_file_contents(path)}'",
+            + f"but '{self.read_file_contents(path)}'",
         )
 
     def assert_sysfs_attr_eventually_is(self, device, attribute, contents, timeout=800):
@@ -407,7 +407,7 @@ class Tests(dbusmock.DBusTestCase):
             lambda: self.read_sysfs_attr(device, attribute) == encoded,
             timeout=timeout,
             message=f"file {device} '{attribute}' does not contain '{contents}', "
-            + "but '{self.read_sysfs_attr(device, attribute)}'",
+            + f"but '{self.read_sysfs_attr(device, attribute)}'",
         )
 
     def assert_dbus_property_eventually_is(self, prop, value, timeout=1200):
@@ -415,7 +415,8 @@ class Tests(dbusmock.DBusTestCase):
         return self.assert_eventually(
             lambda: self.get_dbus_property(prop) == value,
             timeout=timeout,
-            message=f"property '{prop}' is not '{value}', but '{self.get_dbus_property(prop)}'",
+            message=f"property '{prop}' is not '{value}', but "
+            + f"'{self.get_dbus_property(prop)}'",
         )
 
     #
