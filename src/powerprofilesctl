@@ -190,6 +190,13 @@ def get_parser():
     )
     parser_version.set_defaults(func=_version)
 
+    try:
+        import shtab  # pylint: disable=import-outside-toplevel
+
+        shtab.add_argument_to(parser, ["-s", "--print-completion"])  # magic!
+    except ImportError:
+        pass
+
     return parser
 
 

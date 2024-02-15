@@ -67,6 +67,18 @@ address_sanitizer = get_option('b_sanitize') == 'address' or \
   get_option('b_sanitize') == 'address,undefined' or \
   get_option('b_sanitize') == 'leak'
 
+python = import('python')
+python3 = python.find_installation('python3')
+
+have_shtab = run_command(
+  [python3, '-c', 'import shtab'], check: false).returncode() == 0
+if not have_shtab
+  warning('''python3-shtab not found''')
+endif
+
+bashcomp = dependency('bash-completion', required: get_option('bashcomp').disable_auto_if(not have_shtab))
+zshcomp = have_shtab and get_option('zshcomp') != ''
+
 subdir('src')
 subdir('data')
 
@@ -80,6 +92,9 @@ if get_option('gtk_doc')
   subdir('docs')
 endif
 
+python = import('python')
+python3 = python.find_installation('python3')
+
 if get_option('tests')
   # Python 3 required modules
   python3_required_modules = ['dbusmock', 'gi']
@@ -89,8 +104,6 @@ if get_option('tests')
     'UMockdev': '1.0',
   }
 
-  python = import('python')
-  python3 = python.find_installation('python3')
   foreach p : python3_required_modules
     # Source: https://docs.python.org/3/library/importlib.html#checking-if-a-module-can-be-imported
     script = 'import importlib.util; import sys; exit(1) if importlib.util.find_spec(\''+ p +'\') is None else exit(0)'

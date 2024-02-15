@@ -18,3 +18,11 @@ option('manpage',
        description: 'generate powerprofilesctl man page',
        type: 'feature',
        value: 'auto')
+option('bashcomp',
+       description: 'generate bash completion',
+       type: 'feature',
+       value: 'auto')
+option('zshcomp',
+       description: 'path for zsh completion file',
+       type: 'string',
+       value: '')
