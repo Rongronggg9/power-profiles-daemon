@@ -12,12 +12,12 @@ variables:
                 systemd
                 meson
                 git
-                python3-gobject
-                python3-dbusmock
                 python3-packaging
-                python3-pylint
-                umockdev
-                e2fsprogs
+  TEST_DEPENDENCIES: e2fsprogs
+                     python3-dbusmock
+                     python3-gobject
+                     python3-pylint
+                     umockdev
 
 workflow:
   rules:
@@ -49,7 +49,8 @@ pre_commit:
 
 build_stable:
   variables:
-    JOB_DEPS: argparse-manpage
+    JOB_DEPS: $TEST_DEPENDENCIES
+              argparse-manpage
               python3-shtab
   extends:
     - .install-deps
@@ -85,7 +86,8 @@ build_stable:
 
 address_sanitizer:
   variables:
-    JOB_DEPS: libasan
+    JOB_DEPS: $TEST_DEPENDENCIES
+              libasan
               libubsan
   extends:
     - .install-deps
@@ -103,7 +105,8 @@ address_sanitizer:
 
 valgrind:
   variables:
-    JOB_DEPS: valgrind
+    JOB_DEPS: $TEST_DEPENDENCIES
+              valgrind
   extends:
     - .install-deps
   script:
@@ -124,7 +127,7 @@ scan_build:
   extends:
     - .install-deps
   script:
-    - meson setup _build
+    - meson setup _build -Dtests=false
     -  env SCANBUILD=$(which scan-build) ninja -C _build scan-build
   artifacts:
     when: on_failure
