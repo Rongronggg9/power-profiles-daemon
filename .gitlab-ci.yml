@@ -151,3 +151,20 @@ docs:
     - _build-docs/docs/html
     - _build-docs/docs/html/index.html
     expire_in: 1 week
+
+pages:
+  image: alpine:latest
+  stage: deploy
+  needs:
+    - job: build_stable
+      artifacts: true
+    - job: docs
+      artifacts: true
+  script:
+    - mv _build-docs/docs/html public
+    - mv _build/meson-logs/coveragereport public/coverage
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH
