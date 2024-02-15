@@ -128,7 +128,7 @@ scan_build:
     - .install-deps
   script:
     - meson setup _build -Dtests=false
-    -  env SCANBUILD=$(which scan-build) ninja -C _build scan-build
+    - env SCANBUILD=$(which scan-build) ninja -C _build scan-build
   artifacts:
     when: on_failure
     paths:
