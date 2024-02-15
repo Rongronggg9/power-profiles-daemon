@@ -220,10 +220,11 @@ class Tests(dbusmock.DBusTestCase):
         )
 
         # wait until the daemon gets online
+        wait_time = 20 if "valgrind" in daemon_path[0] else 5
         self.assert_eventually(
             lambda: self.proxy and self.proxy.get_name_owner(),
-            timeout=10 * 1000,
-            message="daemon did not start in 10 seconds",
+            timeout=wait_time * 1000,
+            message=f"daemon did not start in {wait_time} seconds",
         )
 
         def properties_changed_cb(_, changed_properties, invalidated):
