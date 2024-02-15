@@ -49,6 +49,8 @@ pre_commit:
     - pre-commit run --all-files
 
 build_stable:
+  variables:
+    JOB_DEPS: argparse-manpage
   extends:
     - .install-deps
   script:
@@ -58,6 +60,7 @@ build_stable:
         --warnlevel 2
         -Dgtk_doc=true
         -Dpylint=true
+        -Dmanpage=enabled
         -Db_coverage=true
         _build
     - meson test -C _build --print-errorlogs
