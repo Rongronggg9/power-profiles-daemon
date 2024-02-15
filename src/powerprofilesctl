@@ -13,14 +13,10 @@ PROPERTIES_IFACE = "org.freedesktop.DBus.Properties"
 
 
 def get_proxy():
-    try:
-        bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
-        proxy = Gio.DBusProxy.new_sync(
-            bus, Gio.DBusProxyFlags.NONE, None, PP_NAME, PP_PATH, PROPERTIES_IFACE, None
-        )
-    except:
-        raise
-    return proxy
+    bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+    return Gio.DBusProxy.new_sync(
+        bus, Gio.DBusProxyFlags.NONE, None, PP_NAME, PP_PATH, PROPERTIES_IFACE, None
+    )
 
 
 def command(func):
@@ -55,38 +51,23 @@ def _get(args):  # pylint: disable=unused-argument
 
 @command
 def _set(args):
-    try:
-        proxy = get_proxy()
-        proxy.Set(
-            "(ssv)", PP_IFACE, "ActiveProfile", GLib.Variant.new_string(args.profile[0])
-        )
-    except:
-        raise
+    proxy = get_proxy()
+    proxy.Set(
+        "(ssv)", PP_IFACE, "ActiveProfile", GLib.Variant.new_string(args.profile[0])
+    )
 
 
 def get_profiles_property(prop):
-    try:
-        proxy = get_proxy()
-    except:
-        raise
-
-    profiles = None
-    try:
-        profiles = proxy.Get("(ss)", PP_IFACE, prop)
-    except:
-        raise
-    return profiles
+    proxy = get_proxy()
+    return proxy.Get("(ss)", PP_IFACE, prop)
 
 
 @command
 def _list(args):  # pylint: disable=unused-argument
-    try:
-        profiles = get_profiles_property("Profiles")
-        reason = get_proxy().Get("(ss)", PP_IFACE, "PerformanceDegraded")
-        degraded = reason != ""
-        active = get_proxy().Get("(ss)", PP_IFACE, "ActiveProfile")
-    except:
-        raise
+    profiles = get_profiles_property("Profiles")
+    reason = get_proxy().Get("(ss)", PP_IFACE, "PerformanceDegraded")
+    degraded = reason != ""
+    active = get_proxy().Get("(ss)", PP_IFACE, "ActiveProfile")
 
     index = 0
     for profile in reversed(profiles):
@@ -106,10 +87,7 @@ def _list(args):  # pylint: disable=unused-argument
 
 @command
 def _list_holds(args):  # pylint: disable=unused-argument
-    try:
-        holds = get_profiles_property("ActiveProfileHolds")
-    except:
-        raise
+    holds = get_profiles_property("ActiveProfileHolds")
 
     index = 0
     for hold in holds:
@@ -136,14 +114,10 @@ def _launch(args):
     if not reason:
         reason = f"Running {args.appid}"
     ret = 0
-    try:
-        bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
-        proxy = Gio.DBusProxy.new_sync(
-            bus, Gio.DBusProxyFlags.NONE, None, PP_NAME, PP_PATH, PP_IFACE, None
-        )
-    except:
-        raise
-
+    bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+    proxy = Gio.DBusProxy.new_sync(
+        bus, Gio.DBusProxyFlags.NONE, None, PP_NAME, PP_PATH, PP_IFACE, None
+    )
     cookie = proxy.HoldProfile("(sss)", profile, reason, appid)
 
     # Kill child when we go away
