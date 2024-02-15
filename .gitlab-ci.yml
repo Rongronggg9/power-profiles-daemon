@@ -3,7 +3,6 @@ image: fedora:rawhide
 variables:
   DEPENDENCIES: gcc
                 gcovr
-                gtk-doc
                 pkgconfig(udev)
                 pkgconfig(systemd)
                 pkgconfig(gio-2.0)
@@ -59,7 +58,6 @@ build_stable:
         --werror
         --fatal-meson-warnings
         --warnlevel 2
-        -Dgtk_doc=true
         -Dpylint=enabled
         -Dmanpage=enabled
         -Db_coverage=true
@@ -122,6 +120,7 @@ valgrind:
 scan_build:
   variables:
     JOB_DEPS: clang-analyzer
+              which
   extends:
     - .install-deps
   script:
@@ -131,3 +130,21 @@ scan_build:
     when: on_failure
     paths:
       - _build/meson-logs
+
+docs:
+  variables:
+    JOB_DEPS: gtk-doc
+  extends:
+    - .install-deps
+  script:
+    - meson setup
+        -Dgtk_doc=true
+        -Dtests=false
+        _build-docs
+    - ninja -C _build-docs power-profiles-daemon-doc
+  artifacts:
+    expose_as: "HTML Documentation"
+    paths:
+    - _build-docs/docs/html
+    - _build-docs/docs/html/index.html
+    expire_in: 1 week
