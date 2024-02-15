@@ -115,3 +115,34 @@ if get_option('pylint')
        env: nomalloc,
        )
 endif
+
+if argparse_manpage.found()
+  argparse_features = run_command(argparse_manpage, '--help',
+    check: true).stdout().strip()
+
+  install_man(configure_file(
+    command: [
+      argparse_manpage,
+      '--pyfile', powerprofilesctl,
+      '--function', 'get_parser',
+      argparse_features.contains('--author') ?
+        ['--author', 'Bastien Nocera', '--author', 'Mario Limonciello'] : [],
+      argparse_features.contains('--author-email') ?
+        ['--author-email', 'hadess@hadess.net', '--author-email', 'mario.limonciello@amd.com'] : [],
+      argparse_features.contains('--project-name') ?
+        ['--project-name', meson.project_name()] : [],
+      argparse_features.contains('--version') ?
+        ['--version', meson.project_version()] : [],
+      argparse_features.contains('--url') ?
+        ['--url', 'https://gitlab.freedesktop.org/upower/power-profiles-daemon'] : [],
+      argparse_features.contains('--description') ?
+        ['--manual-title', 'Power Profiles Daemon Control Program'] : [],
+      argparse_features.contains('--description') ?
+        ['--description', 'Command line utility to control Power Profiles Daemon'] : [],
+      argparse_features.contains('--format') ?
+        ['--format', 'single-commands-section'] : [],
+    ],
+    capture: true,
+    output: 'powerprofilesctl.1',
+  ))
+endif

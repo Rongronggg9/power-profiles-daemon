@@ -56,6 +56,8 @@ if get_option('pylint')
 endif
 xmllint = find_program('xmllint', required: false)
 
+argparse_manpage = find_program('argparse-manpage', required: get_option('manpage'))
+
 bus_names = {
   'org.freedesktop.UPower.PowerProfiles': '/org/freedesktop/UPower/PowerProfiles',
   'net.hadess.PowerProfiles': '/net/hadess/PowerProfiles',

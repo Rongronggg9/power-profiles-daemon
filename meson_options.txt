@@ -14,3 +14,7 @@ option('tests',
        description: 'Whether to run tests',
        type: 'boolean',
        value: true)
+option('manpage',
+       description: 'gemerate powerprofilesctl man page',
+       type: 'feature',
+       value: 'auto')

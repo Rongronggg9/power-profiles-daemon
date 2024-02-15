@@ -138,7 +138,7 @@ def _launch(args):
     return ret
 
 
-def main():
+def get_parser():
     parser = argparse.ArgumentParser(
         epilog="Use “powerprofilesctl COMMAND --help” to get detailed help for individual commands",
     )
@@ -190,7 +190,11 @@ def main():
     )
     parser_version.set_defaults(func=_version)
 
-    args = parser.parse_args()
+    return parser
+
+
+def main():
+    args = get_parser().parse_args()
     # default behavior is to run list if no command is given
     if not args.command:
         args.func = _list
