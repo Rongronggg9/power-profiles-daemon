@@ -127,3 +127,12 @@ meson.add_dist_script(
   find_program('check-news.sh').full_path(),
   '@0@'.format(meson.project_version())
 )
+
+summary({
+  'tests': get_option('tests'),
+  'bash-completion': bashcomp,
+  'zsh-completion': zshcomp,
+  'manpages': argparse_manpage.found(),
+  'python linting': pylint.found(),
+  'gtk_doc': get_option('gtk_doc'),
+})
